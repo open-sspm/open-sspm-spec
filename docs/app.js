@@ -1,4 +1,4 @@
-/* global location, fetch, document */
+/* global location, fetch, document, window, requestAnimationFrame */
 
 const SCHEMA_FILES = {
   "opensspm.ruleset": "opensspm.ruleset.schema.json",
@@ -37,6 +37,40 @@ function escapeHtml(s) {
 
 function prettyJson(v) {
   return JSON.stringify(v, null, 2);
+}
+
+function highlightJsonString(text) {
+  const tokenRe = /("(?:\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(?:\\s*:)?|\\btrue\\b|\\bfalse\\b|\\bnull\\b|-?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)/g;
+  let out = "";
+  let lastIndex = 0;
+  for (const m of text.matchAll(tokenRe)) {
+    const start = m.index ?? 0;
+    const end = start + m[0].length;
+    out += escapeHtml(text.slice(lastIndex, start));
+
+    const tok = m[0];
+    let cls = "tok-number";
+    if (tok[0] === "\"") cls = tok.endsWith(":") ? "tok-key" : "tok-string";
+    else if (tok === "true" || tok === "false") cls = "tok-bool";
+    else if (tok === "null") cls = "tok-null";
+
+    out += `<span class="${cls}">${escapeHtml(tok)}</span>`;
+    lastIndex = end;
+  }
+  out += escapeHtml(text.slice(lastIndex));
+  return out;
+}
+
+function jsonPre(v) {
+  const raw = prettyJson(v);
+  return el("pre", { class: "json" }, [el("code", { class: "language-json", html: highlightJsonString(raw) })]);
+}
+
+function syncTopbarHeight() {
+  const topbar = document.querySelector(".topbar");
+  if (!topbar) return;
+  const h = topbar.getBoundingClientRect().height;
+  document.documentElement.style.setProperty("--topbar-h", `${Math.ceil(h)}px`);
 }
 
 function $(id) {
@@ -244,8 +278,8 @@ function renderFieldTable(rows) {
         el("td", { html: `${indent}<code>${escapeHtml(r.field)}</code>` }),
         el("td", { html: `<code>${escapeHtml(r.type)}</code>` }),
         el("td", { html: r.required ? "<span class=\"chip\">required</span>" : "<span class=\"muted\">optional</span>" }),
-        el("td", { html: r.description ? `<span class="muted">${escapeHtml(r.description)}</span>` : "<span class=\"muted\">—</span>" }),
-        el("td", { html: r.details ? `<span class="muted">${escapeHtml(r.details)}</span>` : "<span class=\"muted\">—</span>" }),
+        el("td", { html: r.description ? `<span class="muted">${escapeHtml(r.description)}</span>` : "<span class=\"muted\">(none)</span>" }),
+        el("td", { html: r.details ? `<span class="muted">${escapeHtml(r.details)}</span>` : "<span class=\"muted\">(none)</span>" }),
       ]);
     })),
   ]);
@@ -305,11 +339,11 @@ function renderSchemaDoc(kind) {
     ]),
     example ? el("div", { class: "card" }, [
       el("h2", { text: "Example" }),
-      el("pre", { class: "json", text: prettyJson(example) }),
+      jsonPre(example),
     ]) : el("div"),
     el("div", { class: "card" }, [
       el("h2", { text: "JSON Schema" }),
-      el("pre", { class: "json", text: prettyJson(schema) }),
+      jsonPre(schema),
     ]),
   ];
 }
@@ -341,7 +375,7 @@ function renderOverview() {
   cards.push(el("div", { class: "card" }, [
     el("h2", { text: "Descriptor" }),
     el("div", { class: "muted", text: "This site renders from the compiled descriptor (no evaluation logic)." }),
-    el("pre", { class: "json", text: prettyJson(d) }),
+    jsonPre(d),
   ]));
 
   return cards;
@@ -436,7 +470,7 @@ function renderRulesetDetail(key) {
     el("div", { class: "card" }, [table]),
     el("div", { class: "card" }, [
       el("h2", { text: "JSON" }),
-      el("pre", { class: "json", text: prettyJson(c.object) }),
+      jsonPre(c.object),
     ]),
   ];
 }
@@ -507,11 +541,11 @@ function renderDatasetDetail(keyWithVersion) {
     ]) : el("div"),
     el("div", { class: "card" }, [
       el("h2", { text: "Row Schema" }),
-      el("pre", { class: "json", text: prettyJson(ds.schema) }),
+      jsonPre(ds.schema),
     ]),
     el("div", { class: "card" }, [
       el("h2", { text: "JSON" }),
-      el("pre", { class: "json", text: prettyJson(c.object) }),
+      jsonPre(c.object),
     ]),
   ];
 }
@@ -559,7 +593,7 @@ function renderConnectorDetail(kind) {
       el("h2", { text: "Provides" }),
       el("div", { html: `<ul>${provides || "<li class=\"muted\">(none)</li>"}</ul>` }),
     ]),
-    el("div", { class: "card" }, [el("h2", { text: "JSON" }), el("pre", { class: "json", text: prettyJson(c.object) })]),
+    el("div", { class: "card" }, [el("h2", { text: "JSON" }), jsonPre(c.object)]),
   ];
 }
 
@@ -610,7 +644,7 @@ function renderProfileDetail(key) {
       el("h2", { text: "Rulesets" }),
       el("div", { html: `<ul>${rulesets || "<li class=\"muted\">(none)</li>"}</ul>` }),
     ]),
-    el("div", { class: "card" }, [el("h2", { text: "JSON" }), el("pre", { class: "json", text: prettyJson(c.object) })]),
+    el("div", { class: "card" }, [el("h2", { text: "JSON" }), jsonPre(c.object)]),
   ];
 }
 
@@ -630,7 +664,7 @@ function renderDictionary() {
   return [
     el("div", { class: "card" }, [el("h1", { text: "Dictionary" }), el("div", { class: "muted", text: "Central enums shared by specs and generated code." })]),
     el("div", { class: "card" }, [table]),
-    el("div", { class: "card" }, [el("h2", { text: "JSON" }), el("pre", { class: "json", text: prettyJson(d.dictionary?.object || {}) })]),
+    el("div", { class: "card" }, [el("h2", { text: "JSON" }), jsonPre(d.dictionary?.object || {})]),
   ];
 }
 
@@ -692,6 +726,7 @@ function render() {
 
   let nodes = [];
   if (view === "overview") nodes = renderOverview();
+  else if (view === "schema") nodes = renderSchemaDoc(decodeURIComponent(rest[0] || ""));
   else if (view === "rulesets") nodes = renderRulesets();
   else if (view === "ruleset") nodes = renderRulesetDetail(decodeURIComponent(rest.join("/")));
   else if (view === "datasets") nodes = renderDatasets();
@@ -710,6 +745,10 @@ function render() {
 
 async function load() {
   try {
+    if (location.protocol === "file:") {
+      setStatus(`This docs site is running from ${location.href}. Open http://localhost:8080/ (or any http(s) URL) instead of file://.`, true);
+      return;
+    }
     const resp = await fetch("./descriptor.v1.json", { cache: "no-store" });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const d = await resp.json();
@@ -734,6 +773,17 @@ async function load() {
 
 window.addEventListener("hashchange", () => render());
 document.addEventListener("DOMContentLoaded", () => {
+  syncTopbarHeight();
+  let resizeRaf = 0;
+  window.addEventListener("resize", () => {
+    if (resizeRaf) return;
+    resizeRaf = requestAnimationFrame(() => {
+      resizeRaf = 0;
+      syncTopbarHeight();
+    });
+  });
+  window.addEventListener("load", () => syncTopbarHeight());
+
   const s = $("search");
   s.addEventListener("input", () => {
     state.query = s.value || "";

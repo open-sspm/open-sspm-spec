@@ -1,4 +1,25 @@
 :root {
+  --font-sans: "Geist Sans";
+  --font-mono: "Geist Mono";
+}
+
+@font-face {
+  font-family: "Geist Sans";
+  src: url("https://cdn.jsdelivr.net/npm/geist@1.5.1/dist/fonts/geist-sans/Geist-Variable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("https://cdn.jsdelivr.net/npm/geist@1.5.1/dist/fonts/geist-mono/GeistMono-Variable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
   color-scheme: light;
   --topbar-h: 72px;
   --bg: #f6f8fc;
@@ -14,8 +35,17 @@
   --ok: #16a34a;
   --focus: rgba(37, 99, 235, 0.35);
   --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 10px 28px rgba(15, 23, 42, 0.06);
-  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  --mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --sans: var(--font-sans), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+
+  --code-bg: #f1f5f9;
+  --code-text: #0f172a;
+  --code-border: rgba(15, 23, 42, 0.12);
+  --tok-key: #1d4ed8;
+  --tok-string: #15803d;
+  --tok-number: #b45309;
+  --tok-bool: #7c3aed;
+  --tok-null: #64748b;
 }
 
 * { box-sizing: border-box; }
@@ -23,13 +53,19 @@ html, body { height: 100%; }
 body {
   margin: 0;
   font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 450;
+  line-height: 1.55;
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-code, pre { font-family: var(--mono); }
+code, pre {
+  font-family: var(--mono);
+  font-variant-ligatures: none;
+}
 a {
   color: var(--link);
   text-decoration: none;
@@ -39,10 +75,16 @@ a:hover {
   text-decoration: underline;
 }
 code {
-  background: rgba(15, 23, 42, 0.06);
+  background: rgba(15, 23, 42, 0.05);
   border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 8px;
   padding: 1px 6px;
+}
+pre code {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
 }
 
 .topbar {
@@ -58,8 +100,23 @@ code {
   top: 0;
   z-index: 10;
 }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 180px;
+}
+.brand-logo {
+  height: 26px;
+  width: auto;
+}
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
 .brand-title { font-weight: 650; letter-spacing: 0.2px; }
-.brand-subtitle { margin-left: 10px; color: var(--muted); font-size: 12px; }
+.brand-subtitle { color: var(--muted); font-size: 12px; }
 .search input {
   width: min(720px, 55vw);
   background: var(--panel2);
@@ -150,7 +207,10 @@ code {
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   padding: 14px 16px;
 }
-.card h1, .card h2, .card h3 { margin: 0 0 10px 0; }
+.card h1, .card h2, .card h3 { margin: 0 0 10px 0; letter-spacing: -0.01em; }
+.card h1 { font-size: 20px; line-height: 1.2; }
+.card h2 { font-size: 16px; line-height: 1.25; }
+.card h3 { font-size: 14px; line-height: 1.25; }
 .muted { color: var(--muted); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
@@ -181,13 +241,25 @@ code {
 
 pre.json {
   margin: 0;
-  padding: 12px;
+  padding: 14px 14px;
   border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--panel2);
+  border: 1px solid var(--code-border);
+  background: var(--code-bg);
+  color: var(--code-text);
+  font-size: 13px;
+  line-height: 1.6;
   overflow: auto;
   max-height: 70vh;
 }
+pre.json code {
+  display: block;
+  white-space: pre;
+}
+pre.json .tok-key { color: var(--tok-key); }
+pre.json .tok-string { color: var(--tok-string); }
+pre.json .tok-number { color: var(--tok-number); }
+pre.json .tok-bool { color: var(--tok-bool); }
+pre.json .tok-null { color: var(--tok-null); }
 
 .sev-high { color: #ea580c; }
 .sev-medium { color: #ca8a04; }

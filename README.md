@@ -52,7 +52,7 @@ go run ./tools/osspec/cmd/osspec build
 
 This writes `docs/descriptor.v1.json` and `docs/metaschema/*.json`.
 
-Serve `docs/` using any static file server (opening `docs/index.html` directly may fail due to `fetch`):
+Serve `docs/` using any static file server (opening `docs/index.html` via `file://` will fail because the site loads JSON via `fetch`):
 
 ```sh
 cd docs && python3 -m http.server 8080

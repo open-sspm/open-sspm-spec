@@ -4,13 +4,20 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Open SSPM Spec Docs</title>
+    <link rel="icon" href="./favicon.ico" sizes="any" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/geist@1.5.1/dist/fonts/geist-sans/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/geist@1.5.1/dist/fonts/geist-mono/GeistMono-Variable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
     <header class="topbar">
       <div class="brand">
-        <span class="brand-title">Open SSPM Spec Docs</span>
-        <span class="brand-subtitle" id="version"></span>
+        <img class="brand-logo" src="./logo.png" alt="Open SSPM" width="72" height="26" />
+        <div class="brand-text">
+          <span class="brand-title">Open SSPM Spec Docs</span>
+          <span class="brand-subtitle" id="version"></span>
+        </div>
       </div>
       <div class="search">
         <input id="search" type="search" placeholder="Search (rulesets, rules, datasets, connectors, profiles)" autocomplete="off" />
