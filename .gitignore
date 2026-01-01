@@ -1,0 +1,35 @@
+.DS_Store
+
+# Third-party PDFs (not committed)
+*.pdf
+
+# Go build artifacts
+*.exe
+*.test
+*.out
+*.coverprofile
+*.pprof
+*.trace
+__debug_bin
+bin/
+.cache/
+
+# Local Go workspaces (usually not committed)
+go.work
+go.work.sum
+
+# Local binaries (when building without -o bin/)
+/osspec
+/osspec-gen-go
+tools/osspec/cmd/osspec/osspec
+tools/osspec/cmd/osspec-gen-go/osspec-gen-go
+
+# Local environment and editors
+.env
+.env.*
+.direnv/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

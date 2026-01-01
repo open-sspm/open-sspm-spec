@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "opensspm.profile.schema.json",
+  "title": "Open SSPM Profile (v1)",
+  "description": "Profiles bundle one or more rulesets into a baseline package (e.g. CIS) and may be used for quick selection by consumers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "profile"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Document schema version discriminator. Must be 1 for Open SSPM v1 documents."
+    },
+    "kind": {
+      "type": "string",
+      "const": "opensspm.profile",
+      "description": "Document kind discriminator. Must be 'opensspm.profile'."
+    },
+    "profile": {
+      "type": "object",
+      "description": "Profile definition container.",
+      "additionalProperties": false,
+      "required": [
+        "key",
+        "name",
+        "rulesets"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique profile identifier."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable profile name."
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional profile description."
+        },
+        "rulesets": {
+          "type": "array",
+          "description": "Rulesets included by this profile.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Ruleset key."
+              },
+              "version": {
+                "type": "string",
+                "description": "Optional ruleset source version label (for display/traceability only)."
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

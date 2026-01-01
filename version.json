@@ -1,0 +1,7 @@
+{
+  "project": "open-sspm",
+  "repo": "open-sspm-spec",
+  "spec_version": "1.0.0",
+  "schema_version": 1,
+  "generator_min_version": "0.1.0"
+}

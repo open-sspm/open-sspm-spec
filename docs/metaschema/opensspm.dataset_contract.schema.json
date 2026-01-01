@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "opensspm.dataset_contract.schema.json",
+  "title": "Open SSPM Dataset Contract (v1)",
+  "description": "Dataset contracts define the meaning and row shape of a dataset (key + version + JSON Schema). Connectors provide datasets that conform to these contracts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "dataset"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Document schema version discriminator. Must be 1 for Open SSPM v1 documents."
+    },
+    "kind": {
+      "type": "string",
+      "const": "opensspm.dataset_contract",
+      "description": "Document kind discriminator. Must be 'opensspm.dataset_contract'."
+    },
+    "dataset": {
+      "type": "object",
+      "description": "Dataset contract definition container.",
+      "additionalProperties": false,
+      "required": [
+        "key",
+        "version",
+        "schema"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Dataset key identifier (e.g. 'okta:policies/sign-on')."
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Dataset contract version (integer)."
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional human-readable description of the dataset."
+        },
+        "primary_key": {
+          "type": "string",
+          "description": "Optional JSON Pointer to the primary key field in a dataset row."
+        },
+        "recommended_display": {
+          "type": "string",
+          "description": "Optional JSON Pointer to a recommended display field in a dataset row (e.g. name)."
+        },
+        "schema": {
+          "type": "object",
+          "description": "JSON Schema object describing a single dataset row."
+        }
+      }
+    }
+  }
+}

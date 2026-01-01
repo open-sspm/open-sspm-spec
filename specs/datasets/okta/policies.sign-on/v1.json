@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "kind": "opensspm.dataset_contract",
+  "dataset": {
+    "key": "okta:policies/sign-on",
+    "version": 1,
+    "description": "Okta sign-on policies (placeholder contract).",
+    "primary_key": "/id",
+    "recommended_display": "/name",
+    "schema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "id": { "type": "string", "description": "Policy identifier." },
+        "name": { "type": "string", "description": "Policy name." },
+        "status": { "type": "string", "description": "Policy status (vendor-defined)." }
+      },
+      "required": ["id"]
+    }
+  }
+}

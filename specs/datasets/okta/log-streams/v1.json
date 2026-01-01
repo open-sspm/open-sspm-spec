@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "kind": "opensspm.dataset_contract",
+  "dataset": {
+    "key": "okta:log-streams",
+    "version": 1,
+    "description": "Okta log streams (placeholder contract).",
+    "primary_key": "/id",
+    "recommended_display": "/name",
+    "schema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "id": { "type": "string", "description": "Log stream identifier." },
+        "name": { "type": "string", "description": "Log stream name." },
+        "type": { "type": "string", "description": "Log stream type (vendor-defined)." }
+      },
+      "required": ["id"]
+    }
+  }
+}

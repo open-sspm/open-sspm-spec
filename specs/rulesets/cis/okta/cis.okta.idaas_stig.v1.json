@@ -1,0 +1,253 @@
+{
+  "schema_version": 1,
+  "kind": "opensspm.ruleset",
+  "ruleset": {
+    "key": "cis.okta.idaas_stig.v1",
+    "name": "CIS Okta IDaaS STIG Benchmark v1.0.0",
+    "scope": {
+      "kind": "connector_instance",
+      "connector_kind": "okta"
+    },
+    "status": "active",
+    "source": {
+      "name": "CIS",
+      "version": "v1.0.0",
+      "date": "2025-08-21",
+      "url": "https://www.cisecurity.org"
+    },
+    "data_contracts": [],
+    "tags": [
+      "cis",
+      "okta",
+      "stig"
+    ],
+    "references": [
+      {
+        "url": "https://www.cisecurity.org",
+        "title": "CIS Benchmarks (obtain the official PDF via CIS)"
+      },
+      {
+        "url": "https://www.cisecurity.org",
+        "title": "Severity mapping: CAT I -> high, CAT II -> medium"
+      }
+    ],
+    "rules": [
+      {
+        "key": "OKTA-APP-000020",
+        "title": "OKTA-APP-000020",
+        "summary": "See CIS benchmark recommendation OKTA-APP-000020",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-000025",
+        "title": "OKTA-APP-000025",
+        "summary": "See CIS benchmark recommendation OKTA-APP-000025",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-000090",
+        "title": "OKTA-APP-000090",
+        "summary": "See CIS benchmark recommendation OKTA-APP-000090",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-000170",
+        "title": "OKTA-APP-000170",
+        "summary": "See CIS benchmark recommendation OKTA-APP-000170",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-000180",
+        "title": "OKTA-APP-000180",
+        "summary": "See CIS benchmark recommendation OKTA-APP-000180",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-000190",
+        "title": "OKTA-APP-000190",
+        "summary": "See CIS benchmark recommendation OKTA-APP-000190",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-000200",
+        "title": "OKTA-APP-000200",
+        "summary": "See CIS benchmark recommendation OKTA-APP-000200",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-000560",
+        "title": "OKTA-APP-000560",
+        "summary": "See CIS benchmark recommendation OKTA-APP-000560",
+        "severity": "high",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-000570",
+        "title": "OKTA-APP-000570",
+        "summary": "See CIS benchmark recommendation OKTA-APP-000570",
+        "severity": "high",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-000650",
+        "title": "OKTA-APP-000650",
+        "summary": "See CIS benchmark recommendation OKTA-APP-000650",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-000670",
+        "title": "OKTA-APP-000670",
+        "summary": "See CIS benchmark recommendation OKTA-APP-000670",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-000680",
+        "title": "OKTA-APP-000680",
+        "summary": "See CIS benchmark recommendation OKTA-APP-000680",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-000690",
+        "title": "OKTA-APP-000690",
+        "summary": "See CIS benchmark recommendation OKTA-APP-000690",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-000700",
+        "title": "OKTA-APP-000700",
+        "summary": "See CIS benchmark recommendation OKTA-APP-000700",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-000740",
+        "title": "OKTA-APP-000740",
+        "summary": "See CIS benchmark recommendation OKTA-APP-000740",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-000745",
+        "title": "OKTA-APP-000745",
+        "summary": "See CIS benchmark recommendation OKTA-APP-000745",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-001430",
+        "title": "OKTA-APP-001430",
+        "summary": "See CIS benchmark recommendation OKTA-APP-001430",
+        "severity": "high",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-001665",
+        "title": "OKTA-APP-001665",
+        "summary": "See CIS benchmark recommendation OKTA-APP-001665",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-001670",
+        "title": "OKTA-APP-001670",
+        "summary": "See CIS benchmark recommendation OKTA-APP-001670",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-001700",
+        "title": "OKTA-APP-001700",
+        "summary": "See CIS benchmark recommendation OKTA-APP-001700",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-001710",
+        "title": "OKTA-APP-001710",
+        "summary": "See CIS benchmark recommendation OKTA-APP-001710",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-001920",
+        "title": "OKTA-APP-001920",
+        "summary": "See CIS benchmark recommendation OKTA-APP-001920",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-002980",
+        "title": "OKTA-APP-002980",
+        "summary": "See CIS benchmark recommendation OKTA-APP-002980",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      },
+      {
+        "key": "OKTA-APP-003010",
+        "title": "OKTA-APP-003010",
+        "summary": "See CIS benchmark recommendation OKTA-APP-003010",
+        "severity": "medium",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "type": "manual.attestation" }
+      }
+    ]
+  }
+}

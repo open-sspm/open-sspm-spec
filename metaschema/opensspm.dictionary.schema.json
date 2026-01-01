@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "opensspm.dictionary.schema.json",
+  "title": "Open SSPM Dictionary (v1)",
+  "description": "The dictionary contains shared enums and cross-cutting definitions used by specs and codegen outputs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "dictionary"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Document schema version discriminator. Must be 1 for Open SSPM v1 documents."
+    },
+    "kind": {
+      "type": "string",
+      "const": "opensspm.dictionary",
+      "description": "Document kind discriminator. Must be 'opensspm.dictionary'."
+    },
+    "dictionary": {
+      "type": "object",
+      "description": "Dictionary container.",
+      "additionalProperties": false,
+      "required": [
+        "enums"
+      ],
+      "properties": {
+        "enums": {
+          "type": "object",
+          "description": "Map of enum name to its list of allowed string values.",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        }
+      }
+    }
+  }
+}

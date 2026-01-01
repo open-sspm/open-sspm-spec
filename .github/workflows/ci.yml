@@ -1,0 +1,26 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Test
+        run: go test ./...
+      - name: Validate specs
+        run: go run ./tools/osspec/cmd/osspec validate
+      - name: Build dist
+        run: go run ./tools/osspec/cmd/osspec build
+      - name: Codegen (Go)
+        run: go run ./tools/osspec/cmd/osspec codegen --lang go --out gen/go
+      - name: Determinism check
+        run: git diff --exit-code
+

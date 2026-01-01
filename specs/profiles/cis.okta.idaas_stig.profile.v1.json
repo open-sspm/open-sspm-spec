@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "kind": "opensspm.profile",
+  "profile": {
+    "key": "cis.okta.idaas_stig.profile.v1",
+    "name": "CIS Okta IDaaS STIG Profile",
+    "description": "Profile bundling the CIS Okta IDaaS STIG ruleset (manual attestation).",
+    "rulesets": [
+      { "key": "cis.okta.idaas_stig.v1", "version": "v1.0.0" }
+    ]
+  }
+}

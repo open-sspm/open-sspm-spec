@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "kind": "opensspm.dictionary",
+  "dictionary": {
+    "enums": {
+      "ScopeKind": [
+        "global",
+        "connector_instance"
+      ],
+      "MonitoringStatus": [
+        "automated",
+        "partial",
+        "manual",
+        "unsupported"
+      ],
+      "Severity": [
+        "critical",
+        "high",
+        "medium",
+        "low",
+        "info"
+      ],
+      "CheckType": [
+        "dataset.field_compare",
+        "dataset.count_compare",
+        "dataset.join_count_compare",
+        "manual.attestation"
+      ],
+      "Operator": [
+        "eq",
+        "neq",
+        "lt",
+        "lte",
+        "gt",
+        "gte",
+        "exists",
+        "absent",
+        "in",
+        "contains"
+      ],
+      "CompareOp": [
+        "eq",
+        "neq",
+        "lt",
+        "lte",
+        "gt",
+        "gte"
+      ],
+      "ErrorPolicy": [
+        "unknown",
+        "error"
+      ],
+      "OnUnmatchedLeft": [
+        "ignore",
+        "count",
+        "error"
+      ],
+      "FieldCompareMatch": [
+        "all",
+        "any",
+        "none"
+      ],
+      "FieldCompareOnEmpty": [
+        "pass",
+        "fail",
+        "unknown",
+        "error"
+      ],
+      "ReferenceType": [
+        "documentation",
+        "standard",
+        "blog",
+        "ticket",
+        "other"
+      ],
+      "FrameworkCoverageKind": [
+        "direct",
+        "partial",
+        "supporting"
+      ],
+      "RemediationEffort": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "DatasetErrorKind": [
+        "missing_integration",
+        "missing_dataset",
+        "permission_denied",
+        "sync_failed",
+        "engine_error"
+      ]
+    }
+  }
+}

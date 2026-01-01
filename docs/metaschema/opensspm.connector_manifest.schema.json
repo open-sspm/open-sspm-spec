@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "opensspm.connector_manifest.schema.json",
+  "title": "Open SSPM Connector Manifest (v1)",
+  "description": "Connector manifests describe an integration kind (e.g. okta) and which dataset contracts it can provide.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "connector"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Document schema version discriminator. Must be 1 for Open SSPM v1 documents."
+    },
+    "kind": {
+      "type": "string",
+      "const": "opensspm.connector_manifest",
+      "description": "Document kind discriminator. Must be 'opensspm.connector_manifest'."
+    },
+    "connector": {
+      "type": "object",
+      "description": "Connector manifest definition container.",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "name",
+        "provides"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Connector kind identifier (e.g. 'okta')."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable connector name."
+        },
+        "provides": {
+          "type": "array",
+          "description": "Datasets (key+version) that this connector can provide.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "dataset",
+              "version"
+            ],
+            "properties": {
+              "dataset": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Dataset key provided by this connector."
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Dataset contract version."
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
