@@ -8,6 +8,8 @@ THIS IS WORKING DOCUMENT, I AM STILL WORKING ON IT AND IT WILL CHANGE A LOT!
 
 Source-of-truth repository for Open SSPM specifications.
 
+Open SSPM is an open, versioned spec (JSON + JSON Schema) for SSPM interoperability: a common way to describe SaaS posture data and posture checks so different connectors/tools can exchange them.
+
 ## What this repo contains
 
 - JSON specs under `specs/`:
