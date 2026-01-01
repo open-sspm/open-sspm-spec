@@ -5,8 +5,10 @@
     "kind": "okta",
     "name": "Okta",
     "provides": [
-      { "dataset": "okta:policies/sign-on", "version": 1 },
-      { "dataset": "okta:log-streams", "version": 1 }
+      { "dataset": "okta:authenticators", "version": 1 },
+      { "dataset": "okta:log-streams", "version": 1 },
+      { "dataset": "okta:policies/password", "version": 1 },
+      { "dataset": "okta:policies/sign-on", "version": 1 }
     ]
   }
 }

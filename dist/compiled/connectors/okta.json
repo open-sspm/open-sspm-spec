@@ -1,1 +1,1 @@
-{"connector":{"kind":"okta","name":"Okta","provides":[{"dataset":"okta:log-streams","version":1},{"dataset":"okta:policies/sign-on","version":1}]},"kind":"opensspm.connector_manifest","schema_version":1}
+{"connector":{"kind":"okta","name":"Okta","provides":[{"dataset":"okta:authenticators","version":1},{"dataset":"okta:log-streams","version":1},{"dataset":"okta:policies/password","version":1},{"dataset":"okta:policies/sign-on","version":1}]},"kind":"opensspm.connector_manifest","schema_version":1}

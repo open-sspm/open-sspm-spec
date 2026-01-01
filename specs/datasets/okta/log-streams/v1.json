@@ -4,7 +4,7 @@
   "dataset": {
     "key": "okta:log-streams",
     "version": 1,
-    "description": "Okta log streams (placeholder contract).",
+    "description": "Okta log streams (Audit log offload targets).",
     "primary_key": "/id",
     "recommended_display": "/name",
     "schema": {
@@ -14,7 +14,8 @@
       "properties": {
         "id": { "type": "string", "description": "Log stream identifier." },
         "name": { "type": "string", "description": "Log stream name." },
-        "type": { "type": "string", "description": "Log stream type (vendor-defined)." }
+        "type": { "type": "string", "description": "Log stream type (vendor-defined)." },
+        "status": { "type": "string", "description": "Log stream status (vendor-defined)." }
       },
       "required": ["id"]
     }

@@ -4,7 +4,7 @@
   "dataset": {
     "key": "okta:policies/sign-on",
     "version": 1,
-    "description": "Okta sign-on policies (placeholder contract).",
+    "description": "Okta sign-on policy rules (includes Global Session Policy rule settings).",
     "primary_key": "/id",
     "recommended_display": "/name",
     "schema": {
@@ -12,9 +12,38 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
-        "id": { "type": "string", "description": "Policy identifier." },
-        "name": { "type": "string", "description": "Policy name." },
-        "status": { "type": "string", "description": "Policy status (vendor-defined)." }
+        "id": { "type": "string", "description": "Policy rule identifier." },
+        "name": { "type": "string", "description": "Policy rule name." },
+        "priority": { "type": "integer", "description": "Rule priority (1 is highest)." },
+        "policy": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "id": { "type": "string", "description": "Parent policy identifier." },
+            "name": { "type": "string", "description": "Parent policy name." }
+          }
+        },
+        "actions": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "signon": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "session": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "maxSessionIdleMinutes": { "type": "integer" },
+                    "maxSessionLifetimeMinutes": { "type": "integer" },
+                    "usePersistentCookie": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
       },
       "required": ["id"]
     }

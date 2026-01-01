@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "kind": "opensspm.dataset_contract",
+  "dataset": {
+    "key": "okta:policies/password",
+    "version": 1,
+    "description": "Okta password policies (includes complexity, age, history, and lockout settings).",
+    "primary_key": "/id",
+    "recommended_display": "/name",
+    "schema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "id": { "type": "string", "description": "Policy identifier." },
+        "name": { "type": "string", "description": "Policy name." },
+        "status": { "type": "string", "description": "Policy status (vendor-defined)." },
+        "settings": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "password": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "complexity": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "minLength": { "type": "integer" },
+                    "minLowerCase": { "type": "integer" },
+                    "minUpperCase": { "type": "integer" },
+                    "minNumber": { "type": "integer" },
+                    "minSymbol": { "type": "integer" },
+                    "dictionary": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "properties": {
+                        "common": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "properties": {
+                            "exclude": { "type": "boolean" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "age": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "minAgeMinutes": { "type": "integer" },
+                    "maxAgeDays": { "type": "integer" },
+                    "historyCount": { "type": "integer" }
+                  }
+                },
+                "lockout": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "maxAttempts": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "required": ["id"]
+    }
+  }
+}

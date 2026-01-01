@@ -32,8 +32,8 @@ func TestCompile_CISOktaRulesetIndexed(t *testing.T) {
 	if rr.Scope.Kind != types.ScopeKindConnectorInstance || rr.Scope.ConnectorKind != "okta" {
 		t.Fatalf("unexpected scope: %+v", rr.Scope)
 	}
-	if len(rr.Datasets) != 0 {
-		t.Fatalf("expected no datasets, got %+v", rr.Datasets)
+	if len(rr.Datasets) != 4 {
+		t.Fatalf("expected 4 datasets, got %+v", rr.Datasets)
 	}
 	if len(rr.ValueParams) != 0 {
 		t.Fatalf("expected no value params, got %+v", rr.ValueParams)
@@ -53,22 +53,57 @@ func TestCompile_CISOktaRulesetIndexed(t *testing.T) {
 	if len(rr.Rules) != 24 {
 		t.Fatalf("expected 24 rules, got %d", len(rr.Rules))
 	}
+	expected := map[string]struct {
+		manual   bool
+		status   types.MonitoringStatus
+		check    types.CheckType
+		datasets int
+	}{
+		"OKTA-APP-000020": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
+		"OKTA-APP-000025": {manual: true, status: types.MonitoringStatusManual, check: types.CheckTypeManualAttestation, datasets: 0},
+		"OKTA-APP-000090": {manual: true, status: types.MonitoringStatusManual, check: types.CheckTypeManualAttestation, datasets: 0},
+		"OKTA-APP-000170": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
+		"OKTA-APP-000180": {manual: true, status: types.MonitoringStatusManual, check: types.CheckTypeManualAttestation, datasets: 0},
+		"OKTA-APP-000190": {manual: true, status: types.MonitoringStatusManual, check: types.CheckTypeManualAttestation, datasets: 0},
+		"OKTA-APP-000200": {manual: true, status: types.MonitoringStatusManual, check: types.CheckTypeManualAttestation, datasets: 0},
+		"OKTA-APP-000560": {manual: true, status: types.MonitoringStatusManual, check: types.CheckTypeManualAttestation, datasets: 0},
+		"OKTA-APP-000570": {manual: true, status: types.MonitoringStatusManual, check: types.CheckTypeManualAttestation, datasets: 0},
+		"OKTA-APP-000650": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
+		"OKTA-APP-000670": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
+		"OKTA-APP-000680": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
+		"OKTA-APP-000690": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
+		"OKTA-APP-000700": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
+		"OKTA-APP-000740": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
+		"OKTA-APP-000745": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
+		"OKTA-APP-001430": {manual: false, status: types.MonitoringStatusPartial, check: types.CheckTypeDatasetCountCompare, datasets: 1},
+		"OKTA-APP-001665": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
+		"OKTA-APP-001670": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
+		"OKTA-APP-001700": {manual: true, status: types.MonitoringStatusManual, check: types.CheckTypeManualAttestation, datasets: 0},
+		"OKTA-APP-001710": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
+		"OKTA-APP-001920": {manual: true, status: types.MonitoringStatusManual, check: types.CheckTypeManualAttestation, datasets: 0},
+		"OKTA-APP-002980": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
+		"OKTA-APP-003010": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
+	}
+
 	for _, r := range rr.Rules {
-		if !r.IsManual {
-			t.Fatalf("expected rule %q to be manual", r.RuleKey)
+		exp, ok := expected[r.RuleKey]
+		if !ok {
+			t.Fatalf("unexpected rule %q in requirements index", r.RuleKey)
 		}
-		if r.CheckType == nil || *r.CheckType != types.CheckTypeManualAttestation {
-			t.Fatalf("expected rule %q check_type=manual.attestation, got %#v", r.RuleKey, r.CheckType)
+		if r.IsManual != exp.manual {
+			t.Fatalf("expected rule %q is_manual=%v, got %v", r.RuleKey, exp.manual, r.IsManual)
 		}
-		if r.Monitoring.Status != types.MonitoringStatusManual {
-			t.Fatalf("expected rule %q monitoring.status=manual, got %q", r.RuleKey, r.Monitoring.Status)
+		if r.CheckType == nil || *r.CheckType != exp.check {
+			t.Fatalf("expected rule %q check_type=%q, got %#v", r.RuleKey, exp.check, r.CheckType)
 		}
-		if len(r.Datasets) != 0 {
-			t.Fatalf("expected rule %q to have no datasets, got %+v", r.RuleKey, r.Datasets)
+		if r.Monitoring.Status != exp.status {
+			t.Fatalf("expected rule %q monitoring.status=%q, got %q", r.RuleKey, exp.status, r.Monitoring.Status)
+		}
+		if len(r.Datasets) != exp.datasets {
+			t.Fatalf("expected rule %q to have %d datasets, got %+v", r.RuleKey, exp.datasets, r.Datasets)
 		}
 		if len(r.ValueParams) != 0 {
 			t.Fatalf("expected rule %q to have no value params, got %+v", r.RuleKey, r.ValueParams)
 		}
 	}
 }
-
