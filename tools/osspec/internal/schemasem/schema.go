@@ -26,6 +26,7 @@ var KnownSchemas = []KindSchema{
 	{Kind: "opensspm.connector_manifest", Filename: "opensspm.connector_manifest.schema.json"},
 	{Kind: "opensspm.profile", Filename: "opensspm.profile.schema.json"},
 	{Kind: "opensspm.dictionary", Filename: "opensspm.dictionary.schema.json"},
+	{Kind: "opensspm.test_case", Filename: "opensspm.test_case.schema.json"},
 }
 
 func LoadRegistry(metaschemaDir string) (*Registry, error) {
@@ -69,4 +70,3 @@ func (r *Registry) ValidateKindJSON(kind string, jsonBytes []byte) error {
 	}
 	return nil
 }
-

@@ -59,6 +59,10 @@ func LoadSpecFiles(ctx context.Context, opts Options) ([]LoadedFile, error) {
 			return nil
 		}
 
+		if strings.HasSuffix(d.Name(), ".test.json") {
+			return nil
+		}
+
 		info, err := d.Info()
 		if err != nil {
 			return err
@@ -110,4 +114,3 @@ func sortLoaded(files []LoadedFile) {
 		}
 	}
 }
-

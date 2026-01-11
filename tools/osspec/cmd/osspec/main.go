@@ -11,6 +11,7 @@ import (
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/compiler"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/plugin"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
+	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/verify"
 )
 
 func main() {
@@ -21,6 +22,8 @@ func main() {
 	switch os.Args[1] {
 	case "validate":
 		runValidate(os.Args[2:])
+	case "verify":
+		runVerify(os.Args[2:])
 	case "build":
 		runBuild(os.Args[2:])
 	case "codegen":
@@ -36,6 +39,7 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "")
 	fmt.Fprintln(os.Stderr, "Usage:")
 	fmt.Fprintln(os.Stderr, "  osspec validate [--repo .]")
+	fmt.Fprintln(os.Stderr, "  osspec verify   [--repo .]")
 	fmt.Fprintln(os.Stderr, "  osspec build    [--repo .] [--out dist]")
 	fmt.Fprintln(os.Stderr, "  osspec codegen  --lang go --out gen/go [--repo .]")
 }
@@ -52,6 +56,24 @@ func runValidate(args []string) {
 		os.Exit(1)
 	}
 	fmt.Fprintln(os.Stdout, "ok")
+}
+
+func runVerify(args []string) {
+	fs := flag.NewFlagSet("verify", flag.ExitOnError)
+	repo := fs.String("repo", ".", "repo root")
+	_ = fs.Parse(args)
+
+	repoAbs, err := filepath.Abs(*repo)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+
+	ctx := context.Background()
+	if err := verify.Run(ctx, repoAbs); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
 }
 
 func runBuild(args []string) {
