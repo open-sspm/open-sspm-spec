@@ -8,10 +8,10 @@ type Header struct {
 }
 
 type Version struct {
-	Project            string `json:"project"`
-	Repo               string `json:"repo"`
-	SpecVersion        string `json:"spec_version"`
-	SchemaVersion      int    `json:"schema_version"`
+	Project             string `json:"project"`
+	Repo                string `json:"repo"`
+	SpecVersion         string `json:"spec_version"`
+	SchemaVersion       int    `json:"schema_version"`
 	GeneratorMinVersion string `json:"generator_min_version"`
 }
 
@@ -42,24 +42,24 @@ type Source struct {
 }
 
 type RulesetDoc struct {
-	SchemaVersion int    `json:"schema_version"`
-	Kind          string `json:"kind"`
+	SchemaVersion int     `json:"schema_version"`
+	Kind          string  `json:"kind"`
 	Ruleset       Ruleset `json:"ruleset"`
 }
 
 type Ruleset struct {
-	Key               string             `json:"key"`
-	Name              string             `json:"name"`
-	Scope             Scope              `json:"scope"`
-	Source            *Source            `json:"source,omitempty"`
-	Status            string             `json:"status,omitempty"`
-	Description       string             `json:"description,omitempty"`
-	Tags              []string           `json:"tags,omitempty"`
-	References        []Reference        `json:"references,omitempty"`
-	FrameworkMappings []FrameworkMapping `json:"framework_mappings,omitempty"`
+	Key               string               `json:"key"`
+	Name              string               `json:"name"`
+	Scope             Scope                `json:"scope"`
+	Source            *Source              `json:"source,omitempty"`
+	Status            string               `json:"status,omitempty"`
+	Description       string               `json:"description,omitempty"`
+	Tags              []string             `json:"tags,omitempty"`
+	References        []Reference          `json:"references,omitempty"`
+	FrameworkMappings []FrameworkMapping   `json:"framework_mappings,omitempty"`
 	Requirements      *RulesetRequirements `json:"requirements,omitempty"`
 	DataContracts     []DatasetContractRef `json:"data_contracts,omitempty"`
-	Rules             []Rule             `json:"rules"`
+	Rules             []Rule               `json:"rules"`
 }
 
 type DatasetRefSpec struct {
@@ -76,15 +76,15 @@ type FrameworkMapping struct {
 }
 
 type RulesetRequirements struct {
-	APIScopes    []string `json:"api_scopes,omitempty"`
-	Permissions  []string `json:"permissions,omitempty"`
-	Notes        string   `json:"notes,omitempty"`
+	APIScopes   []string `json:"api_scopes,omitempty"`
+	Permissions []string `json:"permissions,omitempty"`
+	Notes       string   `json:"notes,omitempty"`
 }
 
 type DatasetContractRef struct {
-	Dataset      string `json:"dataset"`
-	Version      int    `json:"version"`
-	Description  string `json:"description,omitempty"`
+	Dataset     string `json:"dataset"`
+	Version     int    `json:"version"`
+	Description string `json:"description,omitempty"`
 }
 
 type Rule struct {
@@ -112,8 +112,8 @@ type Monitoring struct {
 }
 
 type Parameters struct {
-	Defaults map[string]any                 `json:"defaults"`
-	Schema   map[string]ParameterSchema     `json:"schema,omitempty"`
+	Defaults map[string]any             `json:"defaults"`
+	Schema   map[string]ParameterSchema `json:"schema,omitempty"`
 }
 
 type ParameterSchema struct {
@@ -125,14 +125,14 @@ type ParameterSchema struct {
 }
 
 type Evidence struct {
-	AffectedResources *AffectedResources     `json:"affected_resources,omitempty"`
+	AffectedResources *AffectedResources        `json:"affected_resources,omitempty"`
 	SummaryTemplates  *EvidenceSummaryTemplates `json:"summary_templates,omitempty"`
 }
 
 type AffectedResources struct {
-	Dataset       string `json:"dataset"`
-	IDField       string `json:"id_field"`
-	DisplayField  string `json:"display_field"`
+	Dataset      string `json:"dataset"`
+	IDField      string `json:"id_field"`
+	DisplayField string `json:"display_field"`
 }
 
 type EvidenceSummaryTemplates struct {
@@ -144,8 +144,8 @@ type EvidenceSummaryTemplates struct {
 }
 
 type Remediation struct {
-	Instructions string         `json:"instructions"`
-	Risks        string         `json:"risks,omitempty"`
+	Instructions string            `json:"instructions"`
+	Risks        string            `json:"risks,omitempty"`
 	Effort       RemediationEffort `json:"effort,omitempty"`
 }
 
@@ -170,16 +170,16 @@ type Check struct {
 	Where   []Predicate `json:"where,omitempty"`
 
 	// dataset.field_compare
-	Assert *Predicate         `json:"assert,omitempty"`
+	Assert *Predicate          `json:"assert,omitempty"`
 	Expect *FieldCompareExpect `json:"expect,omitempty"`
 
 	// dataset.count_compare, dataset.join_count_compare
 	Compare *Compare `json:"compare,omitempty"`
 
 	// dataset.join_count_compare
-	Left            *JoinSide        `json:"left,omitempty"`
-	Right           *JoinSide        `json:"right,omitempty"`
-	OnUnmatchedLeft OnUnmatchedLeft  `json:"on_unmatched_left,omitempty"`
+	Left            *JoinSide       `json:"left,omitempty"`
+	Right           *JoinSide       `json:"right,omitempty"`
+	OnUnmatchedLeft OnUnmatchedLeft `json:"on_unmatched_left,omitempty"`
 }
 
 type Predicate struct {
@@ -190,20 +190,20 @@ type Predicate struct {
 	LeftPath  string `json:"left_path,omitempty"`
 	RightPath string `json:"right_path,omitempty"`
 
-	Op        Operator `json:"op"`
-	Value     any      `json:"value,omitempty"`
-	ValueParam string  `json:"value_param,omitempty"`
-}
-
-type Compare struct {
-	Op        CompareOp `json:"op"`
-	Value     *int      `json:"value,omitempty"`
+	Op         Operator `json:"op"`
+	Value      any      `json:"value,omitempty"`
 	ValueParam string   `json:"value_param,omitempty"`
 }
 
+type Compare struct {
+	Op         CompareOp `json:"op"`
+	Value      *int      `json:"value,omitempty"`
+	ValueParam string    `json:"value_param,omitempty"`
+}
+
 type FieldCompareExpect struct {
-	Match       FieldCompareMatch  `json:"match,omitempty"`
-	MinSelected int                `json:"min_selected,omitempty"`
+	Match       FieldCompareMatch   `json:"match,omitempty"`
+	MinSelected int                 `json:"min_selected,omitempty"`
 	OnEmpty     FieldCompareOnEmpty `json:"on_empty,omitempty"`
 }
 
@@ -213,23 +213,23 @@ type JoinSide struct {
 }
 
 type DatasetContractDoc struct {
-	SchemaVersion int    `json:"schema_version"`
-	Kind          string `json:"kind"`
+	SchemaVersion int             `json:"schema_version"`
+	Kind          string          `json:"kind"`
 	Dataset       DatasetContract `json:"dataset"`
 }
 
 type DatasetContract struct {
-	Key               string          `json:"key"`
-	Version           int             `json:"version"`
-	Description       string          `json:"description,omitempty"`
-	PrimaryKey        string          `json:"primary_key,omitempty"`
-	RecommendedDisplay string         `json:"recommended_display,omitempty"`
-	Schema            json.RawMessage `json:"schema"`
+	Key                string          `json:"key"`
+	Version            int             `json:"version"`
+	Description        string          `json:"description,omitempty"`
+	PrimaryKey         string          `json:"primary_key,omitempty"`
+	RecommendedDisplay string          `json:"recommended_display,omitempty"`
+	Schema             json.RawMessage `json:"schema"`
 }
 
 type ConnectorManifestDoc struct {
-	SchemaVersion int    `json:"schema_version"`
-	Kind          string `json:"kind"`
+	SchemaVersion int               `json:"schema_version"`
+	Kind          string            `json:"kind"`
 	Connector     ConnectorManifest `json:"connector"`
 }
 
@@ -240,8 +240,8 @@ type ConnectorManifest struct {
 }
 
 type ProfileDoc struct {
-	SchemaVersion int    `json:"schema_version"`
-	Kind          string `json:"kind"`
+	SchemaVersion int     `json:"schema_version"`
+	Kind          string  `json:"kind"`
 	Profile       Profile `json:"profile"`
 }
 
@@ -255,4 +255,14 @@ type Profile struct {
 type ProfileRulesetRef struct {
 	Key     string `json:"key"`
 	Version string `json:"version,omitempty"`
+}
+
+type TestCaseDoc struct {
+	SchemaVersion int              `json:"schema_version"`
+	Kind          string           `json:"kind"`
+	RuleKey       string           `json:"rule_key"`
+	Description   string           `json:"description,omitempty"`
+	Parameters    map[string]any   `json:"parameters,omitempty"`
+	Inputs        map[string][]any `json:"inputs"`
+	Expect        string           `json:"expect"`
 }
