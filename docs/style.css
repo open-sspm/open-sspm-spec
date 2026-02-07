@@ -225,6 +225,7 @@ pre code {
 .table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
@@ -235,11 +236,17 @@ pre code {
   border-bottom: 1px solid var(--border);
   vertical-align: top;
   text-align: left;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .table th { color: var(--muted); font-weight: 650; background: rgba(15, 23, 42, 0.04); }
 .table tr:hover td { background: rgba(15, 23, 42, 0.03); }
+.table td code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 
-pre.json {
+pre.codeblock {
   margin: 0;
   padding: 14px 14px;
   border-radius: 12px;
@@ -251,15 +258,10 @@ pre.json {
   overflow: auto;
   max-height: 70vh;
 }
-pre.json code {
+pre.codeblock code {
   display: block;
   white-space: pre;
 }
-pre.json .tok-key { color: var(--tok-key); }
-pre.json .tok-string { color: var(--tok-string); }
-pre.json .tok-number { color: var(--tok-number); }
-pre.json .tok-bool { color: var(--tok-bool); }
-pre.json .tok-null { color: var(--tok-null); }
 
 .sev-high { color: #ea580c; }
 .sev-medium { color: #ca8a04; }
