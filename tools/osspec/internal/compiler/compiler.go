@@ -98,6 +98,9 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 				Path string
 				Doc  types.ProfileDoc
 			}{Path: f.RelPath, Doc: doc})
+		case "opensspm.test_case":
+			// Test cases are validated by schema but not compiled into the descriptor.
+			continue
 		default:
 			return nil, fmt.Errorf("%s: unsupported kind %q (compliance-only repo)", f.RelPath, hdr.Kind)
 		}

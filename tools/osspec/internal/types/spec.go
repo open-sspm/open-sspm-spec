@@ -226,6 +226,6 @@ type TestCaseDoc struct {
 	RuleKey       string           `json:"rule_key"`
 	Description   string           `json:"description,omitempty"`
 	Parameters    map[string]any   `json:"parameters,omitempty"`
-	Inputs        map[string][]any `json:"inputs"`
+	Inputs        map[string][]any `json:"inputs,omitempty"`
 	Expect        string           `json:"expect"`
 }
