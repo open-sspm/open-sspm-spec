@@ -2,7 +2,6 @@ package verify
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,6 +10,7 @@ import (
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/compiler"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/evaluate"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
+	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/yamlstrict"
 )
 
 func Run(ctx context.Context, repoRoot string) error {
@@ -84,7 +84,7 @@ func findTestFiles(root string) ([]string, error) {
 		if err != nil {
 			return err
 		}
-		if !info.IsDir() && strings.HasSuffix(path, ".test.json") {
+		if !info.IsDir() && strings.HasSuffix(path, ".test.yaml") {
 			files = append(files, path)
 		}
 		return nil
@@ -98,7 +98,7 @@ func loadTestCase(path string) (*types.TestCaseDoc, error) {
 		return nil, err
 	}
 	var tc types.TestCaseDoc
-	if err := json.Unmarshal(b, &tc); err != nil {
+	if err := yamlstrict.DecodeSingleStrictYAML(b, &tc, true); err != nil {
 		return nil, err
 	}
 	return &tc, nil

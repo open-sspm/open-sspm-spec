@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 
 	"github.com/santhosh-tekuri/jsonschema/v5"
+
+	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/yamlstrict"
 )
 
 type Registry struct {
@@ -21,12 +23,9 @@ type KindSchema struct {
 }
 
 var KnownSchemas = []KindSchema{
-	{Kind: "opensspm.ruleset", Filename: "opensspm.ruleset.schema.json"},
-	{Kind: "opensspm.dataset_contract", Filename: "opensspm.dataset_contract.schema.json"},
-	{Kind: "opensspm.connector_manifest", Filename: "opensspm.connector_manifest.schema.json"},
-	{Kind: "opensspm.profile", Filename: "opensspm.profile.schema.json"},
-	{Kind: "opensspm.dictionary", Filename: "opensspm.dictionary.schema.json"},
-	{Kind: "opensspm.test_case", Filename: "opensspm.test_case.schema.json"},
+	{Kind: "opensspm.ruleset", Filename: "opensspm.ruleset.schema.yaml"},
+	{Kind: "opensspm.profile", Filename: "opensspm.profile.schema.yaml"},
+	{Kind: "opensspm.test_case", Filename: "opensspm.test_case.schema.yaml"},
 }
 
 func LoadRegistry(metaschemaDir string) (*Registry, error) {
@@ -42,7 +41,11 @@ func LoadRegistry(metaschemaDir string) (*Registry, error) {
 		if err != nil {
 			return nil, fmt.Errorf("schemasem: read schema %s: %w", ks.Filename, err)
 		}
-		if err := c.AddResource(ks.Filename, bytes.NewReader(b)); err != nil {
+		schemaJSON, err := yamlstrict.DecodeSingleStrictYAMLToJSON(b)
+		if err != nil {
+			return nil, fmt.Errorf("schemasem: decode schema %s: %w", ks.Filename, err)
+		}
+		if err := c.AddResource(ks.Filename, bytes.NewReader(schemaJSON)); err != nil {
 			return nil, fmt.Errorf("schemasem: add schema %s: %w", ks.Filename, err)
 		}
 		s, err := c.Compile(ks.Filename)

@@ -1,0 +1,16 @@
+"description": "Should fail when maxSessionIdleMinutes is 30"
+"expect": "fail"
+"inputs":
+  "okta:policies/sign-on":
+    -
+      "actions":
+        "signon":
+          "session":
+            "maxSessionIdleMinutes": 30
+      "name": "Custom Rule"
+      "policy":
+        "name": "Default Policy"
+      "priority": 1
+"kind": "opensspm.test_case"
+"rule_key": "OKTA-APP-000020"
+"schema_version": 1

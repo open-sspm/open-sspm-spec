@@ -128,3 +128,31 @@ const (
 	DatasetErrorKindSyncFailed         DatasetErrorKind = "sync_failed"
 	DatasetErrorKindEngineError        DatasetErrorKind = "engine_error"
 )
+
+func enumStrings[T ~string](values []T) []string {
+	out := make([]string, len(values))
+	for i, v := range values {
+		out[i] = string(v)
+	}
+	return out
+}
+
+// EnumValues returns the canonical enum value catalog used by generators.
+func EnumValues() map[string][]string {
+	return map[string][]string{
+		"ScopeKind":             enumStrings([]ScopeKind{ScopeKindGlobal, ScopeKindConnectorInstance}),
+		"MonitoringStatus":      enumStrings([]MonitoringStatus{MonitoringStatusAutomated, MonitoringStatusPartial, MonitoringStatusManual, MonitoringStatusUnsupported}),
+		"Severity":              enumStrings([]Severity{SeverityCritical, SeverityHigh, SeverityMedium, SeverityLow, SeverityInfo}),
+		"CheckType":             enumStrings([]CheckType{CheckTypeDatasetFieldCompare, CheckTypeDatasetCountCompare, CheckTypeDatasetJoinCountCompare, CheckTypeManualAttestation}),
+		"Operator":              enumStrings([]Operator{OperatorEq, OperatorNeq, OperatorLt, OperatorLte, OperatorGt, OperatorGte, OperatorExists, OperatorAbsent, OperatorIn, OperatorContains}),
+		"CompareOp":             enumStrings([]CompareOp{CompareOpEq, CompareOpNeq, CompareOpLt, CompareOpLte, CompareOpGt, CompareOpGte}),
+		"ErrorPolicy":           enumStrings([]ErrorPolicy{ErrorPolicyUnknown, ErrorPolicyError}),
+		"OnUnmatchedLeft":       enumStrings([]OnUnmatchedLeft{OnUnmatchedLeftIgnore, OnUnmatchedLeftCount, OnUnmatchedLeftError}),
+		"FieldCompareMatch":     enumStrings([]FieldCompareMatch{FieldCompareMatchAll, FieldCompareMatchAny, FieldCompareMatchNone}),
+		"FieldCompareOnEmpty":   enumStrings([]FieldCompareOnEmpty{FieldCompareOnEmptyPass, FieldCompareOnEmptyFail, FieldCompareOnEmptyUnknown, FieldCompareOnEmptyError}),
+		"ReferenceType":         enumStrings([]ReferenceType{ReferenceTypeDocumentation, ReferenceTypeStandard, ReferenceTypeBlog, ReferenceTypeTicket, ReferenceTypeOther}),
+		"FrameworkCoverageKind": enumStrings([]FrameworkCoverageKind{FrameworkCoverageDirect, FrameworkCoveragePartial, FrameworkCoverageSupporting}),
+		"RemediationEffort":     enumStrings([]RemediationEffort{RemediationEffortLow, RemediationEffortMedium, RemediationEffortHigh}),
+		"DatasetErrorKind":      enumStrings([]DatasetErrorKind{DatasetErrorKindMissingIntegration, DatasetErrorKindMissingDataset, DatasetErrorKindPermissionDenied, DatasetErrorKindSyncFailed, DatasetErrorKindEngineError}),
+	}
+}

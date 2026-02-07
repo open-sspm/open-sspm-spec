@@ -1,7 +1,6 @@
 package schemasem
 
 import (
-	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -10,22 +9,10 @@ import (
 )
 
 type Bundle struct {
-	Version    types.Version
-	Dictionary struct {
-		Path string
-		Doc  types.DictionaryDoc
-	}
+	Version  types.Version
 	Rulesets []struct {
 		Path string
 		Doc  types.RulesetDoc
-	}
-	DatasetContracts []struct {
-		Path string
-		Doc  types.DatasetContractDoc
-	}
-	Connectors []struct {
-		Path string
-		Doc  types.ConnectorManifestDoc
 	}
 	Profiles []struct {
 		Path string
@@ -33,29 +20,15 @@ type Bundle struct {
 	}
 }
 
-type ValidationContext struct {
-	Bundle           *Bundle
-	DatasetContracts map[string]*types.DatasetContractDoc
-}
-
 func ValidateSemantic(b *Bundle) []error {
 	if b == nil {
 		return []error{fmt.Errorf("semantic: nil bundle")}
 	}
 
-	ctx := &ValidationContext{
-		Bundle:           b,
-		DatasetContracts: make(map[string]*types.DatasetContractDoc),
-	}
-	for i := range b.DatasetContracts {
-		dc := &b.DatasetContracts[i]
-		key := fmt.Sprintf("%s@%d", dc.Doc.Dataset.Key, dc.Doc.Dataset.Version)
-		ctx.DatasetContracts[key] = &dc.Doc
-	}
-
 	var errs []error
 
 	seenRulesetKeys := map[string]string{}
+	rulesetsByKey := map[string]struct{}{}
 	for _, rs := range b.Rulesets {
 		key := rs.Doc.Ruleset.Key
 		if prev, ok := seenRulesetKeys[key]; ok {
@@ -63,18 +36,32 @@ func ValidateSemantic(b *Bundle) []error {
 		} else {
 			seenRulesetKeys[key] = rs.Path
 		}
+		rulesetsByKey[key] = struct{}{}
 
 		errs = append(errs, validateScope(rs.Path, rs.Doc.Ruleset.Scope)...)
-		errs = append(errs, validateRulesetRules(ctx, rs.Path, &rs.Doc)...)
+		errs = append(errs, validateRulesetRules(rs.Path, &rs.Doc)...)
 	}
 
-	seenDataset := map[string]string{}
-	for _, dc := range b.DatasetContracts {
-		k := fmt.Sprintf("%s@%d", dc.Doc.Dataset.Key, dc.Doc.Dataset.Version)
-		if prev, ok := seenDataset[k]; ok {
-			errs = append(errs, fmt.Errorf("semantic: duplicate dataset (key,version) %q in %s and %s", k, prev, dc.Path))
+	seenProfileKeys := map[string]string{}
+	for _, p := range b.Profiles {
+		key := p.Doc.Profile.Key
+		if prev, ok := seenProfileKeys[key]; ok {
+			errs = append(errs, fmt.Errorf("semantic: duplicate profile.key %q in %s and %s", key, prev, p.Path))
 		} else {
-			seenDataset[k] = dc.Path
+			seenProfileKeys[key] = p.Path
+		}
+
+		seenRulesetRefs := map[string]struct{}{}
+		for i := range p.Doc.Profile.Rulesets {
+			r := p.Doc.Profile.Rulesets[i]
+			if _, ok := rulesetsByKey[r.Key]; !ok {
+				errs = append(errs, fmt.Errorf("semantic: %s: profile %q references missing ruleset.key %q", p.Path, key, r.Key))
+			}
+			if _, dup := seenRulesetRefs[r.Key]; dup {
+				errs = append(errs, fmt.Errorf("semantic: %s: profile %q has duplicate ruleset ref %q", p.Path, key, r.Key))
+			} else {
+				seenRulesetRefs[r.Key] = struct{}{}
+			}
 		}
 	}
 
@@ -123,7 +110,7 @@ func indexDatasetContracts(contracts []types.DatasetContractRef) datasetContract
 	return idx
 }
 
-func validateRulesetRules(ctx *ValidationContext, path string, doc *types.RulesetDoc) []error {
+func validateRulesetRules(path string, doc *types.RulesetDoc) []error {
 	var errs []error
 
 	contractsIdx := indexDatasetContracts(doc.Ruleset.DataContracts)
@@ -138,13 +125,13 @@ func validateRulesetRules(ctx *ValidationContext, path string, doc *types.Rulese
 			seenRuleKeys[r.Key] = struct{}{}
 		}
 
-		errs = append(errs, validateRule(ctx, path, &doc.Ruleset, r, contractsIdx)...)
+		errs = append(errs, validateRule(path, &doc.Ruleset, r, contractsIdx)...)
 	}
 
 	return errs
 }
 
-func validateRule(ctx *ValidationContext, path string, rs *types.Ruleset, r *types.Rule, contractsIdx datasetContractIndex) []error {
+func validateRule(path string, rs *types.Ruleset, r *types.Rule, contractsIdx datasetContractIndex) []error {
 	var errs []error
 
 	// 3.3 Parameters schema keys must exist in defaults.
@@ -181,11 +168,11 @@ func validateRule(ctx *ValidationContext, path string, rs *types.Ruleset, r *typ
 		return errs
 	}
 
-	errs = append(errs, validateCheck(ctx, path, rs, r, r.Check, contractsIdx)...)
+	errs = append(errs, validateCheck(path, rs, r, r.Check, contractsIdx)...)
 	return errs
 }
 
-func validateCheck(ctx *ValidationContext, path string, rs *types.Ruleset, r *types.Rule, c *types.Check, contractsIdx datasetContractIndex) []error {
+func validateCheck(path string, rs *types.Ruleset, r *types.Rule, c *types.Check, contractsIdx datasetContractIndex) []error {
 	var errs []error
 
 	// 6.4 Supported check types only (whitelist)
@@ -292,35 +279,6 @@ func validateCheck(ctx *ValidationContext, path string, rs *types.Ruleset, r *ty
 			for _, vp := range valueParams {
 				if _, ok := r.Parameters.Defaults[vp]; !ok {
 					errs = append(errs, fmt.Errorf("semantic: %s: rule %q: value_param %q not found in parameters.defaults", path, r.Key, vp))
-				}
-			}
-		}
-	}
-
-	// Phase 2: Path cross-reference validation
-	if c.Dataset != "" {
-		version := c.DatasetVersion
-		if version == 0 {
-			versions := contractsIdx.versionsByDataset[c.Dataset]
-			if len(versions) == 1 {
-				version = versions[0]
-			}
-		}
-		if version != 0 {
-			key := fmt.Sprintf("%s@%d", c.Dataset, version)
-			if dc, ok := ctx.DatasetContracts[key]; ok {
-				// Validate paths in 'where' and 'assert'
-				for i, p := range c.Where {
-					if p.Path != "" {
-						if err := validatePathInSchema(dc.Dataset.Schema, p.Path); err != nil {
-							errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.where[%d]: path %q not found in dataset %q schema", path, r.Key, i, p.Path, key))
-						}
-					}
-				}
-				if c.Assert != nil && c.Assert.Path != "" {
-					if err := validatePathInSchema(dc.Dataset.Schema, c.Assert.Path); err != nil {
-						errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.assert: path %q not found in dataset %q schema", path, r.Key, c.Assert.Path, key))
-					}
 				}
 			}
 		}
@@ -458,56 +416,4 @@ func validateCompare(path, ruleKey string, c *types.Compare) []error {
 		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.compare must set exactly one of value or value_param", path, ruleKey))
 	}
 	return errs
-}
-
-func validatePathInSchema(schemaBytes []byte, path string) error {
-	if path == "" || path == "/" {
-		return nil
-	}
-
-	var schema map[string]any
-	if err := json.Unmarshal(schemaBytes, &schema); err != nil {
-		return fmt.Errorf("invalid schema: %w", err)
-	}
-
-	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
-	curr := schema
-	for _, part := range parts {
-		// JSON Pointer escapes
-		part = strings.ReplaceAll(part, "~1", "/")
-		part = strings.ReplaceAll(part, "~0", "~")
-
-		// If it's an array index, we check 'items'
-		isIndex := false
-		if len(part) > 0 {
-			isIndex = true
-			for _, c := range part {
-				if c < '0' || c > '9' {
-					isIndex = false
-					break
-				}
-			}
-		}
-
-		if isIndex {
-			items, ok := curr["items"].(map[string]any)
-			if !ok {
-				return fmt.Errorf("path component %q expects array with items", part)
-			}
-			curr = items
-			continue
-		}
-
-		props, ok := curr["properties"].(map[string]any)
-		if !ok {
-			return fmt.Errorf("path component %q not found (no properties)", part)
-		}
-		next, ok := props[part].(map[string]any)
-		if !ok {
-			return fmt.Errorf("path component %q not found", part)
-		}
-		curr = next
-	}
-
-	return nil
 }

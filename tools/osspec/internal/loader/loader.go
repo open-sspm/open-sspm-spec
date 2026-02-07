@@ -55,11 +55,19 @@ func LoadSpecFiles(ctx context.Context, opts Options) ([]LoadedFile, error) {
 			return nil
 		}
 
-		if filepath.Ext(d.Name()) != ".json" {
-			return nil
-		}
+		nameLower := strings.ToLower(d.Name())
+		ext := strings.ToLower(filepath.Ext(nameLower))
 
-		if strings.HasSuffix(d.Name(), ".test.json") {
+		switch ext {
+		case ".yaml":
+			// accepted
+		case ".json":
+			rel, _ := filepath.Rel(root, path)
+			return fmt.Errorf("loader: json spec source not allowed (convert to .yaml): %s", filepath.ToSlash(rel))
+		case ".yml":
+			rel, _ := filepath.Rel(root, path)
+			return fmt.Errorf("loader: .yml is not allowed (use .yaml): %s", filepath.ToSlash(rel))
+		default:
 			return nil
 		}
 

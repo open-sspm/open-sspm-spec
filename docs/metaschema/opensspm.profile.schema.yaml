@@ -1,0 +1,55 @@
+"$id": "opensspm.profile.schema.yaml"
+"$schema": "http://json-schema.org/draft-07/schema#"
+"additionalProperties": false
+"description": "Profiles bundle one or more rulesets into a baseline package (e.g. CIS) and may be used for quick selection by consumers."
+"properties":
+  "kind":
+    "const": "opensspm.profile"
+    "description": "Document kind discriminator. Must be 'opensspm.profile'."
+    "type": "string"
+  "profile":
+    "additionalProperties": false
+    "description": "Profile definition container."
+    "properties":
+      "description":
+        "description": "Optional profile description."
+        "type": "string"
+      "key":
+        "description": "Unique profile identifier."
+        "minLength": 1
+        "type": "string"
+      "name":
+        "description": "Human-readable profile name."
+        "minLength": 1
+        "type": "string"
+      "rulesets":
+        "description": "Rulesets included by this profile."
+        "items":
+          "additionalProperties": false
+          "properties":
+            "key":
+              "description": "Ruleset key."
+              "minLength": 1
+              "type": "string"
+            "version":
+              "description": "Optional ruleset source version label (for display/traceability only)."
+              "type": "string"
+          "required":
+            - "key"
+          "type": "object"
+        "type": "array"
+    "required":
+      - "key"
+      - "name"
+      - "rulesets"
+    "type": "object"
+  "schema_version":
+    "const": 1
+    "description": "Document schema version discriminator. Must be 1 for Open SSPM v1 documents."
+    "type": "integer"
+"required":
+  - "schema_version"
+  - "kind"
+  - "profile"
+"title": "Open SSPM Profile (v1)"
+"type": "object"

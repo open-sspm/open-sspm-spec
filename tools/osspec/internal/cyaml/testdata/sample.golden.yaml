@@ -1,0 +1,9 @@
+"a": 1
+"b":
+  "nested":
+    - "x"
+    - null
+    - true
+  "z": []
+"c": {}
+"d": "text"

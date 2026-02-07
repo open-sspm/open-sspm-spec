@@ -1,0 +1,544 @@
+"$id": "opensspm.ruleset.schema.yaml"
+"$schema": "http://json-schema.org/draft-07/schema#"
+"additionalProperties": false
+"definitions":
+  "affected_resources":
+    "additionalProperties": false
+    "properties":
+      "dataset":
+        "minLength": 1
+        "type": "string"
+      "display_field":
+        "minLength": 1
+        "type": "string"
+      "id_field":
+        "minLength": 1
+        "type": "string"
+    "required":
+      - "dataset"
+      - "id_field"
+      - "display_field"
+    "type": "object"
+  "check":
+    "additionalProperties": false
+    "description": "Typed check input. Interpretation is performed by an evaluation engine (out of scope for this repo)."
+    "properties":
+      "assert":
+        "$ref": "#/definitions/predicate"
+      "compare":
+        "$ref": "#/definitions/compare"
+      "dataset":
+        "description": "Dataset key used by dataset.field_compare and dataset.count_compare."
+        "minLength": 1
+        "type": "string"
+      "dataset_version":
+        "description": "Optional dataset contract version applied to all dataset references in the check."
+        "minimum": 1
+        "type": "integer"
+      "expect":
+        "$ref": "#/definitions/field_compare_expect"
+      "left":
+        "$ref": "#/definitions/join_side"
+      "notes":
+        "type": "string"
+      "on_missing_dataset":
+        "default": "unknown"
+        "enum":
+          - "unknown"
+          - "error"
+        "type": "string"
+      "on_permission_denied":
+        "default": "unknown"
+        "enum":
+          - "unknown"
+          - "error"
+        "type": "string"
+      "on_sync_error":
+        "default": "error"
+        "enum":
+          - "unknown"
+          - "error"
+        "type": "string"
+      "on_unmatched_left":
+        "default": "ignore"
+        "enum":
+          - "ignore"
+          - "count"
+          - "error"
+        "type": "string"
+      "right":
+        "$ref": "#/definitions/join_side"
+      "type":
+        "description": "Check type discriminator. Engines implement semantics for each supported type."
+        "enum":
+          - "dataset.field_compare"
+          - "dataset.count_compare"
+          - "dataset.join_count_compare"
+          - "manual.attestation"
+        "type": "string"
+      "where":
+        "items":
+          "$ref": "#/definitions/where_clause"
+        "type": "array"
+    "required":
+      - "type"
+    "type": "object"
+  "compare":
+    "additionalProperties": false
+    "properties":
+      "op":
+        "enum":
+          - "eq"
+          - "neq"
+          - "lt"
+          - "lte"
+          - "gt"
+          - "gte"
+        "type": "string"
+      "value":
+        "type": "integer"
+      "value_param":
+        "type": "string"
+    "required":
+      - "op"
+    "type": "object"
+  "dataset_contract_ref":
+    "additionalProperties": false
+    "properties":
+      "dataset":
+        "minLength": 1
+        "type": "string"
+      "description":
+        "type": "string"
+      "version":
+        "minimum": 1
+        "type": "integer"
+    "required":
+      - "dataset"
+      - "version"
+    "type": "object"
+  "evidence":
+    "additionalProperties": false
+    "properties":
+      "affected_resources":
+        "$ref": "#/definitions/affected_resources"
+      "summary_templates":
+        "$ref": "#/definitions/summary_templates"
+    "type": "object"
+  "field_compare_expect":
+    "additionalProperties": false
+    "properties":
+      "match":
+        "default": "all"
+        "enum":
+          - "all"
+          - "any"
+          - "none"
+        "type": "string"
+      "min_selected":
+        "minimum": 0
+        "type": "integer"
+      "on_empty":
+        "default": "unknown"
+        "enum":
+          - "pass"
+          - "fail"
+          - "unknown"
+          - "error"
+        "type": "string"
+    "type": "object"
+  "framework_mapping":
+    "additionalProperties": false
+    "properties":
+      "control":
+        "minLength": 1
+        "type": "string"
+      "coverage":
+        "default": "supporting"
+        "enum":
+          - "direct"
+          - "partial"
+          - "supporting"
+        "type": "string"
+      "enhancement":
+        "type": "string"
+      "framework":
+        "minLength": 1
+        "type": "string"
+      "notes":
+        "type": "string"
+    "required":
+      - "framework"
+      - "control"
+    "type": "object"
+  "join_side":
+    "additionalProperties": false
+    "properties":
+      "dataset":
+        "minLength": 1
+        "type": "string"
+      "key_path":
+        "minLength": 1
+        "type": "string"
+    "required":
+      - "dataset"
+      - "key_path"
+    "type": "object"
+  "lifecycle":
+    "additionalProperties": false
+    "properties":
+      "is_active":
+        "type": "boolean"
+      "replaced_by":
+        "type": "string"
+      "rule_version":
+        "type": "string"
+    "type": "object"
+  "monitoring":
+    "additionalProperties": false
+    "properties":
+      "reason":
+        "type": "string"
+      "status":
+        "enum":
+          - "automated"
+          - "partial"
+          - "manual"
+          - "unsupported"
+        "type": "string"
+    "required":
+      - "status"
+    "type": "object"
+  "operator":
+    "enum":
+      - "eq"
+      - "neq"
+      - "lt"
+      - "lte"
+      - "gt"
+      - "gte"
+      - "exists"
+      - "absent"
+      - "in"
+      - "contains"
+    "type": "string"
+  "parameter_schema":
+    "additionalProperties": false
+    "properties":
+      "description":
+        "type": "string"
+      "enum":
+        "minItems": 1
+        "type": "array"
+      "maximum":
+        "type": "number"
+      "minimum":
+        "type": "number"
+      "type":
+        "enum":
+          - "string"
+          - "boolean"
+          - "integer"
+          - "number"
+          - "array"
+          - "object"
+        "type": "string"
+    "required":
+      - "type"
+    "type": "object"
+  "parameters":
+    "additionalProperties": false
+    "properties":
+      "defaults":
+        "additionalProperties": true
+        "description": "Default values for parameter names."
+        "type": "object"
+      "schema":
+        "additionalProperties":
+          "$ref": "#/definitions/parameter_schema"
+        "description": "Optional parameter schema entries (keys must exist in defaults)."
+        "type": "object"
+    "required":
+      - "defaults"
+    "type": "object"
+  "predicate":
+    "additionalProperties": false
+    "properties":
+      "left_path":
+        "type": "string"
+      "op":
+        "$ref": "#/definitions/operator"
+      "path":
+        "type": "string"
+      "right_path":
+        "type": "string"
+      "value": {}
+      "value_param":
+        "type": "string"
+    "required":
+      - "op"
+    "type": "object"
+  "reference":
+    "additionalProperties": false
+    "properties":
+      "title":
+        "description": "Optional short title for the reference."
+        "type": "string"
+      "type":
+        "default": "other"
+        "description": "Reference type."
+        "enum":
+          - "documentation"
+          - "standard"
+          - "blog"
+          - "ticket"
+          - "other"
+        "type": "string"
+      "url":
+        "description": "Reference URL."
+        "format": "uri"
+        "type": "string"
+    "required":
+      - "url"
+    "type": "object"
+  "remediation":
+    "additionalProperties": false
+    "properties":
+      "effort":
+        "enum":
+          - "low"
+          - "medium"
+          - "high"
+        "type": "string"
+      "instructions":
+        "minLength": 1
+        "type": "string"
+      "risks":
+        "type": "string"
+    "required":
+      - "instructions"
+    "type": "object"
+  "rule":
+    "additionalProperties": false
+    "description": "A single control (rule) evaluated by an engine using the referenced check type."
+    "properties":
+      "category":
+        "type": "string"
+      "check":
+        "$ref": "#/definitions/check"
+        "description": "Evaluation primitive reference. Engines interpret check.type; no evaluation logic is generated from this schema."
+      "description":
+        "description": "Optional longer description."
+        "type": "string"
+      "evidence":
+        "$ref": "#/definitions/evidence"
+      "framework_mappings":
+        "items":
+          "$ref": "#/definitions/framework_mapping"
+        "type": "array"
+      "key":
+        "description": "Rule identifier unique within the ruleset (e.g. 'OKTA-APP-000020')."
+        "minLength": 1
+        "type": "string"
+      "lifecycle":
+        "$ref": "#/definitions/lifecycle"
+      "monitoring":
+        "$ref": "#/definitions/monitoring"
+      "parameters":
+        "$ref": "#/definitions/parameters"
+      "references":
+        "items":
+          "$ref": "#/definitions/reference"
+        "type": "array"
+      "remediation":
+        "$ref": "#/definitions/remediation"
+      "required_data":
+        "description": "Declarative dataset coverage list (must include datasets referenced by the check)."
+        "items":
+          "type": "string"
+        "type": "array"
+      "severity":
+        "description": "Severity classification used by consumers."
+        "enum":
+          - "critical"
+          - "high"
+          - "medium"
+          - "low"
+          - "info"
+        "type": "string"
+      "summary":
+        "description": "Optional short summary."
+        "type": "string"
+      "tags":
+        "items":
+          "type": "string"
+        "type": "array"
+      "title":
+        "minLength": 1
+        "type": "string"
+    "required":
+      - "key"
+      - "title"
+      - "severity"
+      - "monitoring"
+      - "required_data"
+    "type": "object"
+  "ruleset_requirements":
+    "additionalProperties": false
+    "properties":
+      "api_scopes":
+        "items":
+          "type": "string"
+        "type": "array"
+      "notes":
+        "type": "string"
+      "permissions":
+        "items":
+          "type": "string"
+        "type": "array"
+    "type": "object"
+  "summary_templates":
+    "additionalProperties": false
+    "properties":
+      "error":
+        "type": "string"
+      "fail":
+        "type": "string"
+      "not_applicable":
+        "type": "string"
+      "pass":
+        "type": "string"
+      "unknown":
+        "type": "string"
+    "type": "object"
+  "where_clause":
+    "additionalProperties": false
+    "properties":
+      "left_path":
+        "type": "string"
+      "op":
+        "$ref": "#/definitions/operator"
+      "path":
+        "type": "string"
+      "right_path":
+        "type": "string"
+      "value": {}
+      "value_param":
+        "type": "string"
+    "required":
+      - "op"
+    "type": "object"
+"description": "Ruleset documents define what to evaluate (rules) and include metadata such as scope and source. No evaluation logic is encoded here; engines interpret check types."
+"properties":
+  "kind":
+    "const": "opensspm.ruleset"
+    "description": "Document kind discriminator. Must be 'opensspm.ruleset'."
+    "type": "string"
+  "ruleset":
+    "additionalProperties": false
+    "description": "Ruleset definition container."
+    "properties":
+      "data_contracts":
+        "description": "Optional version declarations for datasets used by checks."
+        "items":
+          "$ref": "#/definitions/dataset_contract_ref"
+        "type": "array"
+      "description":
+        "description": "Optional description (Markdown permitted, treated as opaque text by engines)."
+        "type": "string"
+      "framework_mappings":
+        "description": "Optional framework/control mappings."
+        "items":
+          "$ref": "#/definitions/framework_mapping"
+        "type": "array"
+      "key":
+        "description": "Unique ruleset identifier (unique across the repository)."
+        "minLength": 1
+        "type": "string"
+      "name":
+        "description": "Human-readable ruleset name."
+        "minLength": 1
+        "type": "string"
+      "references":
+        "description": "External references for mapping and traceability."
+        "items":
+          "$ref": "#/definitions/reference"
+        "type": "array"
+      "requirements":
+        "$ref": "#/definitions/ruleset_requirements"
+      "rules":
+        "description": "Rules in this ruleset. Deterministically sorted by rule.key during compilation."
+        "items":
+          "$ref": "#/definitions/rule"
+        "type": "array"
+      "scope":
+        "additionalProperties": false
+        "description": "Evaluation scope for this ruleset."
+        "properties":
+          "connector_kind":
+            "description": "Required when scope.kind is 'connector_instance'. Forbidden (absent/null/empty) when scope.kind is 'global'."
+            "type":
+              - "string"
+              - "null"
+          "kind":
+            "description": "Scope kind. 'global' applies without a connector instance; 'connector_instance' applies to a specific connector kind."
+            "enum":
+              - "global"
+              - "connector_instance"
+            "type": "string"
+        "required":
+          - "kind"
+        "type": "object"
+      "source":
+        "additionalProperties": false
+        "description": "Optional external standard or source metadata for traceability (e.g. CIS benchmark)."
+        "properties":
+          "date":
+            "description": "Source publication date in YYYY-MM-DD."
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            "type": "string"
+          "name":
+            "description": "Source name (e.g. 'CIS')."
+            "minLength": 1
+            "type": "string"
+          "url":
+            "description": "Optional URL to the source landing page."
+            "format": "uri"
+            "type": "string"
+          "version":
+            "description": "Source version label (e.g. 'v1.0.0')."
+            "minLength": 1
+            "type": "string"
+        "required":
+          - "name"
+          - "version"
+          - "date"
+        "type": "object"
+      "status":
+        "default": "active"
+        "description": "Lifecycle status of the ruleset."
+        "enum":
+          - "active"
+          - "deprecated"
+        "type": "string"
+      "tags":
+        "description": "Optional tags for filtering and grouping."
+        "items":
+          "type": "string"
+        "type": "array"
+    "required":
+      - "key"
+      - "name"
+      - "scope"
+      - "rules"
+    "type": "object"
+  "schema_version":
+    "const": 1
+    "description": "Document schema version discriminator. Must be 1 for Open SSPM v1 documents."
+    "type": "integer"
+"required":
+  - "schema_version"
+  - "kind"
+  - "ruleset"
+"title": "Open SSPM Ruleset (schema_version: 1)"
+"type": "object"

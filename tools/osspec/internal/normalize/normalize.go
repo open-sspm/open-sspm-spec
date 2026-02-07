@@ -5,8 +5,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
 	jsoncanonicalizer "github.com/cyberphone/json-canonicalization/go/src/webpki.org/jsoncanonicalizer"
+	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
 )
 
 func Strings(v []string) []string {
@@ -81,13 +81,6 @@ func RulesetDoc(doc *types.RulesetDoc) {
 	}
 }
 
-func ConnectorManifestDoc(doc *types.ConnectorManifestDoc) {
-	if doc == nil {
-		return
-	}
-	doc.Connector.Provides = DatasetRefs(doc.Connector.Provides)
-}
-
 func ProfileDoc(doc *types.ProfileDoc) {
 	if doc == nil {
 		return
@@ -103,18 +96,6 @@ func ProfileDoc(doc *types.ProfileDoc) {
 		return strings.Compare(a.Version, b.Version)
 	})
 	doc.Profile.Rulesets = out
-}
-
-func DictionaryDoc(doc *types.DictionaryDoc) {
-	if doc == nil {
-		return
-	}
-	if doc.Dictionary.Enums == nil {
-		return
-	}
-	for k := range doc.Dictionary.Enums {
-		doc.Dictionary.Enums[k] = Strings(doc.Dictionary.Enums[k])
-	}
 }
 
 func FrameworkMappings(v []types.FrameworkMapping) []types.FrameworkMapping {

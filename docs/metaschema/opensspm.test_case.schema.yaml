@@ -1,0 +1,39 @@
+"$id": "opensspm.test_case.schema.yaml"
+"$schema": "http://json-schema.org/draft-07/schema#"
+"additionalProperties": false
+"description": "Test cases for verifying Open SSPM rules against mock data."
+"properties":
+  "description":
+    "type": "string"
+  "expect":
+    "enum":
+      - "pass"
+      - "fail"
+      - "unknown"
+    "type": "string"
+  "inputs":
+    "additionalProperties":
+      "items":
+        "type": "object"
+      "type": "array"
+    "description": "Mock datasets for the test."
+    "type": "object"
+  "kind":
+    "const": "opensspm.test_case"
+    "type": "string"
+  "parameters":
+    "description": "Optional parameter overrides for the rule."
+    "type": "object"
+  "rule_key":
+    "description": "The key of the rule being tested."
+    "type": "string"
+  "schema_version":
+    "const": 1
+    "type": "integer"
+"required":
+  - "schema_version"
+  - "kind"
+  - "rule_key"
+  - "expect"
+"title": "Open SSPM Test Case (v1)"
+"type": "object"

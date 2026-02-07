@@ -6,23 +6,21 @@
 
 THIS IS WORKING DOCUMENT, I AM STILL WORKING ON IT AND IT WILL CHANGE A LOT!
 
-Source-of-truth repository for Open SSPM specifications.
+Source-of-truth repository for Open SSPM **compliance specifications**.
 
-Open SSPM is an open, versioned spec (JSON + JSON Schema) for SSPM interoperability: a common way to describe SaaS posture data and posture checks so different connectors/tools can exchange them.
+Open SSPM is an open, versioned spec (YAML authoring + JSON Schema semantics) for posture/compliance rulesets and profiles (benchmarks) that tools can evaluate.
 
 ## What this repo contains
 
-- JSON specs under `specs/`:
+- YAML specs under `specs/`:
   - rulesets (`opensspm.ruleset`)
-  - dataset contracts (`opensspm.dataset_contract`)
-  - connector manifests (`opensspm.connector_manifest`)
   - profiles (`opensspm.profile`)
-- JSON Schemas under `metaschema/` (strict top-level validation)
+  - test cases (`opensspm.test_case`, `*.test.yaml`)
+- YAML-authored schemas under `metaschema/` (strict top-level validation via JSON Schema)
 - Deterministic compiler `osspec` under `tools/osspec`
 - Generated, committed distribution artifacts under `dist/`
-- Generated language outputs under `gen/` (Go first)
 
-Hard boundary: this repo does **not** generate evaluation logic. It generates only data models, interfaces, and deterministic compiled artifacts.
+Hard boundary: this repo does **not** define connectors or dataset contracts. Dataset keys referenced by checks are treated as external/runtime-defined inputs.
 
 ## Quickstart
 
@@ -38,7 +36,7 @@ Build deterministic outputs into `dist/`:
 go run ./tools/osspec/cmd/osspec build
 ```
 
-Generate Go output into `gen/go`:
+Generate Go output into `gen/go` (committed for downstream consumers):
 
 ```sh
 go run ./tools/osspec/cmd/osspec codegen --lang go --out gen/go
@@ -52,9 +50,9 @@ Generate the static documentation site data (renders from the compiled descripto
 go run ./tools/osspec/cmd/osspec build
 ```
 
-This writes `docs/descriptor.v1.json` and `docs/metaschema/*.json`.
+This writes `docs/descriptor.v1.yaml` and `docs/metaschema/*.yaml`.
 
-Serve `docs/` using any static file server (opening `docs/index.html` via `file://` will fail because the site loads JSON via `fetch`):
+Serve `docs/` using any static file server (opening `docs/index.html` via `file://` will fail because the site loads YAML via `fetch`):
 
 ```sh
 cd docs && python3 -m http.server 8080
@@ -69,16 +67,16 @@ GitHub Pages:
 
 - Specs are loaded from `specs/**`:
   - symlinks are rejected
-  - `.json` only
+  - `.yaml` only
   - max size 2 MiB per file
 - Hashing is stable:
   - normalize objects (stable ordering)
-  - canonicalize JSON using JCS (RFC 8785)
-  - SHA-256 hex digest
+  - canonicalize YAML via the repository canonical emitter
+  - SHA-256 hex digest over canonical YAML bytes
 
 ## `required_data` policy
 
-`ruleset.required_data` is optional. If present, `osspec validate` enforces that it includes every dataset referenced by that ruleset’s checks (dataset+version).
+`rule.required_data` declares the dataset keys a rule depends on. `osspec validate` enforces that it includes every dataset referenced by that rule’s check.
 
 ## Third-party standards (CIS)
 
