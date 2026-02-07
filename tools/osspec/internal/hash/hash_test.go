@@ -8,7 +8,7 @@ import (
 )
 
 func TestHashObjectJCS_NormalizedRulesetStableAcrossOrdering(t *testing.T) {
-	zero := 0
+	expr := `rows("okta:log-streams").exists(r, r["enabled"] == true)`
 
 	doc1 := types.RulesetDoc{
 		SchemaVersion: 2,
@@ -17,8 +17,7 @@ func TestHashObjectJCS_NormalizedRulesetStableAcrossOrdering(t *testing.T) {
 			Key:   "example.ruleset.v2",
 			Name:  "Example",
 			Scope: types.Scope{Kind: types.ScopeKindGlobal},
-			// omit status to exercise defaulting
-			Tags: []string{"b", "a"},
+			Tags:  []string{"b", "a"},
 			References: []types.Reference{
 				{URL: "https://b.example", Title: "B"},
 				{URL: "https://a.example", Title: "A", Type: types.ReferenceTypeOther},
@@ -31,37 +30,22 @@ func TestHashObjectJCS_NormalizedRulesetStableAcrossOrdering(t *testing.T) {
 				APIScopes:   []string{"b", "a"},
 				Permissions: []string{"p2", "p1"},
 			},
-			DataContracts: []types.DatasetContractRef{
-				{Dataset: "okta:log-streams", Version: 1},
-			},
+			DataContracts: []types.DatasetContractRef{{Dataset: "okta:log-streams", Version: 1}},
 			Rules: []types.Rule{
 				{
-					Key:         "B",
-					Title:       "B",
-					Severity:    types.SeverityLow,
-					Monitoring:  types.Monitoring{Status: types.MonitoringStatusManual},
+					Key:          "B",
+					Title:        "B",
+					Severity:     types.SeverityLow,
+					Monitoring:   types.Monitoring{Status: types.MonitoringStatusManual},
 					RequiredData: []string{},
-					Check:       &types.Check{Type: types.CheckTypeManualAttestation},
 				},
 				{
-					Key:      "A",
-					Title:    "A",
-					Severity: types.SeverityLow,
-					Monitoring: types.Monitoring{
-						Status: types.MonitoringStatusAutomated,
-					},
+					Key:          "A",
+					Title:        "A",
+					Severity:     types.SeverityLow,
+					Monitoring:   types.Monitoring{Status: types.MonitoringStatusAutomated},
 					RequiredData: []string{"okta:log-streams"},
-					Parameters:   &types.Parameters{Defaults: map[string]any{"min": 0}},
-					Check: &types.Check{
-						Type:           types.CheckTypeDatasetCountCompare,
-						Dataset:        "okta:log-streams",
-						DatasetVersion: 1,
-						Where: []types.Predicate{
-							{Path: "/enabled", Op: types.OperatorEq, Value: true},
-							{Path: "/type", Op: types.OperatorEq, Value: "event_hook"},
-						},
-						Compare: &types.Compare{Op: types.CompareOpGte, Value: &zero},
-					},
+					Check:        &types.Check{Engine: types.CheckEngineCEL, Expression: expr},
 				},
 			},
 		},
@@ -88,37 +72,22 @@ func TestHashObjectJCS_NormalizedRulesetStableAcrossOrdering(t *testing.T) {
 				APIScopes:   []string{"a", "b"},
 				Permissions: []string{"p1", "p2"},
 			},
-			DataContracts: []types.DatasetContractRef{
-				{Dataset: "okta:log-streams", Version: 1},
-			},
+			DataContracts: []types.DatasetContractRef{{Dataset: "okta:log-streams", Version: 1}},
 			Rules: []types.Rule{
 				{
-					Key:      "A",
-					Title:    "A",
-					Severity: types.SeverityLow,
-					Monitoring: types.Monitoring{
-						Status: types.MonitoringStatusAutomated,
-					},
+					Key:          "A",
+					Title:        "A",
+					Severity:     types.SeverityLow,
+					Monitoring:   types.Monitoring{Status: types.MonitoringStatusAutomated},
 					RequiredData: []string{"okta:log-streams"},
-					Parameters:   &types.Parameters{Defaults: map[string]any{"min": 0}},
-					Check: &types.Check{
-						Type:           types.CheckTypeDatasetCountCompare,
-						Dataset:        "okta:log-streams",
-						DatasetVersion: 1,
-						Where: []types.Predicate{
-							{Path: "/type", Op: types.OperatorEq, Value: "event_hook"},
-							{Path: "/enabled", Op: types.OperatorEq, Value: true},
-						},
-						Compare: &types.Compare{Op: types.CompareOpGte, Value: &zero},
-					},
+					Check:        &types.Check{Engine: types.CheckEngineCEL, Expression: expr},
 				},
 				{
-					Key:         "B",
-					Title:       "B",
-					Severity:    types.SeverityLow,
-					Monitoring:  types.Monitoring{Status: types.MonitoringStatusManual},
+					Key:          "B",
+					Title:        "B",
+					Severity:     types.SeverityLow,
+					Monitoring:   types.Monitoring{Status: types.MonitoringStatusManual},
 					RequiredData: []string{},
-					Check:       &types.Check{Type: types.CheckTypeManualAttestation},
 				},
 			},
 		},
@@ -140,76 +109,49 @@ func TestHashObjectJCS_NormalizedRulesetStableAcrossOrdering(t *testing.T) {
 	}
 }
 
-func TestHashObjectJCS_NormalizedRulesetStableAcrossJoinWhereOrdering(t *testing.T) {
-	zero := 0
+func TestHashObjectJCS_NormalizedRulesetStableAcrossRequiredDataOrdering(t *testing.T) {
+	expr := `rows("core:a").size() > 0 && rows("core:b").size() > 0`
 
 	doc1 := types.RulesetDoc{
 		SchemaVersion: 2,
 		Kind:          "opensspm.ruleset",
 		Ruleset: types.Ruleset{
 			Key:   "example.join.ruleset.v2",
-			Name:  "Example join",
+			Name:  "Example",
 			Scope: types.Scope{Kind: types.ScopeKindGlobal},
 			DataContracts: []types.DatasetContractRef{
-				{Dataset: "core:entitlement_assignments", Version: 1},
-				{Dataset: "core:identities", Version: 1},
+				{Dataset: "core:b", Version: 1},
+				{Dataset: "core:a", Version: 1},
 			},
-			Rules: []types.Rule{
-				{
-					Key:         "R1",
-					Title:       "R1",
-					Severity:    types.SeverityLow,
-					Monitoring:  types.Monitoring{Status: types.MonitoringStatusAutomated},
-					RequiredData: []string{"core:entitlement_assignments", "core:identities"},
-					Parameters:   &types.Parameters{Defaults: map[string]any{"max": 0}},
-					Check: &types.Check{
-						Type:           types.CheckTypeDatasetJoinCountCompare,
-						DatasetVersion: 1,
-						Left:           &types.JoinSide{Dataset: "core:identities", KeyPath: "/email"},
-						Right:          &types.JoinSide{Dataset: "core:entitlement_assignments", KeyPath: "/identity/email"},
-						Where: []types.Predicate{
-							{RightPath: "/entitlement/tags", Op: types.OperatorContains, Value: "admin"},
-							{LeftPath: "/email", Op: types.OperatorExists},
-						},
-						Compare: &types.Compare{Op: types.CompareOpLte, Value: &zero},
-					},
-				},
-			},
+			Rules: []types.Rule{{
+				Key:          "R1",
+				Title:        "R1",
+				Severity:     types.SeverityLow,
+				Monitoring:   types.Monitoring{Status: types.MonitoringStatusAutomated},
+				RequiredData: []string{"core:b", "core:a"},
+				Check:        &types.Check{Engine: types.CheckEngineCEL, Expression: expr},
+			}},
 		},
 	}
-
 	doc2 := types.RulesetDoc{
 		SchemaVersion: 2,
 		Kind:          "opensspm.ruleset",
 		Ruleset: types.Ruleset{
 			Key:   "example.join.ruleset.v2",
-			Name:  "Example join",
+			Name:  "Example",
 			Scope: types.Scope{Kind: types.ScopeKindGlobal},
 			DataContracts: []types.DatasetContractRef{
-				{Dataset: "core:identities", Version: 1},
-				{Dataset: "core:entitlement_assignments", Version: 1},
+				{Dataset: "core:a", Version: 1},
+				{Dataset: "core:b", Version: 1},
 			},
-			Rules: []types.Rule{
-				{
-					Key:         "R1",
-					Title:       "R1",
-					Severity:    types.SeverityLow,
-					Monitoring:  types.Monitoring{Status: types.MonitoringStatusAutomated},
-					RequiredData: []string{"core:identities", "core:entitlement_assignments"},
-					Parameters:   &types.Parameters{Defaults: map[string]any{"max": 0}},
-					Check: &types.Check{
-						Type:           types.CheckTypeDatasetJoinCountCompare,
-						DatasetVersion: 1,
-						Left:           &types.JoinSide{Dataset: "core:identities", KeyPath: "/email"},
-						Right:          &types.JoinSide{Dataset: "core:entitlement_assignments", KeyPath: "/identity/email"},
-						Where: []types.Predicate{
-							{LeftPath: "/email", Op: types.OperatorExists},
-							{RightPath: "/entitlement/tags", Op: types.OperatorContains, Value: "admin"},
-						},
-						Compare: &types.Compare{Op: types.CompareOpLte, Value: &zero},
-					},
-				},
-			},
+			Rules: []types.Rule{{
+				Key:          "R1",
+				Title:        "R1",
+				Severity:     types.SeverityLow,
+				Monitoring:   types.Monitoring{Status: types.MonitoringStatusAutomated},
+				RequiredData: []string{"core:a", "core:b"},
+				Check:        &types.Check{Engine: types.CheckEngineCEL, Expression: expr},
+			}},
 		},
 	}
 

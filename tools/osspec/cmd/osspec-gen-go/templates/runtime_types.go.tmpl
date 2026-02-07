@@ -9,22 +9,8 @@ import (
 	specv2 "github.com/open-sspm/open-sspm-spec/gen/go/opensspm/spec/v2"
 )
 
-type DatasetErrorKind string
-
-const (
-	DatasetErrorKind_ENGINE_ERROR        DatasetErrorKind = "engine_error"
-	DatasetErrorKind_MISSING_DATASET     DatasetErrorKind = "missing_dataset"
-	DatasetErrorKind_MISSING_INTEGRATION DatasetErrorKind = "missing_integration"
-	DatasetErrorKind_PERMISSION_DENIED   DatasetErrorKind = "permission_denied"
-	DatasetErrorKind_SYNC_FAILED         DatasetErrorKind = "sync_failed"
-)
-
-type ScopeKind string
-
-const (
-	ScopeKind_CONNECTOR_INSTANCE ScopeKind = "connector_instance"
-	ScopeKind_GLOBAL             ScopeKind = "global"
-)
+{{ .DatasetErrorKindEnumBlock }}
+{{ .ScopeKindEnumBlock }}
 
 type EvalContext struct {
 	ScopeKind         ScopeKind `json:"scope_kind"`

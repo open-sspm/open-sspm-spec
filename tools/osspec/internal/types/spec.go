@@ -146,60 +146,8 @@ type Lifecycle struct {
 }
 
 type Check struct {
-	Type CheckType `json:"type"`
-
-	// Common (all checks)
-	DatasetVersion     int         `json:"dataset_version,omitempty"`
-	OnMissingDataset   ErrorPolicy `json:"on_missing_dataset,omitempty"`
-	OnPermissionDenied ErrorPolicy `json:"on_permission_denied,omitempty"`
-	OnSyncError        ErrorPolicy `json:"on_sync_error,omitempty"`
-	Notes              string      `json:"notes,omitempty"`
-
-	// dataset.field_compare, dataset.count_compare
-	Dataset string      `json:"dataset,omitempty"`
-	Where   []Predicate `json:"where,omitempty"`
-
-	// dataset.field_compare
-	Assert *Predicate          `json:"assert,omitempty"`
-	Expect *FieldCompareExpect `json:"expect,omitempty"`
-
-	// dataset.count_compare, dataset.join_count_compare
-	Compare *Compare `json:"compare,omitempty"`
-
-	// dataset.join_count_compare
-	Left            *JoinSide       `json:"left,omitempty"`
-	Right           *JoinSide       `json:"right,omitempty"`
-	OnUnmatchedLeft OnUnmatchedLeft `json:"on_unmatched_left,omitempty"`
-}
-
-type Predicate struct {
-	// Non-join predicate
-	Path string `json:"path,omitempty"`
-
-	// Join predicate (exactly one of left_path/right_path)
-	LeftPath  string `json:"left_path,omitempty"`
-	RightPath string `json:"right_path,omitempty"`
-
-	Op         Operator `json:"op"`
-	Value      any      `json:"value,omitempty"`
-	ValueParam string   `json:"value_param,omitempty"`
-}
-
-type Compare struct {
-	Op         CompareOp `json:"op"`
-	Value      *int      `json:"value,omitempty"`
-	ValueParam string    `json:"value_param,omitempty"`
-}
-
-type FieldCompareExpect struct {
-	Match       FieldCompareMatch   `json:"match,omitempty"`
-	MinSelected int                 `json:"min_selected,omitempty"`
-	OnEmpty     FieldCompareOnEmpty `json:"on_empty,omitempty"`
-}
-
-type JoinSide struct {
-	Dataset string `json:"dataset"`
-	KeyPath string `json:"key_path"`
+	Engine     CheckEngine `json:"engine"`
+	Expression string      `json:"expression"`
 }
 
 type ProfileDoc struct {

@@ -127,10 +127,10 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 		SchemaVersion: 2,
 		Kind:          "opensspm.compliance_descriptor",
 		Version:       version,
-		Index: struct {
-			Requirements types.RequirementsIndex `json:"requirements"`
-			Artifacts    types.ArtifactsIndex    `json:"artifacts"`
-		}{Requirements: reqIndex, Artifacts: artifactsIndex},
+		Index: types.DescriptorIndex{
+			Requirements: reqIndex,
+			Artifacts:    artifactsIndex,
+		},
 	}
 
 	for _, rs := range bundle.Rulesets {

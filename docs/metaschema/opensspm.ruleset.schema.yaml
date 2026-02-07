@@ -21,86 +21,18 @@
     "type": "object"
   "check":
     "additionalProperties": false
-    "description": "Typed check input. Interpretation is performed by an evaluation engine (out of scope for this repo)."
+    "description": "CEL-based check definition. Expression must evaluate to bool."
     "properties":
-      "assert":
-        "$ref": "#/definitions/predicate"
-      "compare":
-        "$ref": "#/definitions/compare"
-      "dataset":
-        "description": "Dataset key used by dataset.field_compare and dataset.count_compare."
+      "engine":
+        "enum":
+          - "cel"
+        "type": "string"
+      "expression":
         "minLength": 1
         "type": "string"
-      "dataset_version":
-        "description": "Optional dataset contract version applied to all dataset references in the check."
-        "minimum": 1
-        "type": "integer"
-      "expect":
-        "$ref": "#/definitions/field_compare_expect"
-      "left":
-        "$ref": "#/definitions/join_side"
-      "notes":
-        "type": "string"
-      "on_missing_dataset":
-        "default": "unknown"
-        "enum":
-          - "unknown"
-          - "error"
-        "type": "string"
-      "on_permission_denied":
-        "default": "unknown"
-        "enum":
-          - "unknown"
-          - "error"
-        "type": "string"
-      "on_sync_error":
-        "default": "error"
-        "enum":
-          - "unknown"
-          - "error"
-        "type": "string"
-      "on_unmatched_left":
-        "default": "ignore"
-        "enum":
-          - "ignore"
-          - "count"
-          - "error"
-        "type": "string"
-      "right":
-        "$ref": "#/definitions/join_side"
-      "type":
-        "description": "Check type discriminator. Engines implement semantics for each supported type."
-        "enum":
-          - "dataset.field_compare"
-          - "dataset.count_compare"
-          - "dataset.join_count_compare"
-          - "manual.attestation"
-        "type": "string"
-      "where":
-        "items":
-          "$ref": "#/definitions/where_clause"
-        "type": "array"
     "required":
-      - "type"
-    "type": "object"
-  "compare":
-    "additionalProperties": false
-    "properties":
-      "op":
-        "enum":
-          - "eq"
-          - "neq"
-          - "lt"
-          - "lte"
-          - "gt"
-          - "gte"
-        "type": "string"
-      "value":
-        "type": "integer"
-      "value_param":
-        "type": "string"
-    "required":
-      - "op"
+      - "engine"
+      - "expression"
     "type": "object"
   "dataset_contract_ref":
     "additionalProperties": false
@@ -125,28 +57,6 @@
       "summary_templates":
         "$ref": "#/definitions/summary_templates"
     "type": "object"
-  "field_compare_expect":
-    "additionalProperties": false
-    "properties":
-      "match":
-        "default": "all"
-        "enum":
-          - "all"
-          - "any"
-          - "none"
-        "type": "string"
-      "min_selected":
-        "minimum": 0
-        "type": "integer"
-      "on_empty":
-        "default": "unknown"
-        "enum":
-          - "pass"
-          - "fail"
-          - "unknown"
-          - "error"
-        "type": "string"
-    "type": "object"
   "framework_mapping":
     "additionalProperties": false
     "properties":
@@ -170,19 +80,6 @@
     "required":
       - "framework"
       - "control"
-    "type": "object"
-  "join_side":
-    "additionalProperties": false
-    "properties":
-      "dataset":
-        "minLength": 1
-        "type": "string"
-      "key_path":
-        "minLength": 1
-        "type": "string"
-    "required":
-      - "dataset"
-      - "key_path"
     "type": "object"
   "lifecycle":
     "additionalProperties": false
@@ -209,19 +106,6 @@
     "required":
       - "status"
     "type": "object"
-  "operator":
-    "enum":
-      - "eq"
-      - "neq"
-      - "lt"
-      - "lte"
-      - "gt"
-      - "gte"
-      - "exists"
-      - "absent"
-      - "in"
-      - "contains"
-    "type": "string"
   "parameter_schema":
     "additionalProperties": false
     "properties":
@@ -260,23 +144,6 @@
         "type": "object"
     "required":
       - "defaults"
-    "type": "object"
-  "predicate":
-    "additionalProperties": false
-    "properties":
-      "left_path":
-        "type": "string"
-      "op":
-        "$ref": "#/definitions/operator"
-      "path":
-        "type": "string"
-      "right_path":
-        "type": "string"
-      "value": {}
-      "value_param":
-        "type": "string"
-    "required":
-      - "op"
     "type": "object"
   "reference":
     "additionalProperties": false
@@ -320,13 +187,13 @@
     "type": "object"
   "rule":
     "additionalProperties": false
-    "description": "A single control (rule) evaluated by an engine using the referenced check type."
+    "description": "A single control rule evaluated via CEL for automated/partial monitoring."
     "properties":
       "category":
         "type": "string"
       "check":
         "$ref": "#/definitions/check"
-        "description": "Evaluation primitive reference. Engines interpret check.type; no evaluation logic is generated from this schema."
+        "description": "CEL evaluation check. Required by semantic validation for automated/partial rules and optional for manual/unsupported rules."
       "description":
         "description": "Optional longer description."
         "type": "string"
@@ -353,7 +220,7 @@
       "remediation":
         "$ref": "#/definitions/remediation"
       "required_data":
-        "description": "Declarative dataset coverage list (must include datasets referenced by the check)."
+        "description": "Declarative dataset coverage list (must include datasets referenced by the CEL expression)."
         "items":
           "type": "string"
         "type": "array"
@@ -411,24 +278,7 @@
       "unknown":
         "type": "string"
     "type": "object"
-  "where_clause":
-    "additionalProperties": false
-    "properties":
-      "left_path":
-        "type": "string"
-      "op":
-        "$ref": "#/definitions/operator"
-      "path":
-        "type": "string"
-      "right_path":
-        "type": "string"
-      "value": {}
-      "value_param":
-        "type": "string"
-    "required":
-      - "op"
-    "type": "object"
-"description": "Ruleset documents define what to evaluate (rules) and include metadata such as scope and source. No evaluation logic is encoded here; engines interpret check types."
+"description": "Ruleset documents define what to evaluate (rules) and include metadata such as scope and source. Evaluation logic is encoded as CEL expressions in check.expression."
 "properties":
   "kind":
     "const": "opensspm.ruleset"
@@ -439,7 +289,7 @@
     "description": "Ruleset definition container."
     "properties":
       "data_contracts":
-        "description": "Optional version declarations for datasets used by checks."
+        "description": "Optional version declarations for datasets used by CEL checks."
         "items":
           "$ref": "#/definitions/dataset_contract_ref"
         "type": "array"

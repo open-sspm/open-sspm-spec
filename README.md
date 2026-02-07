@@ -76,7 +76,13 @@ GitHub Pages:
 
 ## `required_data` policy
 
-`rule.required_data` declares the dataset keys a rule depends on. `osspec validate` enforces that it includes every dataset referenced by that rule’s check.
+`rule.required_data` declares the dataset keys a rule depends on. `osspec validate` enforces that it includes every dataset referenced by literal helper calls in the rule expression (`rows("...")`, `has_dataset("...")`).
+
+## CEL helper semantics
+
+- `rows("dataset")` reads rows for a dataset and is treated as a required dataset reference.
+- `has_dataset("dataset")` is an existence check helper and does not, by itself, force runtime failure when the dataset is absent.
+- Direct map access like `datasets["dataset"]` is supported at runtime, but dependency extraction for validation/indexing is helper-call based.
 
 ## Third-party standards (CIS)
 

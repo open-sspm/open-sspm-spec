@@ -518,22 +518,25 @@ function renderRequirements() {
     el("thead", {}, [el("tr", {}, [
       el("th", { text: "Ruleset" }),
       el("th", { text: "Scope" }),
-      el("th", { text: "Check Types" }),
+      el("th", { text: "Engines" }),
       el("th", { text: "Datasets" }),
+      el("th", { text: "Params" }),
     ])]),
     el("tbody", {}, rows.map((rr) => {
-      const ct = (rr.check_types || []).map((x) => `<code>${escapeHtml(x)}</code>`).join(", ");
+      const engines = (rr.engines || []).map((x) => `<code>${escapeHtml(x)}</code>`).join(", ");
       const ds = (rr.datasets || []).map((x) => `<code>${escapeHtml(x.dataset)}@${escapeHtml(x.version)}</code>`).join(", ");
+      const ps = (rr.params_referenced || []).map((x) => `<code>${escapeHtml(x)}</code>`).join(", ");
       return el("tr", {}, [
         el("td", {}, [el("a", { href: `#ruleset/${encodeURIComponent(rr.ruleset_key)}`, html: `<code>${escapeHtml(rr.ruleset_key)}</code>` })]),
         el("td", { html: `<code>${escapeHtml(rr.scope?.kind || "")}</code>${rr.scope?.connector_kind ? `<div class="muted"><code>${escapeHtml(rr.scope.connector_kind)}</code></div>` : ""}` }),
-        el("td", { html: ct || "<span class=\"muted\">(none)</span>" }),
+        el("td", { html: engines || "<span class=\"muted\">(none)</span>" }),
         el("td", { html: ds || "<span class=\"muted\">(none)</span>" }),
+        el("td", { html: ps || "<span class=\"muted\">(none)</span>" }),
       ]);
     })),
   ]);
   return [
-    el("div", { class: "card" }, [el("h1", { text: "Requirements Index" }), el("div", { class: "muted", text: "Computed requirements per ruleset (datasets + check types + params)." })]),
+    el("div", { class: "card" }, [el("h1", { text: "Requirements Index" }), el("div", { class: "muted", text: "Computed requirements per ruleset (engines, datasets, and CEL params)." })]),
     el("div", { class: "card" }, [table]),
   ];
 }

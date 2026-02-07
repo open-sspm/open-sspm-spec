@@ -5,7 +5,7 @@
     "kind": "opensspm.profile"
     "source_path": "specs/profiles/cis.okta.idaas_stig.profile.v2.yaml"
   -
-    "hash": "457421ff63d4c9ad214b03f8854f20ce26d836862570db4e8fe46c99e09d9cc9"
+    "hash": "0a4111ff71adc4e6fb32084b28c38f7a3629629cb8bc0c3f282525a9e798e2c3"
     "key": "cis.okta.idaas_stig.v2"
     "kind": "opensspm.ruleset"
     "source_path": "specs/rulesets/cis/okta/cis.okta.idaas_stig.v2.yaml"

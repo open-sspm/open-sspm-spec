@@ -1,11 +1,9 @@
 package normalize
 
 import (
-	"encoding/json"
 	"slices"
 	"strings"
 
-	jsoncanonicalizer "github.com/cyberphone/json-canonicalization/go/src/webpki.org/jsoncanonicalizer"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
 )
 
@@ -76,7 +74,7 @@ func RulesetDoc(doc *types.RulesetDoc) {
 			normalizeFrameworkMappings(doc.Ruleset.Rules[i].FrameworkMappings)
 			doc.Ruleset.Rules[i].FrameworkMappings = FrameworkMappings(doc.Ruleset.Rules[i].FrameworkMappings)
 			normalizeRuleLifecycle(doc.Ruleset.Rules[i].Lifecycle)
-			normalizeCheckDefaults(doc.Ruleset.Rules[i].Check)
+			normalizeRuleCheck(doc.Ruleset.Rules[i].Check)
 		}
 	}
 }
@@ -173,81 +171,10 @@ func normalizeRuleLifecycle(lc *types.Lifecycle) {
 	}
 }
 
-func normalizeCheckDefaults(c *types.Check) {
+func normalizeRuleCheck(c *types.Check) {
 	if c == nil {
 		return
 	}
-
-	if c.OnMissingDataset == "" {
-		c.OnMissingDataset = types.ErrorPolicyUnknown
-	}
-	if c.OnPermissionDenied == "" {
-		c.OnPermissionDenied = types.ErrorPolicyUnknown
-	}
-	if c.OnSyncError == "" {
-		c.OnSyncError = types.ErrorPolicyError
-	}
-
-	if len(c.Where) > 0 {
-		sortPredicates(c.Type, c.Where)
-	}
-
-	switch c.Type {
-	case types.CheckTypeDatasetFieldCompare:
-		if c.Expect == nil {
-			c.Expect = &types.FieldCompareExpect{}
-		}
-		if c.Expect.Match == "" {
-			c.Expect.Match = types.FieldCompareMatchAll
-		}
-		if c.Expect.OnEmpty == "" {
-			c.Expect.OnEmpty = types.FieldCompareOnEmptyUnknown
-		}
-	case types.CheckTypeDatasetJoinCountCompare:
-		if c.OnUnmatchedLeft == "" {
-			c.OnUnmatchedLeft = types.OnUnmatchedLeftIgnore
-		}
-	}
-}
-
-func sortPredicates(checkType types.CheckType, preds []types.Predicate) {
-	// Sorting is stable/deterministic per newspec.md section 7.1.
-	slices.SortFunc(preds, func(a, b types.Predicate) int {
-		if checkType == types.CheckTypeDatasetJoinCountCompare {
-			if c := strings.Compare(a.LeftPath, b.LeftPath); c != 0 {
-				return c
-			}
-			if c := strings.Compare(a.RightPath, b.RightPath); c != 0 {
-				return c
-			}
-		} else {
-			if c := strings.Compare(a.Path, b.Path); c != 0 {
-				return c
-			}
-		}
-
-		if c := strings.Compare(string(a.Op), string(b.Op)); c != 0 {
-			return c
-		}
-		if c := strings.Compare(a.ValueParam, b.ValueParam); c != 0 {
-			return c
-		}
-		return strings.Compare(canonicalValue(a.Value), canonicalValue(b.Value))
-	})
-}
-
-func canonicalValue(v any) string {
-	if v == nil {
-		return "null"
-	}
-	raw, err := json.Marshal(v)
-	if err != nil {
-		// Unmarshal sources are already JSON, so marshal failures are unexpected.
-		return ""
-	}
-	canonical, err := jsoncanonicalizer.Transform(raw)
-	if err != nil {
-		return string(raw)
-	}
-	return string(canonical)
+	c.Engine = types.CheckEngine(strings.ToLower(strings.TrimSpace(string(c.Engine))))
+	c.Expression = strings.TrimSpace(c.Expression)
 }

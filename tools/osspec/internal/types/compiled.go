@@ -19,25 +19,48 @@ type RequirementsIndex struct {
 	Rulesets      []RulesetRequirement `json:"rulesets"`
 }
 
+type RuleInputRequirement struct {
+	Name       string   `json:"name"`
+	Type       string   `json:"type,omitempty"`
+	Default    any      `json:"default,omitempty"`
+	HasDefault bool     `json:"has_default"`
+	Sources    []string `json:"sources"`
+}
+
+type RulesetInputRequirement struct {
+	Name     string   `json:"name"`
+	Type     string   `json:"type,omitempty"`
+	Sources  []string `json:"sources"`
+	RuleKeys []string `json:"rule_keys"`
+}
+
 type RulesetRequirement struct {
-	RulesetKey  string            `json:"ruleset_key"`
-	Status      string            `json:"status"`
-	Scope       Scope             `json:"scope"`
-	Datasets    []DatasetRefSpec  `json:"datasets"`
-	CheckTypes  []CheckType       `json:"check_types"`
-	ValueParams []string          `json:"value_params"`
-	Rules       []RuleRequirement `json:"rules"`
+	RulesetKey         string                    `json:"ruleset_key"`
+	Status             string                    `json:"status"`
+	Scope              Scope                     `json:"scope"`
+	Datasets           []DatasetRefSpec          `json:"datasets"`
+	Engines            []CheckEngine             `json:"engines"`
+	DatasetsReferenced []string                  `json:"datasets_referenced"`
+	ParamsReferenced   []string                  `json:"params_referenced"`
+	Inputs             []RulesetInputRequirement `json:"inputs"`
+	Rules              []RuleRequirement         `json:"rules"`
+}
+
+type RuleRequirementMonitoring struct {
+	Status MonitoringStatus `json:"status"`
 }
 
 type RuleRequirement struct {
-	RuleKey     string           `json:"rule_key"`
-	IsManual    bool             `json:"is_manual"`
-	Datasets    []DatasetRefSpec `json:"datasets"`
-	CheckType   *CheckType       `json:"check_type"`
-	ValueParams []string         `json:"value_params"`
-	Monitoring  struct {
-		Status MonitoringStatus `json:"status"`
-	} `json:"monitoring"`
+	RuleKey            string                    `json:"rule_key"`
+	IsManual           bool                      `json:"is_manual"`
+	Datasets           []DatasetRefSpec          `json:"datasets"`
+	Engine             *CheckEngine              `json:"engine,omitempty"`
+	Expression         string                    `json:"expression,omitempty"`
+	ExpressionSHA256   string                    `json:"expression_sha256,omitempty"`
+	DatasetsReferenced []string                  `json:"datasets_referenced"`
+	ParamsReferenced   []string                  `json:"params_referenced"`
+	Inputs             []RuleInputRequirement    `json:"inputs"`
+	Monitoring         RuleRequirementMonitoring `json:"monitoring"`
 }
 
 type Compiled[T any] struct {
@@ -46,23 +69,25 @@ type Compiled[T any] struct {
 	Object     T      `json:"object"`
 }
 
+type DescriptorIndex struct {
+	Requirements RequirementsIndex `json:"requirements"`
+	Artifacts    ArtifactsIndex    `json:"artifacts"`
+}
+
 type Descriptor struct {
 	SchemaVersion int                    `json:"schema_version"`
 	Kind          string                 `json:"kind"`
 	Version       Version                `json:"version"`
 	Rulesets      []Compiled[RulesetDoc] `json:"rulesets"`
 	Profiles      []Compiled[ProfileDoc] `json:"profiles"`
-	Index         struct {
-		Requirements RequirementsIndex `json:"requirements"`
-		Artifacts    ArtifactsIndex    `json:"artifacts"`
-	} `json:"index"`
+	Index         DescriptorIndex        `json:"index"`
 }
 
 type CodegenRequest struct {
-	SchemaVersion int          `json:"schema_version"`
-	Kind          string       `json:"kind"`
-	Language      string       `json:"language"`
-	Descriptor    Descriptor   `json:"descriptor"`
+	SchemaVersion int        `json:"schema_version"`
+	Kind          string     `json:"kind"`
+	Language      string     `json:"language"`
+	Descriptor    Descriptor `json:"descriptor"`
 }
 
 type CodegenResponse struct {
