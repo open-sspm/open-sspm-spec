@@ -1,0 +1,366 @@
+package celengine
+
+import (
+	"fmt"
+	"regexp"
+	"slices"
+	"strconv"
+	"strings"
+	"sync"
+
+	"github.com/google/cel-go/cel"
+	"github.com/google/cel-go/common/types"
+	"github.com/google/cel-go/common/types/ref"
+)
+
+var (
+	rowsCallRe       = regexp.MustCompile(`\brows\(\s*"([^"]+)"\s*\)`)
+	hasDatasetCallRe = regexp.MustCompile(`\bhas_dataset\(\s*"([^"]+)"\s*\)`)
+	paramCallRe      = regexp.MustCompile(`\bparam\(\s*"([^"]+)"\s*\)`)
+)
+
+type References struct {
+	Datasets         []string
+	RequiredDatasets []string
+	Params           []string
+}
+
+type MissingDatasetError struct {
+	Dataset string
+}
+
+func (e MissingDatasetError) Error() string {
+	return fmt.Sprintf("dataset %q not found", e.Dataset)
+}
+
+type MissingParamError struct {
+	Name string
+}
+
+func (e MissingParamError) Error() string {
+	return fmt.Sprintf("param %q not found", e.Name)
+}
+
+type compiledExpression struct {
+	program cel.Program
+	refs    References
+}
+
+type compiledPredicate struct {
+	program cel.Program
+	refs    References
+}
+
+var compiledCache sync.Map // map[string]compiledExpression
+var compiledPredicateCache sync.Map
+
+func ExtractReferences(expression string) References {
+	requiredDatasets := literalArgs(expression, rowsCallRe)
+	datasets := append([]string{}, requiredDatasets...)
+	datasets = append(datasets, literalArgs(expression, hasDatasetCallRe)...)
+	params := normalizeStringSet(literalArgs(expression, paramCallRe))
+	return References{
+		Datasets:         normalizeStringSet(datasets),
+		RequiredDatasets: normalizeStringSet(requiredDatasets),
+		Params:           params,
+	}
+}
+
+func ValidateExpression(expression string) error {
+	_, err := compileExpression(expression)
+	return err
+}
+
+func ValidatePredicateExpression(expression string) error {
+	_, err := compilePredicateExpression(expression)
+	return err
+}
+
+func Evaluate(expression string, datasets map[string][]any, params map[string]any) (bool, error) {
+	compiled, err := compileExpression(expression)
+	if err != nil {
+		return false, err
+	}
+
+	for _, dataset := range compiled.refs.RequiredDatasets {
+		if _, ok := datasets[dataset]; !ok {
+			return false, MissingDatasetError{Dataset: dataset}
+		}
+	}
+	for _, param := range compiled.refs.Params {
+		if _, ok := params[param]; !ok {
+			return false, MissingParamError{Name: param}
+		}
+	}
+
+	datasetsValue := make(map[string]any, len(datasets))
+	for name, rows := range datasets {
+		datasetsValue[name] = rows
+	}
+	paramsValue := make(map[string]any, len(params))
+	for name, value := range params {
+		paramsValue[name] = value
+	}
+
+	out, _, err := compiled.program.Eval(map[string]any{
+		"datasets": datasetsValue,
+		"params":   paramsValue,
+	})
+	if err != nil {
+		return false, fmt.Errorf("evaluate CEL expression: %w", err)
+	}
+	result, ok := out.Value().(bool)
+	if !ok {
+		return false, fmt.Errorf("CEL expression must return bool, got %T", out.Value())
+	}
+	return result, nil
+}
+
+func EvaluatePredicate(expression string, row any, params map[string]any) (bool, error) {
+	compiled, err := compilePredicateExpression(expression)
+	if err != nil {
+		return false, err
+	}
+
+	if params == nil {
+		params = map[string]any{}
+	}
+	for _, param := range compiled.refs.Params {
+		if _, ok := params[param]; !ok {
+			return false, MissingParamError{Name: param}
+		}
+	}
+
+	paramsValue := make(map[string]any, len(params))
+	for name, value := range params {
+		paramsValue[name] = value
+	}
+
+	out, _, err := compiled.program.Eval(map[string]any{
+		"r":      row,
+		"params": paramsValue,
+	})
+	if err != nil {
+		return false, fmt.Errorf("evaluate CEL predicate: %w", err)
+	}
+	result, ok := out.Value().(bool)
+	if !ok {
+		return false, fmt.Errorf("CEL predicate must return bool, got %T", out.Value())
+	}
+	return result, nil
+}
+
+func ExtractParamReferences(expression string) []string {
+	return normalizeStringSet(literalArgs(expression, paramCallRe))
+}
+
+func compileExpression(expression string) (compiledExpression, error) {
+	expr := strings.TrimSpace(expression)
+	if expr == "" {
+		return compiledExpression{}, fmt.Errorf("CEL expression is required")
+	}
+	if cached, ok := compiledCache.Load(expr); ok {
+		return cached.(compiledExpression), nil
+	}
+
+	env, err := cel.NewEnv(
+		cel.Variable("datasets", cel.MapType(cel.StringType, cel.DynType)),
+		cel.Variable("params", cel.MapType(cel.StringType, cel.DynType)),
+		fieldCELFunction(),
+	)
+	if err != nil {
+		return compiledExpression{}, fmt.Errorf("create CEL environment: %w", err)
+	}
+
+	transformed := transformHelperCalls(expr)
+	ast, iss := env.Compile(transformed)
+	if iss != nil && iss.Err() != nil {
+		return compiledExpression{}, fmt.Errorf("compile CEL expression: %w", iss.Err())
+	}
+	if ast == nil {
+		return compiledExpression{}, fmt.Errorf("compile CEL expression: empty AST")
+	}
+	if !ast.OutputType().IsEquivalentType(cel.BoolType) {
+		return compiledExpression{}, fmt.Errorf("CEL expression must return bool, got %s", ast.OutputType())
+	}
+
+	program, err := env.Program(ast)
+	if err != nil {
+		return compiledExpression{}, fmt.Errorf("build CEL program: %w", err)
+	}
+	compiled := compiledExpression{
+		program: program,
+		refs:    ExtractReferences(expr),
+	}
+	compiledCache.Store(expr, compiled)
+	return compiled, nil
+}
+
+func compilePredicateExpression(expression string) (compiledPredicate, error) {
+	expr := strings.TrimSpace(expression)
+	if expr == "" {
+		return compiledPredicate{}, fmt.Errorf("CEL predicate is required")
+	}
+	if cached, ok := compiledPredicateCache.Load(expr); ok {
+		return cached.(compiledPredicate), nil
+	}
+
+	env, err := cel.NewEnv(
+		cel.Variable("r", cel.DynType),
+		cel.Variable("params", cel.MapType(cel.StringType, cel.DynType)),
+		fieldCELFunction(),
+	)
+	if err != nil {
+		return compiledPredicate{}, fmt.Errorf("create CEL predicate environment: %w", err)
+	}
+
+	transformed := replaceLiteralCalls(expr, paramCallRe, func(name string) string {
+		return fmt.Sprintf(`params[%s]`, strconv.Quote(name))
+	})
+	ast, iss := env.Compile(transformed)
+	if iss != nil && iss.Err() != nil {
+		return compiledPredicate{}, fmt.Errorf("compile CEL predicate: %w", iss.Err())
+	}
+	if ast == nil {
+		return compiledPredicate{}, fmt.Errorf("compile CEL predicate: empty AST")
+	}
+	if !ast.OutputType().IsEquivalentType(cel.BoolType) {
+		return compiledPredicate{}, fmt.Errorf("CEL predicate must return bool, got %s", ast.OutputType())
+	}
+
+	program, err := env.Program(ast)
+	if err != nil {
+		return compiledPredicate{}, fmt.Errorf("build CEL predicate program: %w", err)
+	}
+	compiled := compiledPredicate{
+		program: program,
+		refs: References{
+			Params: ExtractParamReferences(expr),
+		},
+	}
+	compiledPredicateCache.Store(expr, compiled)
+	return compiled, nil
+}
+
+func transformHelperCalls(expression string) string {
+	out := expression
+	out = replaceLiteralCalls(out, rowsCallRe, func(name string) string {
+		return fmt.Sprintf(`datasets[%s]`, strconv.Quote(name))
+	})
+	out = replaceLiteralCalls(out, hasDatasetCallRe, func(name string) string {
+		return fmt.Sprintf(`(%s in datasets)`, strconv.Quote(name))
+	})
+	out = replaceLiteralCalls(out, paramCallRe, func(name string) string {
+		return fmt.Sprintf(`params[%s]`, strconv.Quote(name))
+	})
+	return out
+}
+
+func literalArgs(expression string, re *regexp.Regexp) []string {
+	matches := re.FindAllStringSubmatch(expression, -1)
+	if len(matches) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(matches))
+	for _, match := range matches {
+		if len(match) < 2 {
+			continue
+		}
+		name := strings.TrimSpace(match[1])
+		if name == "" {
+			continue
+		}
+		out = append(out, name)
+	}
+	return out
+}
+
+func replaceLiteralCalls(expression string, re *regexp.Regexp, fn func(name string) string) string {
+	return re.ReplaceAllStringFunc(expression, func(match string) string {
+		sub := re.FindStringSubmatch(match)
+		if len(sub) < 2 {
+			return match
+		}
+		name := strings.TrimSpace(sub[1])
+		if name == "" {
+			return match
+		}
+		return fn(name)
+	})
+}
+
+func normalizeStringSet(values []string) []string {
+	if len(values) == 0 {
+		return []string{}
+	}
+	set := map[string]struct{}{}
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			continue
+		}
+		set[value] = struct{}{}
+	}
+	if len(set) == 0 {
+		return []string{}
+	}
+	out := make([]string, 0, len(set))
+	for value := range set {
+		out = append(out, value)
+	}
+	slices.Sort(out)
+	return out
+}
+
+// fieldCELFunction returns a cel.EnvOption that registers the field(dyn, string) -> dyn
+// function. field safely navigates a nested map using a dot-separated path string,
+// returning null when any intermediate key is missing instead of a runtime error.
+func fieldCELFunction() cel.EnvOption {
+	return cel.Function("field",
+		cel.Overload("field_dyn_string",
+			[]*cel.Type{cel.DynType, cel.StringType},
+			cel.DynType,
+			cel.BinaryBinding(func(lhs, rhs ref.Val) ref.Val {
+				path, ok := rhs.Value().(string)
+				if !ok {
+					return types.NullValue
+				}
+				return fieldNavigate(lhs, path)
+			}),
+		),
+	)
+}
+
+func fieldNavigate(val ref.Val, path string) ref.Val {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return val
+	}
+
+	parts := strings.Split(path, ".")
+	current := val
+	for _, part := range parts {
+		if part == "" {
+			return types.NullValue
+		}
+		m, ok := current.Value().(map[string]any)
+		if !ok {
+			mRef, ok2 := current.Value().(map[ref.Val]ref.Val)
+			if !ok2 {
+				return types.NullValue
+			}
+			next, found := mRef[types.String(part)]
+			if !found {
+				return types.NullValue
+			}
+			current = next
+			continue
+		}
+		next, found := m[part]
+		if !found {
+			return types.NullValue
+		}
+		current = types.DefaultTypeAdapter.NativeToValue(next)
+	}
+	return current
+}

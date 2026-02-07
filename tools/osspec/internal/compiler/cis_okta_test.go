@@ -35,19 +35,8 @@ func TestCompile_CISOktaRulesetIndexed(t *testing.T) {
 	if len(rr.Datasets) != 4 {
 		t.Fatalf("expected 4 datasets, got %+v", rr.Datasets)
 	}
-	if len(rr.ValueParams) != 0 {
-		t.Fatalf("expected no value params, got %+v", rr.ValueParams)
-	}
-
-	foundManual := false
-	for _, ct := range rr.CheckTypes {
-		if ct == types.CheckTypeManualAttestation {
-			foundManual = true
-			break
-		}
-	}
-	if !foundManual {
-		t.Fatalf("expected manual.attestation in check_types, got %+v", rr.CheckTypes)
+	if len(rr.Engines) != 1 || rr.Engines[0] != types.CheckEngineCELPlan {
+		t.Fatalf("expected engines=[cel_plan], got %+v", rr.Engines)
 	}
 
 	if len(rr.Rules) != 24 {
@@ -56,33 +45,33 @@ func TestCompile_CISOktaRulesetIndexed(t *testing.T) {
 	expected := map[string]struct {
 		manual   bool
 		status   types.MonitoringStatus
-		check    types.CheckType
+		engine   *types.CheckEngine
 		datasets int
 	}{
-		"OKTA-APP-000020": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
-		"OKTA-APP-000025": {manual: true, status: types.MonitoringStatusManual, check: types.CheckTypeManualAttestation, datasets: 0},
-		"OKTA-APP-000090": {manual: true, status: types.MonitoringStatusManual, check: types.CheckTypeManualAttestation, datasets: 0},
-		"OKTA-APP-000170": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
-		"OKTA-APP-000180": {manual: true, status: types.MonitoringStatusManual, check: types.CheckTypeManualAttestation, datasets: 0},
-		"OKTA-APP-000190": {manual: true, status: types.MonitoringStatusManual, check: types.CheckTypeManualAttestation, datasets: 0},
-		"OKTA-APP-000200": {manual: true, status: types.MonitoringStatusManual, check: types.CheckTypeManualAttestation, datasets: 0},
-		"OKTA-APP-000560": {manual: true, status: types.MonitoringStatusManual, check: types.CheckTypeManualAttestation, datasets: 0},
-		"OKTA-APP-000570": {manual: true, status: types.MonitoringStatusManual, check: types.CheckTypeManualAttestation, datasets: 0},
-		"OKTA-APP-000650": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
-		"OKTA-APP-000670": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
-		"OKTA-APP-000680": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
-		"OKTA-APP-000690": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
-		"OKTA-APP-000700": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
-		"OKTA-APP-000740": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
-		"OKTA-APP-000745": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
-		"OKTA-APP-001430": {manual: false, status: types.MonitoringStatusPartial, check: types.CheckTypeDatasetCountCompare, datasets: 1},
-		"OKTA-APP-001665": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
-		"OKTA-APP-001670": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
-		"OKTA-APP-001700": {manual: true, status: types.MonitoringStatusManual, check: types.CheckTypeManualAttestation, datasets: 0},
-		"OKTA-APP-001710": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
-		"OKTA-APP-001920": {manual: true, status: types.MonitoringStatusManual, check: types.CheckTypeManualAttestation, datasets: 0},
-		"OKTA-APP-002980": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
-		"OKTA-APP-003010": {manual: false, status: types.MonitoringStatusAutomated, check: types.CheckTypeDatasetFieldCompare, datasets: 1},
+		"OKTA-APP-000020": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
+		"OKTA-APP-000025": {manual: true, status: types.MonitoringStatusManual, engine: nil, datasets: 0},
+		"OKTA-APP-000090": {manual: true, status: types.MonitoringStatusManual, engine: nil, datasets: 0},
+		"OKTA-APP-000170": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
+		"OKTA-APP-000180": {manual: true, status: types.MonitoringStatusManual, engine: nil, datasets: 0},
+		"OKTA-APP-000190": {manual: true, status: types.MonitoringStatusManual, engine: nil, datasets: 0},
+		"OKTA-APP-000200": {manual: true, status: types.MonitoringStatusManual, engine: nil, datasets: 0},
+		"OKTA-APP-000560": {manual: true, status: types.MonitoringStatusManual, engine: nil, datasets: 0},
+		"OKTA-APP-000570": {manual: true, status: types.MonitoringStatusManual, engine: nil, datasets: 0},
+		"OKTA-APP-000650": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
+		"OKTA-APP-000670": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
+		"OKTA-APP-000680": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
+		"OKTA-APP-000690": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
+		"OKTA-APP-000700": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
+		"OKTA-APP-000740": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
+		"OKTA-APP-000745": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
+		"OKTA-APP-001430": {manual: false, status: types.MonitoringStatusPartial, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
+		"OKTA-APP-001665": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
+		"OKTA-APP-001670": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
+		"OKTA-APP-001700": {manual: true, status: types.MonitoringStatusManual, engine: nil, datasets: 0},
+		"OKTA-APP-001710": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
+		"OKTA-APP-001920": {manual: true, status: types.MonitoringStatusManual, engine: nil, datasets: 0},
+		"OKTA-APP-002980": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
+		"OKTA-APP-003010": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
 	}
 
 	for _, r := range rr.Rules {
@@ -93,8 +82,8 @@ func TestCompile_CISOktaRulesetIndexed(t *testing.T) {
 		if r.IsManual != exp.manual {
 			t.Fatalf("expected rule %q is_manual=%v, got %v", r.RuleKey, exp.manual, r.IsManual)
 		}
-		if r.CheckType == nil || *r.CheckType != exp.check {
-			t.Fatalf("expected rule %q check_type=%q, got %#v", r.RuleKey, exp.check, r.CheckType)
+		if !sameEngine(r.Engine, exp.engine) {
+			t.Fatalf("expected rule %q engine=%v, got %#v", r.RuleKey, exp.engine, r.Engine)
 		}
 		if r.Monitoring.Status != exp.status {
 			t.Fatalf("expected rule %q monitoring.status=%q, got %q", r.RuleKey, exp.status, r.Monitoring.Status)
@@ -102,8 +91,16 @@ func TestCompile_CISOktaRulesetIndexed(t *testing.T) {
 		if len(r.Datasets) != exp.datasets {
 			t.Fatalf("expected rule %q to have %d datasets, got %+v", r.RuleKey, exp.datasets, r.Datasets)
 		}
-		if len(r.ValueParams) != 0 {
-			t.Fatalf("expected rule %q to have no value params, got %+v", r.RuleKey, r.ValueParams)
-		}
 	}
+}
+
+func ptrEngine(v types.CheckEngine) *types.CheckEngine {
+	return &v
+}
+
+func sameEngine(a, b *types.CheckEngine) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	return *a == *b
 }

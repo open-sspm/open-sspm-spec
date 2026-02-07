@@ -1,10 +1,6 @@
 "kind": "opensspm.requirements_index"
 "rulesets":
   -
-    "check_types":
-      - "dataset.count_compare"
-      - "dataset.field_compare"
-      - "manual.attestation"
     "datasets":
       -
         "dataset": "okta:authenticators"
@@ -18,248 +14,310 @@
       -
         "dataset": "okta:policies/sign-on"
         "version": 1
+    "datasets_referenced":
+      - "okta:authenticators"
+      - "okta:log-streams"
+      - "okta:policies/password"
+      - "okta:policies/sign-on"
+    "engines":
+      - "cel_plan"
+    "inputs": []
+    "params_referenced": []
     "rules":
       -
-        "check_type": "dataset.field_compare"
         "datasets":
           -
             "dataset": "okta:policies/sign-on"
             "version": 1
+        "datasets_referenced":
+          - "okta:policies/sign-on"
+        "engine": "cel_plan"
+        "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
+        "params_referenced": []
         "rule_key": "OKTA-APP-000020"
-        "value_params": []
       -
-        "check_type": "manual.attestation"
         "datasets": []
+        "datasets_referenced": []
+        "inputs": []
         "is_manual": true
         "monitoring":
           "status": "manual"
+        "params_referenced": []
         "rule_key": "OKTA-APP-000025"
-        "value_params": []
       -
-        "check_type": "manual.attestation"
         "datasets": []
+        "datasets_referenced": []
+        "inputs": []
         "is_manual": true
         "monitoring":
           "status": "manual"
+        "params_referenced": []
         "rule_key": "OKTA-APP-000090"
-        "value_params": []
       -
-        "check_type": "dataset.field_compare"
         "datasets":
           -
             "dataset": "okta:policies/password"
             "version": 1
+        "datasets_referenced":
+          - "okta:policies/password"
+        "engine": "cel_plan"
+        "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
+        "params_referenced": []
         "rule_key": "OKTA-APP-000170"
-        "value_params": []
       -
-        "check_type": "manual.attestation"
         "datasets": []
+        "datasets_referenced": []
+        "inputs": []
         "is_manual": true
         "monitoring":
           "status": "manual"
+        "params_referenced": []
         "rule_key": "OKTA-APP-000180"
-        "value_params": []
       -
-        "check_type": "manual.attestation"
         "datasets": []
+        "datasets_referenced": []
+        "inputs": []
         "is_manual": true
         "monitoring":
           "status": "manual"
+        "params_referenced": []
         "rule_key": "OKTA-APP-000190"
-        "value_params": []
       -
-        "check_type": "manual.attestation"
         "datasets": []
+        "datasets_referenced": []
+        "inputs": []
         "is_manual": true
         "monitoring":
           "status": "manual"
+        "params_referenced": []
         "rule_key": "OKTA-APP-000200"
-        "value_params": []
       -
-        "check_type": "manual.attestation"
         "datasets": []
+        "datasets_referenced": []
+        "inputs": []
         "is_manual": true
         "monitoring":
           "status": "manual"
+        "params_referenced": []
         "rule_key": "OKTA-APP-000560"
-        "value_params": []
       -
-        "check_type": "manual.attestation"
         "datasets": []
+        "datasets_referenced": []
+        "inputs": []
         "is_manual": true
         "monitoring":
           "status": "manual"
+        "params_referenced": []
         "rule_key": "OKTA-APP-000570"
-        "value_params": []
       -
-        "check_type": "dataset.field_compare"
         "datasets":
           -
             "dataset": "okta:policies/password"
             "version": 1
+        "datasets_referenced":
+          - "okta:policies/password"
+        "engine": "cel_plan"
+        "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
+        "params_referenced": []
         "rule_key": "OKTA-APP-000650"
-        "value_params": []
       -
-        "check_type": "dataset.field_compare"
         "datasets":
           -
             "dataset": "okta:policies/password"
             "version": 1
+        "datasets_referenced":
+          - "okta:policies/password"
+        "engine": "cel_plan"
+        "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
+        "params_referenced": []
         "rule_key": "OKTA-APP-000670"
-        "value_params": []
       -
-        "check_type": "dataset.field_compare"
         "datasets":
           -
             "dataset": "okta:policies/password"
             "version": 1
+        "datasets_referenced":
+          - "okta:policies/password"
+        "engine": "cel_plan"
+        "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
+        "params_referenced": []
         "rule_key": "OKTA-APP-000680"
-        "value_params": []
       -
-        "check_type": "dataset.field_compare"
         "datasets":
           -
             "dataset": "okta:policies/password"
             "version": 1
+        "datasets_referenced":
+          - "okta:policies/password"
+        "engine": "cel_plan"
+        "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
+        "params_referenced": []
         "rule_key": "OKTA-APP-000690"
-        "value_params": []
       -
-        "check_type": "dataset.field_compare"
         "datasets":
           -
             "dataset": "okta:policies/password"
             "version": 1
+        "datasets_referenced":
+          - "okta:policies/password"
+        "engine": "cel_plan"
+        "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
+        "params_referenced": []
         "rule_key": "OKTA-APP-000700"
-        "value_params": []
       -
-        "check_type": "dataset.field_compare"
         "datasets":
           -
             "dataset": "okta:policies/password"
             "version": 1
+        "datasets_referenced":
+          - "okta:policies/password"
+        "engine": "cel_plan"
+        "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
+        "params_referenced": []
         "rule_key": "OKTA-APP-000740"
-        "value_params": []
       -
-        "check_type": "dataset.field_compare"
         "datasets":
           -
             "dataset": "okta:policies/password"
             "version": 1
+        "datasets_referenced":
+          - "okta:policies/password"
+        "engine": "cel_plan"
+        "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
+        "params_referenced": []
         "rule_key": "OKTA-APP-000745"
-        "value_params": []
       -
-        "check_type": "dataset.count_compare"
         "datasets":
           -
             "dataset": "okta:log-streams"
             "version": 1
+        "datasets_referenced":
+          - "okta:log-streams"
+        "engine": "cel_plan"
+        "inputs": []
         "is_manual": false
         "monitoring":
           "status": "partial"
+        "params_referenced": []
         "rule_key": "OKTA-APP-001430"
-        "value_params": []
       -
-        "check_type": "dataset.field_compare"
         "datasets":
           -
             "dataset": "okta:policies/sign-on"
             "version": 1
+        "datasets_referenced":
+          - "okta:policies/sign-on"
+        "engine": "cel_plan"
+        "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
+        "params_referenced": []
         "rule_key": "OKTA-APP-001665"
-        "value_params": []
       -
-        "check_type": "dataset.field_compare"
         "datasets":
           -
             "dataset": "okta:authenticators"
             "version": 1
+        "datasets_referenced":
+          - "okta:authenticators"
+        "engine": "cel_plan"
+        "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
+        "params_referenced": []
         "rule_key": "OKTA-APP-001670"
-        "value_params": []
       -
-        "check_type": "manual.attestation"
         "datasets": []
+        "datasets_referenced": []
+        "inputs": []
         "is_manual": true
         "monitoring":
           "status": "manual"
+        "params_referenced": []
         "rule_key": "OKTA-APP-001700"
-        "value_params": []
       -
-        "check_type": "dataset.field_compare"
         "datasets":
           -
             "dataset": "okta:policies/sign-on"
             "version": 1
+        "datasets_referenced":
+          - "okta:policies/sign-on"
+        "engine": "cel_plan"
+        "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
+        "params_referenced": []
         "rule_key": "OKTA-APP-001710"
-        "value_params": []
       -
-        "check_type": "manual.attestation"
         "datasets": []
+        "datasets_referenced": []
+        "inputs": []
         "is_manual": true
         "monitoring":
           "status": "manual"
+        "params_referenced": []
         "rule_key": "OKTA-APP-001920"
-        "value_params": []
       -
-        "check_type": "dataset.field_compare"
         "datasets":
           -
             "dataset": "okta:policies/password"
             "version": 1
+        "datasets_referenced":
+          - "okta:policies/password"
+        "engine": "cel_plan"
+        "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
+        "params_referenced": []
         "rule_key": "OKTA-APP-002980"
-        "value_params": []
       -
-        "check_type": "dataset.field_compare"
         "datasets":
           -
             "dataset": "okta:policies/password"
             "version": 1
+        "datasets_referenced":
+          - "okta:policies/password"
+        "engine": "cel_plan"
+        "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
+        "params_referenced": []
         "rule_key": "OKTA-APP-003010"
-        "value_params": []
     "ruleset_key": "cis.okta.idaas_stig.v2"
     "scope":
       "connector_kind": "okta"
       "kind": "connector_instance"
     "status": "active"
-    "value_params": []
 "schema_version": 2

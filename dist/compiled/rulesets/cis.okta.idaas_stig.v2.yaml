@@ -27,32 +27,16 @@
   "rules":
     -
       "check":
-        "assert":
-          "op": "eq"
-          "path": "/actions/signon/session/maxSessionIdleMinutes"
-          "value": 15
-        "dataset": "okta:policies/sign-on"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "fail"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "neq"
-            "path": "/name"
-            "value": "Default Rule"
-          -
-            "op": "eq"
-            "path": "/policy/name"
-            "value": "Default Policy"
-          -
-            "op": "eq"
-            "path": "/priority"
-            "value": 1
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"actions.signon.session.maxSessionIdleMinutes\") == 15"
+          "dataset": "okta:policies/sign-on"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "fail"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"policy.name\") == \"Default Policy\" \u0026\u0026 field(r, \"priority\") == 1 \u0026\u0026 field(r, \"name\") != \"Default Rule\""
       "key": "OKTA-APP-000020"
       "monitoring":
         "status": "automated"
@@ -67,11 +51,6 @@
       "summary": "Checks Global Session Policy rule priority 1 idle timeout."
       "title": "OKTA-APP-000020"
     -
-      "check":
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "manual.attestation"
       "key": "OKTA-APP-000025"
       "monitoring":
         "status": "manual"
@@ -85,11 +64,6 @@
       "summary": "See CIS benchmark recommendation OKTA-APP-000025"
       "title": "OKTA-APP-000025"
     -
-      "check":
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "manual.attestation"
       "key": "OKTA-APP-000090"
       "monitoring":
         "status": "manual"
@@ -104,24 +78,16 @@
       "title": "OKTA-APP-000090"
     -
       "check":
-        "assert":
-          "op": "eq"
-          "path": "/settings/password/lockout/maxAttempts"
-          "value": 3
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "/status"
-            "value": "ACTIVE"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.lockout.maxAttempts\") == 3"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-000170"
       "monitoring":
         "status": "automated"
@@ -136,11 +102,6 @@
       "summary": "Checks password lockout threshold for active password policies."
       "title": "OKTA-APP-000170"
     -
-      "check":
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "manual.attestation"
       "key": "OKTA-APP-000180"
       "monitoring":
         "status": "manual"
@@ -158,11 +119,6 @@
       "summary": "See CIS benchmark recommendation OKTA-APP-000180"
       "title": "OKTA-APP-000180"
     -
-      "check":
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "manual.attestation"
       "key": "OKTA-APP-000190"
       "monitoring":
         "status": "manual"
@@ -180,11 +136,6 @@
       "summary": "See CIS benchmark recommendation OKTA-APP-000190"
       "title": "OKTA-APP-000190"
     -
-      "check":
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "manual.attestation"
       "key": "OKTA-APP-000200"
       "monitoring":
         "status": "manual"
@@ -198,11 +149,6 @@
       "summary": "See CIS benchmark recommendation OKTA-APP-000200"
       "title": "OKTA-APP-000200"
     -
-      "check":
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "manual.attestation"
       "key": "OKTA-APP-000560"
       "monitoring":
         "status": "manual"
@@ -216,11 +162,6 @@
       "summary": "See CIS benchmark recommendation OKTA-APP-000560"
       "title": "OKTA-APP-000560"
     -
-      "check":
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "manual.attestation"
       "key": "OKTA-APP-000570"
       "monitoring":
         "status": "manual"
@@ -235,24 +176,16 @@
       "title": "OKTA-APP-000570"
     -
       "check":
-        "assert":
-          "op": "gte"
-          "path": "/settings/password/complexity/minLength"
-          "value": 15
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "/status"
-            "value": "ACTIVE"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.complexity.minLength\") \u003e= 15"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-000650"
       "monitoring":
         "status": "automated"
@@ -268,24 +201,16 @@
       "title": "OKTA-APP-000650"
     -
       "check":
-        "assert":
-          "op": "gte"
-          "path": "/settings/password/complexity/minUpperCase"
-          "value": 1
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "/status"
-            "value": "ACTIVE"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.complexity.minUpperCase\") \u003e= 1"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-000670"
       "monitoring":
         "status": "automated"
@@ -301,24 +226,16 @@
       "title": "OKTA-APP-000670"
     -
       "check":
-        "assert":
-          "op": "gte"
-          "path": "/settings/password/complexity/minLowerCase"
-          "value": 1
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "/status"
-            "value": "ACTIVE"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.complexity.minLowerCase\") \u003e= 1"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-000680"
       "monitoring":
         "status": "automated"
@@ -334,24 +251,16 @@
       "title": "OKTA-APP-000680"
     -
       "check":
-        "assert":
-          "op": "gte"
-          "path": "/settings/password/complexity/minNumber"
-          "value": 1
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "/status"
-            "value": "ACTIVE"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.complexity.minNumber\") \u003e= 1"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-000690"
       "monitoring":
         "status": "automated"
@@ -367,24 +276,16 @@
       "title": "OKTA-APP-000690"
     -
       "check":
-        "assert":
-          "op": "gte"
-          "path": "/settings/password/complexity/minSymbol"
-          "value": 1
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "/status"
-            "value": "ACTIVE"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.complexity.minSymbol\") \u003e= 1"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-000700"
       "monitoring":
         "status": "automated"
@@ -400,24 +301,16 @@
       "title": "OKTA-APP-000700"
     -
       "check":
-        "assert":
-          "op": "gte"
-          "path": "/settings/password/age/minAgeMinutes"
-          "value": 1440
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "/status"
-            "value": "ACTIVE"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.age.minAgeMinutes\") \u003e= 1440"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-000740"
       "monitoring":
         "status": "automated"
@@ -433,24 +326,16 @@
       "title": "OKTA-APP-000740"
     -
       "check":
-        "assert":
-          "op": "eq"
-          "path": "/settings/password/age/maxAgeDays"
-          "value": 60
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "/status"
-            "value": "ACTIVE"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.age.maxAgeDays\") == 60"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-000745"
       "monitoring":
         "status": "automated"
@@ -466,19 +351,14 @@
       "title": "OKTA-APP-000745"
     -
       "check":
-        "compare":
-          "op": "gte"
-          "value": 1
-        "dataset": "okta:log-streams"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "dataset.count_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "/status"
-            "value": "ACTIVE"
+        "engine": "cel_plan"
+        "plan":
+          "compare":
+            "op": "gte"
+            "value": 1
+          "dataset": "okta:log-streams"
+          "type": "dataset.count_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-001430"
       "monitoring":
         "reason": "Okta logs can also be exported via the System Log API; this check only covers Log Streaming."
@@ -495,32 +375,16 @@
       "title": "OKTA-APP-001430"
     -
       "check":
-        "assert":
-          "op": "eq"
-          "path": "/actions/signon/session/maxSessionLifetimeMinutes"
-          "value": 1080
-        "dataset": "okta:policies/sign-on"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "fail"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "neq"
-            "path": "/name"
-            "value": "Default Rule"
-          -
-            "op": "eq"
-            "path": "/policy/name"
-            "value": "Default Policy"
-          -
-            "op": "eq"
-            "path": "/priority"
-            "value": 1
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"actions.signon.session.maxSessionLifetimeMinutes\") == 1080"
+          "dataset": "okta:policies/sign-on"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "fail"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"policy.name\") == \"Default Policy\" \u0026\u0026 field(r, \"priority\") == 1 \u0026\u0026 field(r, \"name\") != \"Default Rule\""
       "key": "OKTA-APP-001665"
       "monitoring":
         "status": "automated"
@@ -536,24 +400,16 @@
       "title": "OKTA-APP-001665"
     -
       "check":
-        "assert":
-          "op": "eq"
-          "path": "/status"
-          "value": "ACTIVE"
-        "dataset": "okta:authenticators"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "fail"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "/name"
-            "value": "Smart Card Authenticator"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"status\") == \"ACTIVE\""
+          "dataset": "okta:authenticators"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "fail"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"name\") == \"Smart Card Authenticator\""
       "key": "OKTA-APP-001670"
       "monitoring":
         "status": "automated"
@@ -568,11 +424,6 @@
       "summary": "Checks that the Smart Card Authenticator is present and active."
       "title": "OKTA-APP-001670"
     -
-      "check":
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "manual.attestation"
       "key": "OKTA-APP-001700"
       "monitoring":
         "status": "manual"
@@ -587,32 +438,16 @@
       "title": "OKTA-APP-001700"
     -
       "check":
-        "assert":
-          "op": "eq"
-          "path": "/actions/signon/session/usePersistentCookie"
-          "value": false
-        "dataset": "okta:policies/sign-on"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "fail"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "neq"
-            "path": "/name"
-            "value": "Default Rule"
-          -
-            "op": "eq"
-            "path": "/policy/name"
-            "value": "Default Policy"
-          -
-            "op": "eq"
-            "path": "/priority"
-            "value": 1
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"actions.signon.session.usePersistentCookie\") == false"
+          "dataset": "okta:policies/sign-on"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "fail"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"policy.name\") == \"Default Policy\" \u0026\u0026 field(r, \"priority\") == 1 \u0026\u0026 field(r, \"name\") != \"Default Rule\""
       "key": "OKTA-APP-001710"
       "monitoring":
         "status": "automated"
@@ -627,11 +462,6 @@
       "summary": "Checks Global Session Policy rule priority 1 persistent cookie setting."
       "title": "OKTA-APP-001710"
     -
-      "check":
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "manual.attestation"
       "key": "OKTA-APP-001920"
       "monitoring":
         "status": "manual"
@@ -650,24 +480,16 @@
       "title": "OKTA-APP-001920"
     -
       "check":
-        "assert":
-          "op": "eq"
-          "path": "/settings/password/complexity/dictionary/common/exclude"
-          "value": true
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "/status"
-            "value": "ACTIVE"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.complexity.dictionary.common.exclude\") == true"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-002980"
       "monitoring":
         "status": "automated"
@@ -683,24 +505,16 @@
       "title": "OKTA-APP-002980"
     -
       "check":
-        "assert":
-          "op": "gte"
-          "path": "/settings/password/age/historyCount"
-          "value": 5
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "/status"
-            "value": "ACTIVE"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.age.historyCount\") \u003e= 5"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-003010"
       "monitoring":
         "status": "automated"

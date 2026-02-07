@@ -1,6 +1,8 @@
 package compiler
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -9,8 +11,9 @@ import (
 )
 
 func TestBuildRequirements_CapturesRulesetAndRuleDetails(t *testing.T) {
-	checkTypeManual := types.CheckTypeManualAttestation
-	checkTypeCount := types.CheckTypeDatasetCountCompare
+	r1Expr := `rows("okta:log-streams").exists(r, r["enabled"] == param("enabled")) && rows("okta:log-streams").size() >= int(param("min"))`
+	r3Expr := `rows("okta:log-streams").exists(r, r["enabled"] == param("enabled"))`
+	engineCEL := types.CheckEngineCEL
 
 	b := &schemasem.Bundle{
 		Rulesets: []struct {
@@ -39,13 +42,8 @@ func TestBuildRequirements_CapturesRulesetAndRuleDetails(t *testing.T) {
 								RequiredData: []string{"okta:log-streams"},
 								Parameters:   &types.Parameters{Defaults: map[string]any{"min": 1, "enabled": true}},
 								Check: &types.Check{
-									Type:    types.CheckTypeDatasetCountCompare,
-									Dataset: "okta:log-streams",
-									// omit dataset_version; effective version should resolve from ruleset.data_contracts (2)
-									Where: []types.Predicate{
-										{Path: "/enabled", Op: types.OperatorEq, ValueParam: "enabled"},
-									},
-									Compare: &types.Compare{Op: types.CompareOpGte, ValueParam: "min"},
+									Engine:     types.CheckEngineCEL,
+									Expression: r1Expr,
 								},
 							},
 							{
@@ -54,7 +52,23 @@ func TestBuildRequirements_CapturesRulesetAndRuleDetails(t *testing.T) {
 								Severity:     types.SeverityInfo,
 								Monitoring:   types.Monitoring{Status: types.MonitoringStatusManual},
 								RequiredData: []string{},
-								Check:        &types.Check{Type: types.CheckTypeManualAttestation},
+							},
+							{
+								Key:        "R3",
+								Title:      "R3",
+								Severity:   types.SeverityLow,
+								Monitoring: types.Monitoring{Status: types.MonitoringStatusAutomated},
+								Parameters: &types.Parameters{
+									Defaults: map[string]any{"enabled": false, "threshold": 5},
+									Schema: map[string]types.ParameterSchema{
+										"enabled":   {Type: "boolean"},
+										"threshold": {Type: "integer"},
+									},
+								},
+								Check: &types.Check{
+									Engine:     types.CheckEngineCEL,
+									Expression: r3Expr,
+								},
 							},
 						},
 					},
@@ -69,37 +83,96 @@ func TestBuildRequirements_CapturesRulesetAndRuleDetails(t *testing.T) {
 		Kind:          "opensspm.requirements_index",
 		Rulesets: []types.RulesetRequirement{
 			{
-				RulesetKey: "example.ruleset.v2",
-				Status:     "active",
-				Scope:      types.Scope{Kind: types.ScopeKindGlobal},
-				Datasets: []types.DatasetRefSpec{
-					{Dataset: "okta:log-streams", Version: 2},
-				},
-				CheckTypes: []types.CheckType{
-					types.CheckTypeDatasetCountCompare,
-					types.CheckTypeManualAttestation,
-				},
-				ValueParams: []string{"enabled", "min"},
-				Rules: []types.RuleRequirement{
+				RulesetKey:         "example.ruleset.v2",
+				Status:             "active",
+				Scope:              types.Scope{Kind: types.ScopeKindGlobal},
+				Datasets:           []types.DatasetRefSpec{{Dataset: "okta:log-streams", Version: 2}},
+				Engines:            []types.CheckEngine{types.CheckEngineCEL},
+				DatasetsReferenced: []string{"okta:log-streams"},
+				ParamsReferenced:   []string{"enabled", "min"},
+				Inputs: []types.RulesetInputRequirement{
 					{
-						RuleKey:    "R1",
-						IsManual:   false,
-						Datasets:   []types.DatasetRefSpec{{Dataset: "okta:log-streams", Version: 2}},
-						CheckType:  &checkTypeCount,
-						ValueParams: []string{"enabled", "min"},
-						Monitoring: struct {
-							Status types.MonitoringStatus `json:"status"`
-						}{Status: types.MonitoringStatusAutomated},
+						Name:     "enabled",
+						Type:     "boolean",
+						Sources:  []string{"defaults", "schema", "expression_param"},
+						RuleKeys: []string{"R1", "R3"},
 					},
 					{
-						RuleKey:    "R2",
-						IsManual:   true,
-						Datasets:   []types.DatasetRefSpec{},
-						CheckType:  &checkTypeManual,
-						ValueParams: []string{},
-						Monitoring: struct {
-							Status types.MonitoringStatus `json:"status"`
-						}{Status: types.MonitoringStatusManual},
+						Name:     "min",
+						Sources:  []string{"defaults", "expression_param"},
+						RuleKeys: []string{"R1"},
+					},
+					{
+						Name:     "threshold",
+						Type:     "integer",
+						Sources:  []string{"defaults", "schema"},
+						RuleKeys: []string{"R3"},
+					},
+				},
+				Rules: []types.RuleRequirement{
+					{
+						RuleKey:            "R1",
+						IsManual:           false,
+						Datasets:           []types.DatasetRefSpec{{Dataset: "okta:log-streams", Version: 2}},
+						Engine:             &engineCEL,
+						Expression:         r1Expr,
+						ExpressionSHA256:   hashExpr(r1Expr),
+						DatasetsReferenced: []string{"okta:log-streams"},
+						ParamsReferenced:   []string{"enabled", "min"},
+						Inputs: []types.RuleInputRequirement{
+							{
+								Name:       "enabled",
+								Default:    true,
+								HasDefault: true,
+								Sources:    []string{"defaults", "expression_param"},
+							},
+							{
+								Name:       "min",
+								Default:    1,
+								HasDefault: true,
+								Sources:    []string{"defaults", "expression_param"},
+							},
+						},
+						Monitoring: types.RuleRequirementMonitoring{Status: types.MonitoringStatusAutomated},
+					},
+					{
+						RuleKey:            "R2",
+						IsManual:           true,
+						Datasets:           []types.DatasetRefSpec{},
+						Engine:             nil,
+						Expression:         "",
+						ExpressionSHA256:   "",
+						DatasetsReferenced: []string{},
+						ParamsReferenced:   []string{},
+						Inputs:             []types.RuleInputRequirement{},
+						Monitoring:         types.RuleRequirementMonitoring{Status: types.MonitoringStatusManual},
+					},
+					{
+						RuleKey:            "R3",
+						IsManual:           false,
+						Datasets:           []types.DatasetRefSpec{{Dataset: "okta:log-streams", Version: 2}},
+						Engine:             &engineCEL,
+						Expression:         r3Expr,
+						ExpressionSHA256:   hashExpr(r3Expr),
+						DatasetsReferenced: []string{"okta:log-streams"},
+						ParamsReferenced:   []string{"enabled"},
+						Inputs: []types.RuleInputRequirement{
+							{
+								Name:       "enabled",
+								Type:       "boolean",
+								Default:    false,
+								HasDefault: true,
+								Sources:    []string{"defaults", "schema", "expression_param"},
+							},
+							{
+								Name:       "threshold",
+								Type:       "integer",
+								Default:    5,
+								HasDefault: true,
+								Sources:    []string{"defaults", "schema"},
+							},
+						},
+						Monitoring: types.RuleRequirementMonitoring{Status: types.MonitoringStatusAutomated},
 					},
 				},
 			},
@@ -111,3 +184,7 @@ func TestBuildRequirements_CapturesRulesetAndRuleDetails(t *testing.T) {
 	}
 }
 
+func hashExpr(expr string) string {
+	sum := sha256.Sum256([]byte(expr))
+	return hex.EncodeToString(sum[:])
+}

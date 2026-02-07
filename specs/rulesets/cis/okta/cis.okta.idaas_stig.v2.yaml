@@ -27,7 +27,7 @@
       "check":
         "assert":
           "op": "eq"
-          "path": "/actions/signon/session/maxSessionIdleMinutes"
+          "path": "actions.signon.session.maxSessionIdleMinutes"
           "value": 15
         "dataset": "okta:policies/sign-on"
         "expect":
@@ -38,15 +38,15 @@
         "where":
           -
             "op": "eq"
-            "path": "/policy/name"
+            "path": "policy.name"
             "value": "Default Policy"
           -
             "op": "eq"
-            "path": "/priority"
+            "path": "priority"
             "value": 1
           -
             "op": "neq"
-            "path": "/name"
+            "path": "name"
             "value": "Default Rule"
       "key": "OKTA-APP-000020"
       "monitoring":
@@ -95,7 +95,7 @@
       "check":
         "assert":
           "op": "eq"
-          "path": "/settings/password/lockout/maxAttempts"
+          "path": "settings.password.lockout.maxAttempts"
           "value": 3
         "dataset": "okta:policies/password"
         "expect":
@@ -106,7 +106,7 @@
         "where":
           -
             "op": "eq"
-            "path": "/status"
+            "path": "status"
             "value": "ACTIVE"
       "key": "OKTA-APP-000170"
       "monitoring":
@@ -208,7 +208,7 @@
       "check":
         "assert":
           "op": "gte"
-          "path": "/settings/password/complexity/minLength"
+          "path": "settings.password.complexity.minLength"
           "value": 15
         "dataset": "okta:policies/password"
         "expect":
@@ -219,7 +219,7 @@
         "where":
           -
             "op": "eq"
-            "path": "/status"
+            "path": "status"
             "value": "ACTIVE"
       "key": "OKTA-APP-000650"
       "monitoring":
@@ -238,7 +238,7 @@
       "check":
         "assert":
           "op": "gte"
-          "path": "/settings/password/complexity/minUpperCase"
+          "path": "settings.password.complexity.minUpperCase"
           "value": 1
         "dataset": "okta:policies/password"
         "expect":
@@ -249,7 +249,7 @@
         "where":
           -
             "op": "eq"
-            "path": "/status"
+            "path": "status"
             "value": "ACTIVE"
       "key": "OKTA-APP-000670"
       "monitoring":
@@ -268,7 +268,7 @@
       "check":
         "assert":
           "op": "gte"
-          "path": "/settings/password/complexity/minLowerCase"
+          "path": "settings.password.complexity.minLowerCase"
           "value": 1
         "dataset": "okta:policies/password"
         "expect":
@@ -279,7 +279,7 @@
         "where":
           -
             "op": "eq"
-            "path": "/status"
+            "path": "status"
             "value": "ACTIVE"
       "key": "OKTA-APP-000680"
       "monitoring":
@@ -298,7 +298,7 @@
       "check":
         "assert":
           "op": "gte"
-          "path": "/settings/password/complexity/minNumber"
+          "path": "settings.password.complexity.minNumber"
           "value": 1
         "dataset": "okta:policies/password"
         "expect":
@@ -309,7 +309,7 @@
         "where":
           -
             "op": "eq"
-            "path": "/status"
+            "path": "status"
             "value": "ACTIVE"
       "key": "OKTA-APP-000690"
       "monitoring":
@@ -328,7 +328,7 @@
       "check":
         "assert":
           "op": "gte"
-          "path": "/settings/password/complexity/minSymbol"
+          "path": "settings.password.complexity.minSymbol"
           "value": 1
         "dataset": "okta:policies/password"
         "expect":
@@ -339,7 +339,7 @@
         "where":
           -
             "op": "eq"
-            "path": "/status"
+            "path": "status"
             "value": "ACTIVE"
       "key": "OKTA-APP-000700"
       "monitoring":
@@ -358,7 +358,7 @@
       "check":
         "assert":
           "op": "gte"
-          "path": "/settings/password/age/minAgeMinutes"
+          "path": "settings.password.age.minAgeMinutes"
           "value": 1440
         "dataset": "okta:policies/password"
         "expect":
@@ -369,7 +369,7 @@
         "where":
           -
             "op": "eq"
-            "path": "/status"
+            "path": "status"
             "value": "ACTIVE"
       "key": "OKTA-APP-000740"
       "monitoring":
@@ -388,7 +388,7 @@
       "check":
         "assert":
           "op": "eq"
-          "path": "/settings/password/age/maxAgeDays"
+          "path": "settings.password.age.maxAgeDays"
           "value": 60
         "dataset": "okta:policies/password"
         "expect":
@@ -399,7 +399,7 @@
         "where":
           -
             "op": "eq"
-            "path": "/status"
+            "path": "status"
             "value": "ACTIVE"
       "key": "OKTA-APP-000745"
       "monitoring":
@@ -424,7 +424,7 @@
         "where":
           -
             "op": "eq"
-            "path": "/status"
+            "path": "status"
             "value": "ACTIVE"
       "key": "OKTA-APP-001430"
       "monitoring":
@@ -444,7 +444,7 @@
       "check":
         "assert":
           "op": "eq"
-          "path": "/actions/signon/session/maxSessionLifetimeMinutes"
+          "path": "actions.signon.session.maxSessionLifetimeMinutes"
           "value": 1080
         "dataset": "okta:policies/sign-on"
         "expect":
@@ -455,15 +455,15 @@
         "where":
           -
             "op": "eq"
-            "path": "/policy/name"
+            "path": "policy.name"
             "value": "Default Policy"
           -
             "op": "eq"
-            "path": "/priority"
+            "path": "priority"
             "value": 1
           -
             "op": "neq"
-            "path": "/name"
+            "path": "name"
             "value": "Default Rule"
       "key": "OKTA-APP-001665"
       "monitoring":
@@ -482,7 +482,7 @@
       "check":
         "assert":
           "op": "eq"
-          "path": "/status"
+          "path": "status"
           "value": "ACTIVE"
         "dataset": "okta:authenticators"
         "expect":
@@ -493,7 +493,7 @@
         "where":
           -
             "op": "eq"
-            "path": "/name"
+            "path": "name"
             "value": "Smart Card Authenticator"
       "key": "OKTA-APP-001670"
       "monitoring":
@@ -527,7 +527,7 @@
       "check":
         "assert":
           "op": "eq"
-          "path": "/actions/signon/session/usePersistentCookie"
+          "path": "actions.signon.session.usePersistentCookie"
           "value": false
         "dataset": "okta:policies/sign-on"
         "expect":
@@ -538,15 +538,15 @@
         "where":
           -
             "op": "eq"
-            "path": "/policy/name"
+            "path": "policy.name"
             "value": "Default Policy"
           -
             "op": "eq"
-            "path": "/priority"
+            "path": "priority"
             "value": 1
           -
             "op": "neq"
-            "path": "/name"
+            "path": "name"
             "value": "Default Rule"
       "key": "OKTA-APP-001710"
       "monitoring":
@@ -584,7 +584,7 @@
       "check":
         "assert":
           "op": "eq"
-          "path": "/settings/password/complexity/dictionary/common/exclude"
+          "path": "settings.password.complexity.dictionary.common.exclude"
           "value": true
         "dataset": "okta:policies/password"
         "expect":
@@ -595,7 +595,7 @@
         "where":
           -
             "op": "eq"
-            "path": "/status"
+            "path": "status"
             "value": "ACTIVE"
       "key": "OKTA-APP-002980"
       "monitoring":
@@ -614,7 +614,7 @@
       "check":
         "assert":
           "op": "gte"
-          "path": "/settings/password/age/historyCount"
+          "path": "settings.password.age.historyCount"
           "value": 5
         "dataset": "okta:policies/password"
         "expect":
@@ -625,7 +625,7 @@
         "where":
           -
             "op": "eq"
-            "path": "/status"
+            "path": "status"
             "value": "ACTIVE"
       "key": "OKTA-APP-003010"
       "monitoring":

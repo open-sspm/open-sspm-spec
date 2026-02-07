@@ -17,74 +17,7 @@ import (
 	"github.com/google/cel-go/common/types/ref"
 )
 
-type CheckEngine string
-
-const (
-	CheckEngine_CEL      CheckEngine = "cel"
-	CheckEngine_CEL_PLAN CheckEngine = "cel_plan"
-)
-
-type DatasetErrorKind string
-
-const (
-	DatasetErrorKind_ENGINE_ERROR        DatasetErrorKind = "engine_error"
-	DatasetErrorKind_MISSING_DATASET     DatasetErrorKind = "missing_dataset"
-	DatasetErrorKind_MISSING_INTEGRATION DatasetErrorKind = "missing_integration"
-	DatasetErrorKind_PERMISSION_DENIED   DatasetErrorKind = "permission_denied"
-	DatasetErrorKind_SYNC_FAILED         DatasetErrorKind = "sync_failed"
-)
-
-type FrameworkCoverageKind string
-
-const (
-	FrameworkCoverageKind_DIRECT     FrameworkCoverageKind = "direct"
-	FrameworkCoverageKind_PARTIAL    FrameworkCoverageKind = "partial"
-	FrameworkCoverageKind_SUPPORTING FrameworkCoverageKind = "supporting"
-)
-
-type MonitoringStatus string
-
-const (
-	MonitoringStatus_AUTOMATED   MonitoringStatus = "automated"
-	MonitoringStatus_MANUAL      MonitoringStatus = "manual"
-	MonitoringStatus_PARTIAL     MonitoringStatus = "partial"
-	MonitoringStatus_UNSUPPORTED MonitoringStatus = "unsupported"
-)
-
-type ReferenceType string
-
-const (
-	ReferenceType_BLOG          ReferenceType = "blog"
-	ReferenceType_DOCUMENTATION ReferenceType = "documentation"
-	ReferenceType_OTHER         ReferenceType = "other"
-	ReferenceType_STANDARD      ReferenceType = "standard"
-	ReferenceType_TICKET        ReferenceType = "ticket"
-)
-
-type RemediationEffort string
-
-const (
-	RemediationEffort_HIGH   RemediationEffort = "high"
-	RemediationEffort_LOW    RemediationEffort = "low"
-	RemediationEffort_MEDIUM RemediationEffort = "medium"
-)
-
-type ScopeKind string
-
-const (
-	ScopeKind_CONNECTOR_INSTANCE ScopeKind = "connector_instance"
-	ScopeKind_GLOBAL             ScopeKind = "global"
-)
-
-type Severity string
-
-const (
-	Severity_CRITICAL Severity = "critical"
-	Severity_HIGH     Severity = "high"
-	Severity_INFO     Severity = "info"
-	Severity_LOW      Severity = "low"
-	Severity_MEDIUM   Severity = "medium"
-)
+{{ .EnumBlock }}
 
 type Header struct {
 	SchemaVersion int    `json:"schema_version"`

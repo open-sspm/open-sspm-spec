@@ -26,71 +26,11 @@ const (
 	SeverityInfo     Severity = "info"
 )
 
-type CheckType string
+type CheckEngine string
 
 const (
-	CheckTypeDatasetFieldCompare     CheckType = "dataset.field_compare"
-	CheckTypeDatasetCountCompare     CheckType = "dataset.count_compare"
-	CheckTypeDatasetJoinCountCompare CheckType = "dataset.join_count_compare"
-	CheckTypeManualAttestation       CheckType = "manual.attestation"
-)
-
-type Operator string
-
-const (
-	OperatorEq       Operator = "eq"
-	OperatorNeq      Operator = "neq"
-	OperatorLt       Operator = "lt"
-	OperatorLte      Operator = "lte"
-	OperatorGt       Operator = "gt"
-	OperatorGte      Operator = "gte"
-	OperatorExists   Operator = "exists"
-	OperatorAbsent   Operator = "absent"
-	OperatorIn       Operator = "in"
-	OperatorContains Operator = "contains"
-)
-
-type CompareOp string
-
-const (
-	CompareOpEq  CompareOp = "eq"
-	CompareOpNeq CompareOp = "neq"
-	CompareOpLt  CompareOp = "lt"
-	CompareOpLte CompareOp = "lte"
-	CompareOpGt  CompareOp = "gt"
-	CompareOpGte CompareOp = "gte"
-)
-
-type ErrorPolicy string
-
-const (
-	ErrorPolicyUnknown ErrorPolicy = "unknown"
-	ErrorPolicyError   ErrorPolicy = "error"
-)
-
-type OnUnmatchedLeft string
-
-const (
-	OnUnmatchedLeftIgnore OnUnmatchedLeft = "ignore"
-	OnUnmatchedLeftCount  OnUnmatchedLeft = "count"
-	OnUnmatchedLeftError  OnUnmatchedLeft = "error"
-)
-
-type FieldCompareMatch string
-
-const (
-	FieldCompareMatchAll  FieldCompareMatch = "all"
-	FieldCompareMatchAny  FieldCompareMatch = "any"
-	FieldCompareMatchNone FieldCompareMatch = "none"
-)
-
-type FieldCompareOnEmpty string
-
-const (
-	FieldCompareOnEmptyPass    FieldCompareOnEmpty = "pass"
-	FieldCompareOnEmptyFail    FieldCompareOnEmpty = "fail"
-	FieldCompareOnEmptyUnknown FieldCompareOnEmpty = "unknown"
-	FieldCompareOnEmptyError   FieldCompareOnEmpty = "error"
+	CheckEngineCEL     CheckEngine = "cel"
+	CheckEngineCELPlan CheckEngine = "cel_plan"
 )
 
 type ReferenceType string
@@ -143,13 +83,7 @@ func EnumValues() map[string][]string {
 		"ScopeKind":             enumStrings([]ScopeKind{ScopeKindGlobal, ScopeKindConnectorInstance}),
 		"MonitoringStatus":      enumStrings([]MonitoringStatus{MonitoringStatusAutomated, MonitoringStatusPartial, MonitoringStatusManual, MonitoringStatusUnsupported}),
 		"Severity":              enumStrings([]Severity{SeverityCritical, SeverityHigh, SeverityMedium, SeverityLow, SeverityInfo}),
-		"CheckType":             enumStrings([]CheckType{CheckTypeDatasetFieldCompare, CheckTypeDatasetCountCompare, CheckTypeDatasetJoinCountCompare, CheckTypeManualAttestation}),
-		"Operator":              enumStrings([]Operator{OperatorEq, OperatorNeq, OperatorLt, OperatorLte, OperatorGt, OperatorGte, OperatorExists, OperatorAbsent, OperatorIn, OperatorContains}),
-		"CompareOp":             enumStrings([]CompareOp{CompareOpEq, CompareOpNeq, CompareOpLt, CompareOpLte, CompareOpGt, CompareOpGte}),
-		"ErrorPolicy":           enumStrings([]ErrorPolicy{ErrorPolicyUnknown, ErrorPolicyError}),
-		"OnUnmatchedLeft":       enumStrings([]OnUnmatchedLeft{OnUnmatchedLeftIgnore, OnUnmatchedLeftCount, OnUnmatchedLeftError}),
-		"FieldCompareMatch":     enumStrings([]FieldCompareMatch{FieldCompareMatchAll, FieldCompareMatchAny, FieldCompareMatchNone}),
-		"FieldCompareOnEmpty":   enumStrings([]FieldCompareOnEmpty{FieldCompareOnEmptyPass, FieldCompareOnEmptyFail, FieldCompareOnEmptyUnknown, FieldCompareOnEmptyError}),
+		"CheckEngine":           enumStrings([]CheckEngine{CheckEngineCEL, CheckEngineCELPlan}),
 		"ReferenceType":         enumStrings([]ReferenceType{ReferenceTypeDocumentation, ReferenceTypeStandard, ReferenceTypeBlog, ReferenceTypeTicket, ReferenceTypeOther}),
 		"FrameworkCoverageKind": enumStrings([]FrameworkCoverageKind{FrameworkCoverageDirect, FrameworkCoveragePartial, FrameworkCoverageSupporting}),
 		"RemediationEffort":     enumStrings([]RemediationEffort{RemediationEffortLow, RemediationEffortMedium, RemediationEffortHigh}),

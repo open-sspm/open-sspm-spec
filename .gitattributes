@@ -1,0 +1,6 @@
+# Mark deterministic build outputs as generated so GitHub collapses diffs.
+dist/compiled/** linguist-generated=true
+dist/descriptor.v2.yaml linguist-generated=true
+dist/index/** linguist-generated=true
+gen/** linguist-generated=true
+docs/descriptor.v2.yaml linguist-generated=true
