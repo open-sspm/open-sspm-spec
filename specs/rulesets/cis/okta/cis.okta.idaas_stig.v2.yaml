@@ -1,656 +1,460 @@
-"kind": "opensspm.ruleset"
-"ruleset":
-  "data_contracts":
-    -
-      "dataset": "okta:authenticators"
-      "version": 1
-    -
-      "dataset": "okta:log-streams"
-      "version": 1
-    -
-      "dataset": "okta:policies/password"
-      "version": 1
-    -
-      "dataset": "okta:policies/sign-on"
-      "version": 1
-  "key": "cis.okta.idaas_stig.v2"
-  "name": "CIS Okta IDaaS STIG Benchmark v1.0.0"
-  "references":
-    -
-      "title": "CIS Benchmarks (obtain the official PDF via CIS)"
-      "url": "https://www.cisecurity.org"
-    -
-      "title": "Severity mapping: CAT I -\u003e high, CAT II -\u003e medium"
-      "url": "https://www.cisecurity.org"
-  "rules":
-    -
-      "check":
-        "assert":
-          "op": "eq"
-          "path": "actions.signon.session.maxSessionIdleMinutes"
-          "value": 15
-        "dataset": "okta:policies/sign-on"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "fail"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "policy.name"
-            "value": "Default Policy"
-          -
-            "op": "eq"
-            "path": "priority"
-            "value": 1
-          -
-            "op": "neq"
-            "path": "name"
-            "value": "Default Rule"
-      "key": "OKTA-APP-000020"
-      "monitoring":
-        "status": "automated"
-      "references":
-        -
-          "title": "Okta Management API: Policy (sign-on policies and rules)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
-      "required_data":
-        - "okta:policies/sign-on"
-      "severity": "medium"
-      "summary": "Checks Global Session Policy rule priority 1 idle timeout."
-      "title": "OKTA-APP-000020"
-    -
-      "check":
-        "type": "manual.attestation"
-      "key": "OKTA-APP-000025"
-      "monitoring":
-        "status": "manual"
-      "references":
-        -
-          "title": "Okta Management API: OktaApplicationSettings (first-party app settings)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/OktaApplicationSettings/"
-      "required_data": []
-      "severity": "medium"
-      "summary": "See CIS benchmark recommendation OKTA-APP-000025"
-      "title": "OKTA-APP-000025"
-    -
-      "check":
-        "type": "manual.attestation"
-      "key": "OKTA-APP-000090"
-      "monitoring":
-        "status": "manual"
-      "references":
-        -
-          "title": "Okta API: Users (suspend/deactivate user lifecycle)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/reference/api/users/"
-      "required_data": []
-      "severity": "medium"
-      "summary": "See CIS benchmark recommendation OKTA-APP-000090"
-      "title": "OKTA-APP-000090"
-    -
-      "check":
-        "assert":
-          "op": "eq"
-          "path": "settings.password.lockout.maxAttempts"
-          "value": 3
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "status"
-            "value": "ACTIVE"
-      "key": "OKTA-APP-000170"
-      "monitoring":
-        "status": "automated"
-      "references":
-        -
-          "title": "Okta Management API: Policy (password policies)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
-      "required_data":
-        - "okta:policies/password"
-      "severity": "medium"
-      "summary": "Checks password lockout threshold for active password policies."
-      "title": "OKTA-APP-000170"
-    -
-      "check":
-        "type": "manual.attestation"
-      "key": "OKTA-APP-000180"
-      "monitoring":
-        "status": "manual"
-      "references":
-        -
-          "title": "Okta Management API: Policy (authentication policies and rules)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
-        -
-          "title": "Okta Management API: Authenticator"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Authenticator/"
-      "required_data": []
-      "severity": "medium"
-      "summary": "See CIS benchmark recommendation OKTA-APP-000180"
-      "title": "OKTA-APP-000180"
-    -
-      "check":
-        "type": "manual.attestation"
-      "key": "OKTA-APP-000190"
-      "monitoring":
-        "status": "manual"
-      "references":
-        -
-          "title": "Okta Management API: Policy (authentication policies and rules)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
-        -
-          "title": "Okta Management API: Authenticator"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Authenticator/"
-      "required_data": []
-      "severity": "medium"
-      "summary": "See CIS benchmark recommendation OKTA-APP-000190"
-      "title": "OKTA-APP-000190"
-    -
-      "check":
-        "type": "manual.attestation"
-      "key": "OKTA-APP-000200"
-      "monitoring":
-        "status": "manual"
-      "references":
-        -
-          "title": "Okta Management API: CustomPages (sign-in page customization)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/CustomPages/"
-      "required_data": []
-      "severity": "medium"
-      "summary": "See CIS benchmark recommendation OKTA-APP-000200"
-      "title": "OKTA-APP-000200"
-    -
-      "check":
-        "type": "manual.attestation"
-      "key": "OKTA-APP-000560"
-      "monitoring":
-        "status": "manual"
-      "references":
-        -
-          "title": "Okta Management API: Policy (authentication policies and rules)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
-      "required_data": []
-      "severity": "high"
-      "summary": "See CIS benchmark recommendation OKTA-APP-000560"
-      "title": "OKTA-APP-000560"
-    -
-      "check":
-        "type": "manual.attestation"
-      "key": "OKTA-APP-000570"
-      "monitoring":
-        "status": "manual"
-      "references":
-        -
-          "title": "Okta Management API: Policy (authentication policies and rules)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
-      "required_data": []
-      "severity": "high"
-      "summary": "See CIS benchmark recommendation OKTA-APP-000570"
-      "title": "OKTA-APP-000570"
-    -
-      "check":
-        "assert":
-          "op": "gte"
-          "path": "settings.password.complexity.minLength"
-          "value": 15
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "status"
-            "value": "ACTIVE"
-      "key": "OKTA-APP-000650"
-      "monitoring":
-        "status": "automated"
-      "references":
-        -
-          "title": "Okta Management API: Policy (password policies)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
-      "required_data":
-        - "okta:policies/password"
-      "severity": "medium"
-      "summary": "Checks password minimum length for active password policies."
-      "title": "OKTA-APP-000650"
-    -
-      "check":
-        "assert":
-          "op": "gte"
-          "path": "settings.password.complexity.minUpperCase"
-          "value": 1
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "status"
-            "value": "ACTIVE"
-      "key": "OKTA-APP-000670"
-      "monitoring":
-        "status": "automated"
-      "references":
-        -
-          "title": "Okta Management API: Policy (password policies)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
-      "required_data":
-        - "okta:policies/password"
-      "severity": "medium"
-      "summary": "Checks password uppercase requirement for active password policies."
-      "title": "OKTA-APP-000670"
-    -
-      "check":
-        "assert":
-          "op": "gte"
-          "path": "settings.password.complexity.minLowerCase"
-          "value": 1
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "status"
-            "value": "ACTIVE"
-      "key": "OKTA-APP-000680"
-      "monitoring":
-        "status": "automated"
-      "references":
-        -
-          "title": "Okta Management API: Policy (password policies)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
-      "required_data":
-        - "okta:policies/password"
-      "severity": "medium"
-      "summary": "Checks password lowercase requirement for active password policies."
-      "title": "OKTA-APP-000680"
-    -
-      "check":
-        "assert":
-          "op": "gte"
-          "path": "settings.password.complexity.minNumber"
-          "value": 1
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "status"
-            "value": "ACTIVE"
-      "key": "OKTA-APP-000690"
-      "monitoring":
-        "status": "automated"
-      "references":
-        -
-          "title": "Okta Management API: Policy (password policies)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
-      "required_data":
-        - "okta:policies/password"
-      "severity": "medium"
-      "summary": "Checks password numeric requirement for active password policies."
-      "title": "OKTA-APP-000690"
-    -
-      "check":
-        "assert":
-          "op": "gte"
-          "path": "settings.password.complexity.minSymbol"
-          "value": 1
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "status"
-            "value": "ACTIVE"
-      "key": "OKTA-APP-000700"
-      "monitoring":
-        "status": "automated"
-      "references":
-        -
-          "title": "Okta Management API: Policy (password policies)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
-      "required_data":
-        - "okta:policies/password"
-      "severity": "medium"
-      "summary": "Checks password symbol requirement for active password policies."
-      "title": "OKTA-APP-000700"
-    -
-      "check":
-        "assert":
-          "op": "gte"
-          "path": "settings.password.age.minAgeMinutes"
-          "value": 1440
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "status"
-            "value": "ACTIVE"
-      "key": "OKTA-APP-000740"
-      "monitoring":
-        "status": "automated"
-      "references":
-        -
-          "title": "Okta Management API: Policy (password policies)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
-      "required_data":
-        - "okta:policies/password"
-      "severity": "medium"
-      "summary": "Checks password minimum age for active password policies."
-      "title": "OKTA-APP-000740"
-    -
-      "check":
-        "assert":
-          "op": "eq"
-          "path": "settings.password.age.maxAgeDays"
-          "value": 60
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "status"
-            "value": "ACTIVE"
-      "key": "OKTA-APP-000745"
-      "monitoring":
-        "status": "automated"
-      "references":
-        -
-          "title": "Okta Management API: Policy (password policies)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
-      "required_data":
-        - "okta:policies/password"
-      "severity": "medium"
-      "summary": "Checks password maximum age for active password policies."
-      "title": "OKTA-APP-000745"
-    -
-      "check":
-        "compare":
-          "op": "gte"
-          "value": 1
-        "dataset": "okta:log-streams"
-        "type": "dataset.count_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "status"
-            "value": "ACTIVE"
-      "key": "OKTA-APP-001430"
-      "monitoring":
-        "reason": "Okta logs can also be exported via the System Log API; this check only covers Log Streaming."
-        "status": "partial"
-      "references":
-        -
-          "title": "Okta Management API: LogStream"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/LogStream/"
-      "required_data":
-        - "okta:log-streams"
-      "severity": "high"
-      "summary": "Checks that at least one Log Streaming connection is configured and active."
-      "title": "OKTA-APP-001430"
-    -
-      "check":
-        "assert":
-          "op": "eq"
-          "path": "actions.signon.session.maxSessionLifetimeMinutes"
-          "value": 1080
-        "dataset": "okta:policies/sign-on"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "fail"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "policy.name"
-            "value": "Default Policy"
-          -
-            "op": "eq"
-            "path": "priority"
-            "value": 1
-          -
-            "op": "neq"
-            "path": "name"
-            "value": "Default Rule"
-      "key": "OKTA-APP-001665"
-      "monitoring":
-        "status": "automated"
-      "references":
-        -
-          "title": "Okta Management API: Policy (sign-on policies and rules)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
-      "required_data":
-        - "okta:policies/sign-on"
-      "severity": "medium"
-      "summary": "Checks Global Session Policy rule priority 1 session lifetime."
-      "title": "OKTA-APP-001665"
-    -
-      "check":
-        "assert":
-          "op": "eq"
-          "path": "status"
-          "value": "ACTIVE"
-        "dataset": "okta:authenticators"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "fail"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "name"
-            "value": "Smart Card Authenticator"
-      "key": "OKTA-APP-001670"
-      "monitoring":
-        "status": "automated"
-      "references":
-        -
-          "title": "Okta Management API: Authenticator"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Authenticator/"
-      "required_data":
-        - "okta:authenticators"
-      "severity": "medium"
-      "summary": "Checks that the Smart Card Authenticator is present and active."
-      "title": "OKTA-APP-001670"
-    -
-      "check":
-        "type": "manual.attestation"
-      "key": "OKTA-APP-001700"
-      "monitoring":
-        "status": "manual"
-      "references":
-        -
-          "title": "Okta Management API: Authenticator (Okta Verify settings)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Authenticator/"
-      "required_data": []
-      "severity": "medium"
-      "summary": "See CIS benchmark recommendation OKTA-APP-001700"
-      "title": "OKTA-APP-001700"
-    -
-      "check":
-        "assert":
-          "op": "eq"
-          "path": "actions.signon.session.usePersistentCookie"
-          "value": false
-        "dataset": "okta:policies/sign-on"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "fail"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "policy.name"
-            "value": "Default Policy"
-          -
-            "op": "eq"
-            "path": "priority"
-            "value": 1
-          -
-            "op": "neq"
-            "path": "name"
-            "value": "Default Rule"
-      "key": "OKTA-APP-001710"
-      "monitoring":
-        "status": "automated"
-      "references":
-        -
-          "title": "Okta Management API: Policy (sign-on policies and rules)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
-      "required_data":
-        - "okta:policies/sign-on"
-      "severity": "medium"
-      "summary": "Checks Global Session Policy rule priority 1 persistent cookie setting."
-      "title": "OKTA-APP-001710"
-    -
-      "check":
-        "type": "manual.attestation"
-      "key": "OKTA-APP-001920"
-      "monitoring":
-        "status": "manual"
-      "references":
-        -
-          "title": "Okta API: Identity Providers"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/reference/api/idps/"
-        -
-          "title": "Okta API: Identity Provider Keys"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/reference/api/idp-keys/"
-      "required_data": []
-      "severity": "medium"
-      "summary": "See CIS benchmark recommendation OKTA-APP-001920"
-      "title": "OKTA-APP-001920"
-    -
-      "check":
-        "assert":
-          "op": "eq"
-          "path": "settings.password.complexity.dictionary.common.exclude"
-          "value": true
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "status"
-            "value": "ACTIVE"
-      "key": "OKTA-APP-002980"
-      "monitoring":
-        "status": "automated"
-      "references":
-        -
-          "title": "Okta Management API: Policy (password policies)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
-      "required_data":
-        - "okta:policies/password"
-      "severity": "medium"
-      "summary": "Checks common/compromised password protections for active password policies."
-      "title": "OKTA-APP-002980"
-    -
-      "check":
-        "assert":
-          "op": "gte"
-          "path": "settings.password.age.historyCount"
-          "value": 5
-        "dataset": "okta:policies/password"
-        "expect":
-          "match": "all"
-          "min_selected": 1
-          "on_empty": "unknown"
-        "type": "dataset.field_compare"
-        "where":
-          -
-            "op": "eq"
-            "path": "status"
-            "value": "ACTIVE"
-      "key": "OKTA-APP-003010"
-      "monitoring":
-        "status": "automated"
-      "references":
-        -
-          "title": "Okta Management API: Policy (password policies)"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
-      "required_data":
-        - "okta:policies/password"
-      "severity": "medium"
-      "summary": "Checks password reuse history for active password policies."
-      "title": "OKTA-APP-003010"
-  "scope":
-    "connector_kind": "okta"
-    "kind": "connector_instance"
-  "source":
-    "date": "2025-08-21"
-    "name": "CIS"
-    "url": "https://www.cisecurity.org"
-    "version": "v1.0.0"
-  "status": "active"
-  "tags":
-    - "cis"
-    - "okta"
-    - "stig"
-"schema_version": 2
+kind: opensspm.ruleset
+schema_version: 2
+ruleset:
+  key: cis.okta.idaas_stig.v2
+  name: CIS Okta IDaaS STIG Benchmark v1.0.0
+
+  references:
+    - title: CIS Benchmarks (obtain the official PDF via CIS)
+      url: https://www.cisecurity.org
+    - title: "Severity mapping: CAT I -> high, CAT II -> medium"
+      url: https://www.cisecurity.org
+
+  data_contracts:
+    - dataset: okta:authenticators
+      version: 1
+    - dataset: okta:log-streams
+      version: 1
+    - dataset: okta:policies/password
+      version: 1
+    - dataset: okta:policies/sign-on
+      version: 1
+
+  scope:
+    kind: connector_instance
+    connector_kind: okta
+
+  source:
+    name: CIS
+    version: v1.0.0
+    date: "2025-08-21"
+    url: https://www.cisecurity.org
+
+  status: active
+  tags:
+    - cis
+    - okta
+    - stig
+
+  defaults:
+    check:
+      on_missing_dataset: unknown
+      on_permission_denied: unknown
+      on_sync_error: error
+
+  selectors:
+    signon_default_policy_priority1_non_default_rule:
+      dataset: okta:policies/sign-on
+      where:
+        - op: eq
+          path: policy.name
+          value: Default Policy
+        - op: eq
+          path: priority
+          value: 1
+        - op: neq
+          path: name
+          value: Default Rule
+
+    active_password_policies:
+      dataset: okta:policies/password
+      where:
+        - op: eq
+          path: status
+          value: ACTIVE
+
+    active_log_streams:
+      dataset: okta:log-streams
+      where:
+        - op: eq
+          path: status
+          value: ACTIVE
+
+    smart_card_authenticator:
+      dataset: okta:authenticators
+      where:
+        - op: eq
+          path: name
+          value: Smart Card Authenticator
+
+  rules:
+    # -------------------------
+    # CAT II (medium)
+    # -------------------------
+
+    - key: OKTA-APP-000020
+      title: OKTA-APP-000020
+      severity: medium
+      summary: Global Session Policy idle timeout is 15 minutes for the Priority 1 rule in Default Policy.
+      monitoring:
+        status: automated
+      required_data:
+        - okta:policies/sign-on
+      check:
+        type: dataset.field_compare
+        selector: signon_default_policy_priority1_non_default_rule
+        assert:
+          op: eq
+          path: actions.signon.session.maxSessionIdleMinutes
+          value: 15
+        expect:
+          match: all
+          min_selected: 1
+          on_empty: fail
+
+    - key: OKTA-APP-000025
+      title: OKTA-APP-000025
+      severity: medium
+      summary: Okta Admin Console application session idle timeout is 15 minutes.
+      monitoring:
+        status: manual
+      required_data: []
+
+    - key: OKTA-APP-000090
+      title: OKTA-APP-000090
+      severity: medium
+      summary: Users are automatically disabled after 35 days of inactivity (workflow/automation).
+      monitoring:
+        status: manual
+      required_data: []
+
+    - key: OKTA-APP-000170
+      title: OKTA-APP-000170
+      severity: medium
+      summary: Password policies lock out after 3 unsuccessful attempts.
+      monitoring:
+        status: automated
+      required_data:
+        - okta:policies/password
+      check:
+        type: dataset.field_compare
+        selector: active_password_policies
+        assert:
+          op: eq
+          path: settings.password.lockout.maxAttempts
+          value: 3
+        expect:
+          match: all
+          min_selected: 1
+          on_empty: unknown
+
+    - key: OKTA-APP-000180
+      title: OKTA-APP-000180
+      severity: medium
+      summary: Okta Dashboard authentication policy requires phishing-resistant authenticators.
+      monitoring:
+        status: manual
+      required_data: []
+
+    - key: OKTA-APP-000190
+      title: OKTA-APP-000190
+      severity: medium
+      summary: Okta Admin Console authentication policy requires phishing-resistant authenticators.
+      monitoring:
+        status: manual
+      required_data: []
+
+    - key: OKTA-APP-000200
+      title: OKTA-APP-000200
+      severity: medium
+      summary: DoD notice and consent banner is displayed before login.
+      monitoring:
+        status: manual
+      required_data: []
+
+    # CAT I (high)
+    - key: OKTA-APP-000560
+      title: OKTA-APP-000560
+      severity: high
+      summary: Okta Admin Console requires multi-factor authentication.
+      monitoring:
+        status: manual
+      required_data: []
+
+    - key: OKTA-APP-000570
+      title: OKTA-APP-000570
+      severity: high
+      summary: Okta Dashboard requires multi-factor authentication.
+      monitoring:
+        status: manual
+      required_data: []
+
+    # Back to CAT II (medium)
+    - key: OKTA-APP-000650
+      title: OKTA-APP-000650
+      severity: medium
+      summary: Password minimum length is at least 15 characters.
+      monitoring:
+        status: automated
+      required_data:
+        - okta:policies/password
+      check:
+        type: dataset.field_compare
+        selector: active_password_policies
+        assert:
+          op: gte
+          path: settings.password.complexity.minLength
+          value: 15
+        expect:
+          match: all
+          min_selected: 1
+          on_empty: unknown
+
+    - key: OKTA-APP-000670
+      title: OKTA-APP-000670
+      severity: medium
+      summary: Password requires at least 1 uppercase character.
+      monitoring:
+        status: automated
+      required_data:
+        - okta:policies/password
+      check:
+        type: dataset.field_compare
+        selector: active_password_policies
+        assert:
+          op: gte
+          path: settings.password.complexity.minUpperCase
+          value: 1
+        expect:
+          match: all
+          min_selected: 1
+          on_empty: unknown
+
+    - key: OKTA-APP-000680
+      title: OKTA-APP-000680
+      severity: medium
+      summary: Password requires at least 1 lowercase character.
+      monitoring:
+        status: automated
+      required_data:
+        - okta:policies/password
+      check:
+        type: dataset.field_compare
+        selector: active_password_policies
+        assert:
+          op: gte
+          path: settings.password.complexity.minLowerCase
+          value: 1
+        expect:
+          match: all
+          min_selected: 1
+          on_empty: unknown
+
+    - key: OKTA-APP-000690
+      title: OKTA-APP-000690
+      severity: medium
+      summary: Password requires at least 1 numeric character.
+      monitoring:
+        status: automated
+      required_data:
+        - okta:policies/password
+      check:
+        type: dataset.field_compare
+        selector: active_password_policies
+        assert:
+          op: gte
+          path: settings.password.complexity.minNumber
+          value: 1
+        expect:
+          match: all
+          min_selected: 1
+          on_empty: unknown
+
+    - key: OKTA-APP-000700
+      title: OKTA-APP-000700
+      severity: medium
+      summary: Password requires at least 1 symbol character.
+      monitoring:
+        status: automated
+      required_data:
+        - okta:policies/password
+      check:
+        type: dataset.field_compare
+        selector: active_password_policies
+        assert:
+          op: gte
+          path: settings.password.complexity.minSymbol
+          value: 1
+        expect:
+          match: all
+          min_selected: 1
+          on_empty: unknown
+
+    - key: OKTA-APP-000740
+      title: OKTA-APP-000740
+      severity: medium
+      summary: Minimum password age is at least 24 hours.
+      monitoring:
+        status: automated
+      required_data:
+        - okta:policies/password
+      check:
+        type: dataset.field_compare
+        selector: active_password_policies
+        assert:
+          op: gte
+          path: settings.password.age.minAgeMinutes
+          value: 1440
+        expect:
+          match: all
+          min_selected: 1
+          on_empty: unknown
+
+    - key: OKTA-APP-000745
+      title: OKTA-APP-000745
+      severity: medium
+      summary: Maximum password age is 60 days.
+      monitoring:
+        status: automated
+      required_data:
+        - okta:policies/password
+      check:
+        type: dataset.field_compare
+        selector: active_password_policies
+        assert:
+          op: eq
+          path: settings.password.age.maxAgeDays
+          value: 60
+        expect:
+          match: all
+          min_selected: 1
+          on_empty: unknown
+
+    # -------------------------
+    # CAT I (high)
+    # -------------------------
+
+    - key: OKTA-APP-001430
+      title: OKTA-APP-001430
+      severity: high
+      summary: At least one active Log Stream is configured.
+      monitoring:
+        status: automated
+      required_data:
+        - okta:log-streams
+      check:
+        type: dataset.count_compare
+        selector: active_log_streams
+        compare:
+          op: gte
+          value: 1
+
+    # -------------------------
+    # CAT II (medium)
+    # -------------------------
+
+    - key: OKTA-APP-001665
+      title: OKTA-APP-001665
+      severity: medium
+      summary: Maximum global session lifetime is 18 hours for the Priority 1 rule in Default Policy.
+      monitoring:
+        status: automated
+      required_data:
+        - okta:policies/sign-on
+      check:
+        type: dataset.field_compare
+        selector: signon_default_policy_priority1_non_default_rule
+        assert:
+          op: eq
+          path: actions.signon.session.maxSessionLifetimeMinutes
+          value: 1080
+        expect:
+          match: all
+          min_selected: 1
+          on_empty: fail
+
+    - key: OKTA-APP-001670
+      title: OKTA-APP-001670
+      severity: medium
+      summary: Smart Card Authenticator is present and active.
+      monitoring:
+        status: automated
+      required_data:
+        - okta:authenticators
+      check:
+        type: dataset.field_compare
+        selector: smart_card_authenticator
+        assert:
+          op: eq
+          path: status
+          value: ACTIVE
+        expect:
+          match: all
+          min_selected: 1
+          on_empty: fail
+
+    - key: OKTA-APP-001700
+      title: OKTA-APP-001700
+      severity: medium
+      summary: Okta Verify is configured with FIPS-compliant device enforcement (org-defined).
+      monitoring:
+        status: manual
+      required_data: []
+
+    - key: OKTA-APP-001710
+      title: OKTA-APP-001710
+      severity: medium
+      summary: Persistent global session cookies are disabled for the Priority 1 rule in Default Policy.
+      monitoring:
+        status: automated
+      required_data:
+        - okta:policies/sign-on
+      check:
+        type: dataset.field_compare
+        selector: signon_default_policy_priority1_non_default_rule
+        assert:
+          op: eq
+          path: actions.signon.session.usePersistentCookie
+          value: false
+        expect:
+          match: all
+          min_selected: 1
+          on_empty: fail
+
+    - key: OKTA-APP-001920
+      title: OKTA-APP-001920
+      severity: medium
+      summary: Smart Card IdPs are active and use DoD-approved certificate authorities.
+      monitoring:
+        status: manual
+      required_data: []
+
+    - key: OKTA-APP-002980
+      title: OKTA-APP-002980
+      severity: medium
+      summary: Common password check is enabled in password policies.
+      monitoring:
+        status: automated
+      required_data:
+        - okta:policies/password
+      check:
+        type: dataset.field_compare
+        selector: active_password_policies
+        assert:
+          op: eq
+          path: settings.password.complexity.dictionary.common.exclude
+          value: true
+        expect:
+          match: all
+          min_selected: 1
+          on_empty: unknown
+
+    - key: OKTA-APP-003010
+      title: OKTA-APP-003010
+      severity: medium
+      summary: Password history prevents reuse for at least 5 generations.
+      monitoring:
+        status: automated
+      required_data:
+        - okta:policies/password
+      check:
+        type: dataset.field_compare
+        selector: active_password_policies
+        assert:
+          op: gte
+          path: settings.password.age.historyCount
+          value: 5
+        expect:
+          match: all
+          min_selected: 1
+          on_empty: unknown

@@ -20,6 +20,7 @@
       - "okta:policies/password"
       - "okta:policies/sign-on"
     "engines":
+      - "cel"
       - "cel_plan"
     "inputs": []
     "params_referenced": []
@@ -31,7 +32,9 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/sign-on"
-        "engine": "cel_plan"
+        "engine": "cel"
+        "expression": "rows(\"okta:policies/sign-on\").filter(r, field(r, \"policy.name\") == \"Default Policy\" \u0026\u0026 field(r, \"priority\") == 1 \u0026\u0026 field(r, \"name\") != \"Default Rule\").size() \u003e= 1 \u0026\u0026 rows(\"okta:policies/sign-on\").filter(r, field(r, \"policy.name\") == \"Default Policy\" \u0026\u0026 field(r, \"priority\") == 1 \u0026\u0026 field(r, \"name\") != \"Default Rule\").all(r, field(r, \"actions.signon.session.maxSessionIdleMinutes\") == 15)"
+        "expression_sha256": "e87085878de92f232cb67e85cf174189a97fc0c358acb8aaaed6f4f977f0fade"
         "inputs": []
         "is_manual": false
         "monitoring":
@@ -220,11 +223,13 @@
             "version": 1
         "datasets_referenced":
           - "okta:log-streams"
-        "engine": "cel_plan"
+        "engine": "cel"
+        "expression": "rows(\"okta:log-streams\").filter(r, field(r, \"status\") == \"ACTIVE\").size() \u003e= 1"
+        "expression_sha256": "496843a5d14d123b887afe7c25fff22e2d128654f2b5c2783f1a3b131281e8bf"
         "inputs": []
         "is_manual": false
         "monitoring":
-          "status": "partial"
+          "status": "automated"
         "params_referenced": []
         "rule_key": "OKTA-APP-001430"
       -
@@ -234,7 +239,9 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/sign-on"
-        "engine": "cel_plan"
+        "engine": "cel"
+        "expression": "rows(\"okta:policies/sign-on\").filter(r, field(r, \"policy.name\") == \"Default Policy\" \u0026\u0026 field(r, \"priority\") == 1 \u0026\u0026 field(r, \"name\") != \"Default Rule\").size() \u003e= 1 \u0026\u0026 rows(\"okta:policies/sign-on\").filter(r, field(r, \"policy.name\") == \"Default Policy\" \u0026\u0026 field(r, \"priority\") == 1 \u0026\u0026 field(r, \"name\") != \"Default Rule\").all(r, field(r, \"actions.signon.session.maxSessionLifetimeMinutes\") == 1080)"
+        "expression_sha256": "c8a8258b0b5cc72709cf40e19ae32055f2d8cdbe82fbd11970c88b45c4ac7422"
         "inputs": []
         "is_manual": false
         "monitoring":
@@ -248,7 +255,9 @@
             "version": 1
         "datasets_referenced":
           - "okta:authenticators"
-        "engine": "cel_plan"
+        "engine": "cel"
+        "expression": "rows(\"okta:authenticators\").filter(r, field(r, \"name\") == \"Smart Card Authenticator\").size() \u003e= 1 \u0026\u0026 rows(\"okta:authenticators\").filter(r, field(r, \"name\") == \"Smart Card Authenticator\").all(r, field(r, \"status\") == \"ACTIVE\")"
+        "expression_sha256": "4a189457a86f0758da0d832239cc2ff82f2ef52d9123aad37c6749ced1fc4bdd"
         "inputs": []
         "is_manual": false
         "monitoring":
@@ -271,7 +280,9 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/sign-on"
-        "engine": "cel_plan"
+        "engine": "cel"
+        "expression": "rows(\"okta:policies/sign-on\").filter(r, field(r, \"policy.name\") == \"Default Policy\" \u0026\u0026 field(r, \"priority\") == 1 \u0026\u0026 field(r, \"name\") != \"Default Rule\").size() \u003e= 1 \u0026\u0026 rows(\"okta:policies/sign-on\").filter(r, field(r, \"policy.name\") == \"Default Policy\" \u0026\u0026 field(r, \"priority\") == 1 \u0026\u0026 field(r, \"name\") != \"Default Rule\").all(r, field(r, \"actions.signon.session.usePersistentCookie\") == false)"
+        "expression_sha256": "69d46b0566eaeab52ec44a448b7d17f45f2a1b00874ec98e306a0846d3ad3d19"
         "inputs": []
         "is_manual": false
         "monitoring":
