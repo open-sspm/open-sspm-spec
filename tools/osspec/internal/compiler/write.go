@@ -32,6 +32,7 @@ func writeDist(repoRoot, distDir string, res *Result) error {
 	distAbs := filepath.Join(repoRootAbs, distDir)
 	docsAbs := filepath.Join(repoRootAbs, "docs")
 
+	_ = os.RemoveAll(filepath.Join(distAbs, "index"))
 	if err := os.MkdirAll(filepath.Join(distAbs, "index"), 0o755); err != nil {
 		return err
 	}
@@ -40,12 +41,6 @@ func writeDist(repoRoot, distDir string, res *Result) error {
 		return err
 	}
 	if err := os.MkdirAll(filepath.Join(distAbs, "compiled", "rulesets"), 0o755); err != nil {
-		return err
-	}
-	if err := os.MkdirAll(filepath.Join(distAbs, "compiled", "datasets"), 0o755); err != nil {
-		return err
-	}
-	if err := os.MkdirAll(filepath.Join(distAbs, "compiled", "connectors"), 0o755); err != nil {
 		return err
 	}
 	if err := os.MkdirAll(filepath.Join(distAbs, "compiled", "profiles"), 0o755); err != nil {
@@ -68,9 +63,6 @@ func writeDist(repoRoot, distDir string, res *Result) error {
 		return err
 	}
 	if err := writeCanonicalJSON(filepath.Join(distAbs, "index", "requirements.json"), res.Requirements); err != nil {
-		return err
-	}
-	if err := writeCanonicalJSON(filepath.Join(distAbs, "index", "dictionary.compiled.json"), res.Descriptor.Dictionary.Object); err != nil {
 		return err
 	}
 
@@ -131,30 +123,12 @@ func writeCompiled(distAbs string, res *Result) error {
 			return fmt.Errorf("write compiled ruleset %s: %w", rs.Object.Ruleset.Key, err)
 		}
 	}
-	// Dataset contracts
-	for _, dc := range res.Descriptor.DatasetContracts {
-		name := sanitizeFilename(dc.Object.Dataset.Key) + fmt.Sprintf(".v%d.json", dc.Object.Dataset.Version)
-		if err := writeCanonicalJSON(filepath.Join(distAbs, "compiled", "datasets", name), dc.Object); err != nil {
-			return fmt.Errorf("write compiled dataset %s@%d: %w", dc.Object.Dataset.Key, dc.Object.Dataset.Version, err)
-		}
-	}
-	// Connectors
-	for _, c := range res.Descriptor.Connectors {
-		name := sanitizeFilename(c.Object.Connector.Kind) + ".json"
-		if err := writeCanonicalJSON(filepath.Join(distAbs, "compiled", "connectors", name), c.Object); err != nil {
-			return fmt.Errorf("write compiled connector %s: %w", c.Object.Connector.Kind, err)
-		}
-	}
 	// Profiles
 	for _, p := range res.Descriptor.Profiles {
 		name := sanitizeFilename(p.Object.Profile.Key) + ".json"
 		if err := writeCanonicalJSON(filepath.Join(distAbs, "compiled", "profiles", name), p.Object); err != nil {
 			return fmt.Errorf("write compiled profile %s: %w", p.Object.Profile.Key, err)
 		}
-	}
-	// Dictionary
-	if err := writeCanonicalJSON(filepath.Join(distAbs, "compiled", "dictionary.json"), res.Descriptor.Dictionary.Object); err != nil {
-		return fmt.Errorf("write compiled dictionary: %w", err)
 	}
 
 	return nil

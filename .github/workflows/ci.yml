@@ -23,4 +23,3 @@ jobs:
         run: go run ./tools/osspec/cmd/osspec codegen --lang go --out gen/go
       - name: Determinism check
         run: git diff --exit-code
-

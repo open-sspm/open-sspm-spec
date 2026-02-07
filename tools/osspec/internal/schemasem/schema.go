@@ -22,10 +22,7 @@ type KindSchema struct {
 
 var KnownSchemas = []KindSchema{
 	{Kind: "opensspm.ruleset", Filename: "opensspm.ruleset.schema.json"},
-	{Kind: "opensspm.dataset_contract", Filename: "opensspm.dataset_contract.schema.json"},
-	{Kind: "opensspm.connector_manifest", Filename: "opensspm.connector_manifest.schema.json"},
 	{Kind: "opensspm.profile", Filename: "opensspm.profile.schema.json"},
-	{Kind: "opensspm.dictionary", Filename: "opensspm.dictionary.schema.json"},
 	{Kind: "opensspm.test_case", Filename: "opensspm.test_case.schema.json"},
 }
 

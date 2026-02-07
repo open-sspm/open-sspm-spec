@@ -2,10 +2,8 @@
 
 const SCHEMA_FILES = {
   "opensspm.ruleset": "opensspm.ruleset.schema.json",
-  "opensspm.dataset_contract": "opensspm.dataset_contract.schema.json",
-  "opensspm.connector_manifest": "opensspm.connector_manifest.schema.json",
   "opensspm.profile": "opensspm.profile.schema.json",
-  "opensspm.dictionary": "opensspm.dictionary.schema.json",
+  "opensspm.test_case": "opensspm.test_case.schema.json",
 };
 
 const state = {
@@ -104,19 +102,11 @@ function activeNavHref() {
     case "ruleset":
     case "rulesets":
       return "#rulesets";
-    case "dataset":
-    case "datasets":
-      return "#datasets";
-    case "connector":
-    case "connectors":
-      return "#connectors";
     case "profile":
     case "profiles":
       return "#profiles";
     case "schema":
       return `#schema/${encodeURIComponent(rest[0] || "")}`;
-    case "dictionary":
-      return "#dictionary";
     case "requirements":
       return "#requirements";
     case "artifacts":
@@ -291,14 +281,8 @@ function exampleForKind(kind) {
   switch (kind) {
     case "opensspm.ruleset":
       return d.rulesets?.[0]?.object || null;
-    case "opensspm.dataset_contract":
-      return d.dataset_contracts?.[0]?.object || null;
-    case "opensspm.connector_manifest":
-      return d.connectors?.[0]?.object || null;
     case "opensspm.profile":
       return d.profiles?.[0]?.object || null;
-    case "opensspm.dictionary":
-      return d.dictionary?.object || null;
     default:
       return null;
   }
@@ -353,8 +337,6 @@ function renderOverview() {
   const v = d.version || {};
   const counts = {
     rulesets: (d.rulesets || []).length,
-    datasets: (d.dataset_contracts || []).length,
-    connectors: (d.connectors || []).length,
     profiles: (d.profiles || []).length,
   };
 
@@ -364,8 +346,6 @@ function renderOverview() {
     el("div", { class: "muted", text: `Spec version ${v.spec_version || "?"} (schema_version ${v.schema_version ?? "?"})` }),
     el("div", { class: "chips" }, [
       chip(`rulesets: ${counts.rulesets}`, "#rulesets"),
-      chip(`datasets: ${counts.datasets}`, "#datasets"),
-      chip(`connectors: ${counts.connectors}`, "#connectors"),
       chip(`profiles: ${counts.profiles}`, "#profiles"),
       chip("requirements", "#requirements"),
       chip("artifacts", "#artifacts"),
@@ -460,7 +440,7 @@ function renderRulesetDetail(key) {
       el("div", { class: "muted", text: rs.name }),
       el("div", { class: "chips" }, [
         chip(`scope: ${rs.scope?.kind || "?"}`, "#rulesets"),
-        rs.scope?.connector_kind ? chip(`connector: ${rs.scope.connector_kind}`, "#connectors") : el("span"),
+        rs.scope?.connector_kind ? chip(`connector: ${rs.scope.connector_kind}`, "#rulesets") : el("span"),
         chip(`rules: ${(rs.rules || []).length}`, "#rulesets"),
       ]),
       el("div", { class: "muted", html: `source: <code>${escapeHtml(rs.source?.name || "")}</code> <code>${escapeHtml(rs.source?.version || "")}</code> <code>${escapeHtml(rs.source?.date || "")}</code>` }),
@@ -472,128 +452,6 @@ function renderRulesetDetail(key) {
       el("h2", { text: "JSON" }),
       jsonPre(c.object),
     ]),
-  ];
-}
-
-function renderDatasets() {
-  const d = getDescriptor();
-  const rows = [];
-  for (const c of d.dataset_contracts || []) {
-    const ds = c.object.dataset;
-    const key = `${ds.key}@${ds.version}`;
-    if (!matches(state.query, ds.key, ds.description, String(ds.version))) continue;
-    rows.push({ key, datasetKey: ds.key, version: ds.version, desc: ds.description || "", hash: c.hash });
-  }
-
-  const table = el("table", { class: "table" }, [
-    el("thead", {}, [el("tr", {}, [
-      el("th", { text: "Dataset" }),
-      el("th", { text: "Description" }),
-      el("th", { text: "Hash" }),
-    ])]),
-    el("tbody", {}, rows.map((r) => el("tr", {}, [
-      el("td", {}, [el("a", { href: `#dataset/${encodeURIComponent(r.key)}`, html: `<code>${escapeHtml(r.key)}</code>` })]),
-      el("td", { html: `<span class="muted">${escapeHtml(r.desc)}</span>` }),
-      el("td", { html: `<code>${escapeHtml(r.hash)}</code>` }),
-    ]))),
-  ]);
-
-  return [
-    el("div", { class: "card" }, [
-      el("h1", { text: "Dataset Contracts" }),
-      el("div", { class: "muted", text: "Contracts define dataset keys, versions, and row schemas." }),
-    ]),
-    el("div", { class: "card" }, [table]),
-  ];
-}
-
-function renderDatasetDetail(keyWithVersion) {
-  const d = getDescriptor();
-  const [k, vStr] = keyWithVersion.split("@");
-  const v = Number(vStr);
-  const c = (d.dataset_contracts || []).find((x) => x.object.dataset.key === k && x.object.dataset.version === v);
-  if (!c) return [el("div", { class: "card" }, [el("h1", { text: "Dataset not found" }), el("div", { class: "muted", text: keyWithVersion })])];
-  const ds = c.object.dataset;
-
-  const rowSchema = ds.schema;
-  const rows = [];
-  if (rowSchema && typeof rowSchema === "object" && rowSchema.properties && typeof rowSchema.properties === "object") {
-    const req = new Set(Array.isArray(rowSchema.required) ? rowSchema.required : []);
-    const names = Object.keys(rowSchema.properties).sort();
-    for (const name of names) {
-      flattenSchema(rowSchema.properties[name], rowSchema, name, req.has(name), rows, 0, new Set());
-    }
-  }
-
-  return [
-    el("div", { class: "card" }, [
-      el("h1", { html: `Dataset: <code>${escapeHtml(ds.key)}@${escapeHtml(ds.version)}</code>` }),
-      ds.description ? el("div", { class: "muted", text: ds.description }) : el("div"),
-      el("div", { class: "muted", html: ds.primary_key ? `primary_key: <code>${escapeHtml(ds.primary_key)}</code>` : "" }),
-      el("div", { class: "muted", html: ds.recommended_display ? `recommended_display: <code>${escapeHtml(ds.recommended_display)}</code>` : "" }),
-      el("div", { class: "muted", html: `source_path: <code>${escapeHtml(c.source_path)}</code>` }),
-      el("div", { class: "muted", html: `hash: <code>${escapeHtml(c.hash)}</code>` }),
-    ]),
-    rows.length ? el("div", { class: "card" }, [
-      el("h2", { text: "Fields" }),
-      el("div", { class: "muted", text: "Field list is derived from the dataset row JSON Schema." }),
-      renderFieldTable(rows),
-    ]) : el("div"),
-    el("div", { class: "card" }, [
-      el("h2", { text: "Row Schema" }),
-      jsonPre(ds.schema),
-    ]),
-    el("div", { class: "card" }, [
-      el("h2", { text: "JSON" }),
-      jsonPre(c.object),
-    ]),
-  ];
-}
-
-function renderConnectors() {
-  const d = getDescriptor();
-  const rows = [];
-  for (const c of d.connectors || []) {
-    const co = c.object.connector;
-    if (!matches(state.query, co.kind, co.name)) continue;
-    rows.push({ kind: co.kind, name: co.name, provides: (co.provides || []).length, hash: c.hash });
-  }
-  const table = el("table", { class: "table" }, [
-    el("thead", {}, [el("tr", {}, [
-      el("th", { text: "Connector" }),
-      el("th", { text: "Provides" }),
-      el("th", { text: "Hash" }),
-    ])]),
-    el("tbody", {}, rows.map((r) => el("tr", {}, [
-      el("td", {}, [el("a", { href: `#connector/${encodeURIComponent(r.kind)}`, html: `<div><code>${escapeHtml(r.kind)}</code></div><div class="muted">${escapeHtml(r.name)}</div>` })]),
-      el("td", { text: String(r.provides) }),
-      el("td", { html: `<code>${escapeHtml(r.hash)}</code>` }),
-    ]))),
-  ]);
-  return [
-    el("div", { class: "card" }, [el("h1", { text: "Connectors" }), el("div", { class: "muted", text: "Connector manifests declare datasets that a connector can provide." })]),
-    el("div", { class: "card" }, [table]),
-  ];
-}
-
-function renderConnectorDetail(kind) {
-  const d = getDescriptor();
-  const c = (d.connectors || []).find((x) => x.object.connector.kind === kind);
-  if (!c) return [el("div", { class: "card" }, [el("h1", { text: "Connector not found" }), el("div", { class: "muted", text: kind })])];
-  const co = c.object.connector;
-  const provides = (co.provides || []).map((p) => `<li><code>${escapeHtml(p.dataset)}@${escapeHtml(p.version)}</code></li>`).join("");
-  return [
-    el("div", { class: "card" }, [
-      el("h1", { html: `Connector: <code>${escapeHtml(co.kind)}</code>` }),
-      el("div", { class: "muted", text: co.name }),
-      el("div", { class: "muted", html: `source_path: <code>${escapeHtml(c.source_path)}</code>` }),
-      el("div", { class: "muted", html: `hash: <code>${escapeHtml(c.hash)}</code>` }),
-    ]),
-    el("div", { class: "card" }, [
-      el("h2", { text: "Provides" }),
-      el("div", { html: `<ul>${provides || "<li class=\"muted\">(none)</li>"}</ul>` }),
-    ]),
-    el("div", { class: "card" }, [el("h2", { text: "JSON" }), jsonPre(c.object)]),
   ];
 }
 
@@ -645,26 +503,6 @@ function renderProfileDetail(key) {
       el("div", { html: `<ul>${rulesets || "<li class=\"muted\">(none)</li>"}</ul>` }),
     ]),
     el("div", { class: "card" }, [el("h2", { text: "JSON" }), jsonPre(c.object)]),
-  ];
-}
-
-function renderDictionary() {
-  const d = getDescriptor();
-  const dict = d.dictionary?.object?.dictionary?.enums || {};
-  const names = Object.keys(dict).sort();
-  const rows = names.map((n) => {
-    const values = (dict[n] || []).map((v) => `<code>${escapeHtml(v)}</code>`).join(", ");
-    return el("tr", {}, [el("td", { html: `<code>${escapeHtml(n)}</code>` }), el("td", { html: values })]);
-  });
-  const table = el("table", { class: "table" }, [
-    el("thead", {}, [el("tr", {}, [el("th", { text: "Enum" }), el("th", { text: "Values" })])]),
-    el("tbody", {}, rows),
-  ]);
-
-  return [
-    el("div", { class: "card" }, [el("h1", { text: "Dictionary" }), el("div", { class: "muted", text: "Central enums shared by specs and generated code." })]),
-    el("div", { class: "card" }, [table]),
-    el("div", { class: "card" }, [el("h2", { text: "JSON" }), jsonPre(d.dictionary?.object || {})]),
   ];
 }
 
@@ -729,13 +567,8 @@ function render() {
   else if (view === "schema") nodes = renderSchemaDoc(decodeURIComponent(rest[0] || ""));
   else if (view === "rulesets") nodes = renderRulesets();
   else if (view === "ruleset") nodes = renderRulesetDetail(decodeURIComponent(rest.join("/")));
-  else if (view === "datasets") nodes = renderDatasets();
-  else if (view === "dataset") nodes = renderDatasetDetail(decodeURIComponent(rest.join("/")));
-  else if (view === "connectors") nodes = renderConnectors();
-  else if (view === "connector") nodes = renderConnectorDetail(decodeURIComponent(rest.join("/")));
   else if (view === "profiles") nodes = renderProfiles();
   else if (view === "profile") nodes = renderProfileDetail(decodeURIComponent(rest.join("/")));
-  else if (view === "dictionary") nodes = renderDictionary();
   else if (view === "artifacts") nodes = renderArtifacts();
   else if (view === "requirements") nodes = renderRequirements();
   else nodes = [el("div", { class: "card" }, [el("h1", { text: "Not found" }), el("div", { class: "muted", text: `Unknown view: ${view}` })])];

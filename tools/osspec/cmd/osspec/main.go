@@ -35,7 +35,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "osspec: compile and validate Open SSPM JSON specs")
+	fmt.Fprintln(os.Stderr, "osspec: compile and validate Open SSPM compliance specs")
 	fmt.Fprintln(os.Stderr, "")
 	fmt.Fprintln(os.Stderr, "Usage:")
 	fmt.Fprintln(os.Stderr, "  osspec validate [--repo .]")

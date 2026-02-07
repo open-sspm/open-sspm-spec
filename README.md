@@ -6,23 +6,21 @@
 
 THIS IS WORKING DOCUMENT, I AM STILL WORKING ON IT AND IT WILL CHANGE A LOT!
 
-Source-of-truth repository for Open SSPM specifications.
+Source-of-truth repository for Open SSPM **compliance specifications**.
 
-Open SSPM is an open, versioned spec (JSON + JSON Schema) for SSPM interoperability: a common way to describe SaaS posture data and posture checks so different connectors/tools can exchange them.
+Open SSPM is an open, versioned spec (JSON + JSON Schema) for posture/compliance rulesets and profiles (benchmarks) that tools can evaluate.
 
 ## What this repo contains
 
 - JSON specs under `specs/`:
   - rulesets (`opensspm.ruleset`)
-  - dataset contracts (`opensspm.dataset_contract`)
-  - connector manifests (`opensspm.connector_manifest`)
   - profiles (`opensspm.profile`)
+  - test cases (`opensspm.test_case`, `*.test.json`)
 - JSON Schemas under `metaschema/` (strict top-level validation)
 - Deterministic compiler `osspec` under `tools/osspec`
 - Generated, committed distribution artifacts under `dist/`
-- Generated language outputs under `gen/` (Go first)
 
-Hard boundary: this repo does **not** generate evaluation logic. It generates only data models, interfaces, and deterministic compiled artifacts.
+Hard boundary: this repo does **not** define connectors or dataset contracts. Dataset keys referenced by checks are treated as external/runtime-defined inputs.
 
 ## Quickstart
 
@@ -38,7 +36,7 @@ Build deterministic outputs into `dist/`:
 go run ./tools/osspec/cmd/osspec build
 ```
 
-Generate Go output into `gen/go`:
+Generate Go output into `gen/go` (committed for downstream consumers):
 
 ```sh
 go run ./tools/osspec/cmd/osspec codegen --lang go --out gen/go
@@ -78,7 +76,7 @@ GitHub Pages:
 
 ## `required_data` policy
 
-`ruleset.required_data` is optional. If present, `osspec validate` enforces that it includes every dataset referenced by that ruleset’s checks (dataset+version).
+`rule.required_data` declares the dataset keys a rule depends on. `osspec validate` enforces that it includes every dataset referenced by that rule’s check.
 
 ## Third-party standards (CIS)
 

@@ -1,7 +1,5 @@
 package types
 
-import "encoding/json"
-
 type Header struct {
 	SchemaVersion int    `json:"schema_version"`
 	Kind          string `json:"kind"`
@@ -13,14 +11,6 @@ type Version struct {
 	SpecVersion         string `json:"spec_version"`
 	SchemaVersion       int    `json:"schema_version"`
 	GeneratorMinVersion string `json:"generator_min_version"`
-}
-
-type DictionaryDoc struct {
-	SchemaVersion int    `json:"schema_version"`
-	Kind          string `json:"kind"`
-	Dictionary    struct {
-		Enums map[string][]string `json:"enums"`
-	} `json:"dictionary"`
 }
 
 type Reference struct {
@@ -210,33 +200,6 @@ type FieldCompareExpect struct {
 type JoinSide struct {
 	Dataset string `json:"dataset"`
 	KeyPath string `json:"key_path"`
-}
-
-type DatasetContractDoc struct {
-	SchemaVersion int             `json:"schema_version"`
-	Kind          string          `json:"kind"`
-	Dataset       DatasetContract `json:"dataset"`
-}
-
-type DatasetContract struct {
-	Key                string          `json:"key"`
-	Version            int             `json:"version"`
-	Description        string          `json:"description,omitempty"`
-	PrimaryKey         string          `json:"primary_key,omitempty"`
-	RecommendedDisplay string          `json:"recommended_display,omitempty"`
-	Schema             json.RawMessage `json:"schema"`
-}
-
-type ConnectorManifestDoc struct {
-	SchemaVersion int               `json:"schema_version"`
-	Kind          string            `json:"kind"`
-	Connector     ConnectorManifest `json:"connector"`
-}
-
-type ConnectorManifest struct {
-	Kind     string           `json:"kind"`
-	Name     string           `json:"name"`
-	Provides []DatasetRefSpec `json:"provides"`
 }
 
 type ProfileDoc struct {
