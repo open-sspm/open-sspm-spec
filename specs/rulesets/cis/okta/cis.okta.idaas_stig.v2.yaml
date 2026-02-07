@@ -14,7 +14,7 @@
       "dataset": "okta:policies/sign-on"
       "version": 1
   "key": "cis.okta.idaas_stig.v2"
-  "name": "CIS Okta IDaaS STIG Benchmark v2.0.0"
+  "name": "CIS Okta IDaaS STIG Benchmark v1.0.0"
   "references":
     -
       "title": "CIS Benchmarks (obtain the official PDF via CIS)"
@@ -647,7 +647,7 @@
     "date": "2025-08-21"
     "name": "CIS"
     "url": "https://www.cisecurity.org"
-    "version": "v2.0.0"
+    "version": "v1.0.0"
   "status": "active"
   "tags":
     - "cis"

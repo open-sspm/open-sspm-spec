@@ -6,5 +6,5 @@
   "rulesets":
     -
       "key": "cis.okta.idaas_stig.v2"
-      "version": "v2.0.0"
+      "version": "v1.0.0"
 "schema_version": 2
