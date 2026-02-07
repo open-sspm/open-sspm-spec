@@ -28,12 +28,12 @@
     "description": "The key of the rule being tested."
     "type": "string"
   "schema_version":
-    "const": 1
+    "const": 2
     "type": "integer"
 "required":
   - "schema_version"
   - "kind"
   - "rule_key"
   - "expect"
-"title": "Open SSPM Test Case (v1)"
+"title": "Open SSPM Test Case (v2)"
 "type": "object"

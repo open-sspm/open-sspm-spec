@@ -1,18 +1,18 @@
 "artifacts":
   -
-    "hash": "63375d2b0e76f7cd2999e1d9aace65c695566c1dffc4f2e9f61c75ef0346aa5a"
-    "key": "cis.okta.idaas_stig.profile.v1"
+    "hash": "fb00758c21ea49275aa61358e74012d2f68ed930f0dd1dc7643cedd8a6be9ffd"
+    "key": "cis.okta.idaas_stig.profile.v2"
     "kind": "opensspm.profile"
-    "source_path": "specs/profiles/cis.okta.idaas_stig.profile.v1.yaml"
+    "source_path": "specs/profiles/cis.okta.idaas_stig.profile.v2.yaml"
   -
-    "hash": "cc8932d39e64dfabb5c4e9ba2ba28360ce145460c80e0584ab83811db0cc0b8a"
-    "key": "cis.okta.idaas_stig.v1"
+    "hash": "457421ff63d4c9ad214b03f8854f20ce26d836862570db4e8fe46c99e09d9cc9"
+    "key": "cis.okta.idaas_stig.v2"
     "kind": "opensspm.ruleset"
-    "source_path": "specs/rulesets/cis/okta/cis.okta.idaas_stig.v1.yaml"
+    "source_path": "specs/rulesets/cis/okta/cis.okta.idaas_stig.v2.yaml"
   -
-    "hash": "ae0619fbe43fe8d8e692dcf3992311f6ab12d850e7b0b0b8c2fcddd55d27cfb8"
+    "hash": "6576272f27d257fa10cce8ff8089638286e80bb8437db447f9bd51bd07b06dcd"
     "key": "version"
     "kind": "opensspm.version"
     "source_path": "version.yaml"
 "kind": "opensspm.artifacts_index"
-"schema_version": 1
+"schema_version": 2

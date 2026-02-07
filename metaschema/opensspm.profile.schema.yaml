@@ -44,12 +44,12 @@
       - "rulesets"
     "type": "object"
   "schema_version":
-    "const": 1
-    "description": "Document schema version discriminator. Must be 1 for Open SSPM v1 documents."
+    "const": 2
+    "description": "Document schema version discriminator. Must be 2 for Open SSPM v2 documents."
     "type": "integer"
 "required":
   - "schema_version"
   - "kind"
   - "profile"
-"title": "Open SSPM Profile (v1)"
+"title": "Open SSPM Profile (v2)"
 "type": "object"

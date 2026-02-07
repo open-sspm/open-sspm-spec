@@ -50,7 +50,7 @@ Generate the static documentation site data (renders from the compiled descripto
 go run ./tools/osspec/cmd/osspec build
 ```
 
-This writes `docs/descriptor.v1.yaml` and `docs/metaschema/*.yaml`.
+This writes `docs/descriptor.v2.yaml` and `docs/metaschema/*.yaml`.
 
 Serve `docs/` using any static file server (opening `docs/index.html` via `file://` will fail because the site loads YAML via `fetch`):
 

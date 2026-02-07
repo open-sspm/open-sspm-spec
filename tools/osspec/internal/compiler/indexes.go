@@ -12,7 +12,7 @@ import (
 
 func buildRequirements(b *schemasem.Bundle) types.RequirementsIndex {
 	out := types.RequirementsIndex{
-		SchemaVersion: 1,
+		SchemaVersion: 2,
 		Kind:          "opensspm.requirements_index",
 	}
 
@@ -180,4 +180,3 @@ func setToSortedStringSlice(m map[string]struct{}) []string {
 	slices.Sort(out)
 	return out
 }
-

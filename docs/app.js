@@ -562,7 +562,7 @@ async function load() {
       setStatus(`This docs site is running from ${location.href}. Open http://localhost:8080/ (or any http(s) URL) instead of file://.`, true);
       return;
     }
-    const resp = await fetch("./descriptor.v1.yaml", { cache: "no-store" });
+    const resp = await fetch("./descriptor.v2.yaml", { cache: "no-store" });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const d = jsyaml.load(await resp.text(), { schema: jsyaml.JSON_SCHEMA });
     state.descriptor = d;

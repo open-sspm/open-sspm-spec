@@ -58,10 +58,10 @@ func TestValidateSemantic_ValidExamples_PerCheckType(t *testing.T) {
 		{
 			name: "manual.attestation",
 			doc: `{
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "opensspm.ruleset",
   "ruleset": {
-    "key": "example.manual.v1",
+    "key": "example.manual.v2",
     "name": "Example manual",
     "scope": { "kind": "connector_instance", "connector_kind": "okta" },
     "status": "active",
@@ -82,10 +82,10 @@ func TestValidateSemantic_ValidExamples_PerCheckType(t *testing.T) {
 		{
 			name: "dataset.field_compare",
 			doc: `{
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "opensspm.ruleset",
   "ruleset": {
-    "key": "example.field_compare.v1",
+    "key": "example.field_compare.v2",
     "name": "Example field compare",
     "scope": { "kind": "connector_instance", "connector_kind": "okta" },
     "data_contracts": [
@@ -116,10 +116,10 @@ func TestValidateSemantic_ValidExamples_PerCheckType(t *testing.T) {
 		{
 			name: "dataset.count_compare",
 			doc: `{
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "opensspm.ruleset",
   "ruleset": {
-    "key": "example.count_compare.v1",
+    "key": "example.count_compare.v2",
     "name": "Example count compare",
     "scope": { "kind": "connector_instance", "connector_kind": "okta" },
     "data_contracts": [
@@ -150,10 +150,10 @@ func TestValidateSemantic_ValidExamples_PerCheckType(t *testing.T) {
 		{
 			name: "dataset.join_count_compare",
 			doc: `{
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "opensspm.ruleset",
   "ruleset": {
-    "key": "example.join_count_compare.v1",
+    "key": "example.join_count_compare.v2",
     "name": "Example join count compare",
     "scope": { "kind": "global" },
     "data_contracts": [
@@ -197,10 +197,10 @@ func TestValidateSemantic_ValidExamples_PerCheckType(t *testing.T) {
 
 func TestValidateSemantic_MonitoringAutomatedRequiresCheck(t *testing.T) {
 	errs := validateRulesetDocJSON(t, `{
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "opensspm.ruleset",
   "ruleset": {
-    "key": "example.missing_check.v1",
+    "key": "example.missing_check.v2",
     "name": "Example missing check",
     "scope": { "kind": "global" },
     "rules": [
@@ -221,10 +221,10 @@ func TestValidateSemantic_MonitoringAutomatedRequiresCheck(t *testing.T) {
 
 func TestValidateSemantic_ManualAllowsMissingCheck(t *testing.T) {
 	errs := validateRulesetDocJSON(t, `{
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "opensspm.ruleset",
   "ruleset": {
-    "key": "example.manual_missing_check.v1",
+    "key": "example.manual_missing_check.v2",
     "name": "Example manual missing check",
     "scope": { "kind": "global" },
     "rules": [
@@ -245,10 +245,10 @@ func TestValidateSemantic_ManualAllowsMissingCheck(t *testing.T) {
 
 func TestValidateSemantic_ManualForbidsNonManualCheck(t *testing.T) {
 	errs := validateRulesetDocJSON(t, `{
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "opensspm.ruleset",
   "ruleset": {
-    "key": "example.manual_bad_check.v1",
+    "key": "example.manual_bad_check.v2",
     "name": "Example manual bad check",
     "scope": { "kind": "global" },
     "rules": [
@@ -274,10 +274,10 @@ func TestValidateSemantic_ManualForbidsNonManualCheck(t *testing.T) {
 
 func TestValidateSemantic_RequiredDataCoverage(t *testing.T) {
 	errs := validateRulesetDocJSON(t, `{
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "opensspm.ruleset",
   "ruleset": {
-    "key": "example.required_data.v1",
+    "key": "example.required_data.v2",
     "name": "Example required_data",
     "scope": { "kind": "connector_instance", "connector_kind": "okta" },
     "data_contracts": [
@@ -307,10 +307,10 @@ func TestValidateSemantic_RequiredDataCoverage(t *testing.T) {
 
 func TestValidateSemantic_DatasetVersionRequiresContract(t *testing.T) {
 	errs := validateRulesetDocJSON(t, `{
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "opensspm.ruleset",
   "ruleset": {
-    "key": "example.dataset_version_contract.v1",
+    "key": "example.dataset_version_contract.v2",
     "name": "Example dataset_version contract",
     "scope": { "kind": "global" },
     "data_contracts": [
@@ -340,10 +340,10 @@ func TestValidateSemantic_DatasetVersionRequiresContract(t *testing.T) {
 
 func TestValidateSemantic_MultipleContractsRequireDatasetVersion(t *testing.T) {
 	errs := validateRulesetDocJSON(t, `{
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "opensspm.ruleset",
   "ruleset": {
-    "key": "example.ambiguous_contracts.v1",
+    "key": "example.ambiguous_contracts.v2",
     "name": "Example ambiguous contracts",
     "scope": { "kind": "global" },
     "data_contracts": [
@@ -373,10 +373,10 @@ func TestValidateSemantic_MultipleContractsRequireDatasetVersion(t *testing.T) {
 
 func TestValidateSemantic_ValueParamRequiresParametersDefaults(t *testing.T) {
 	errs := validateRulesetDocJSON(t, `{
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "opensspm.ruleset",
   "ruleset": {
-    "key": "example.value_param_missing_defaults.v1",
+    "key": "example.value_param_missing_defaults.v2",
     "name": "Example value_param missing defaults",
     "scope": { "kind": "global" },
     "data_contracts": [
@@ -406,10 +406,10 @@ func TestValidateSemantic_ValueParamRequiresParametersDefaults(t *testing.T) {
 
 func TestValidateSemantic_JoinWhereExactlyOneSide(t *testing.T) {
 	errs := validateRulesetDocJSON(t, `{
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "opensspm.ruleset",
   "ruleset": {
-    "key": "example.join_where_bad.v1",
+    "key": "example.join_where_bad.v2",
     "name": "Example join where bad",
     "scope": { "kind": "global" },
     "data_contracts": [
@@ -445,10 +445,10 @@ func TestValidateSemantic_JoinWhereExactlyOneSide(t *testing.T) {
 
 func TestValidateSemantic_PredicateExistsForbidsValue(t *testing.T) {
 	errs := validateRulesetDocJSON(t, `{
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "opensspm.ruleset",
   "ruleset": {
-    "key": "example.exists_has_value.v1",
+    "key": "example.exists_has_value.v2",
     "name": "Example exists has value",
     "scope": { "kind": "global" },
     "data_contracts": [
@@ -481,10 +481,10 @@ func TestValidateSemantic_PredicateExistsForbidsValue(t *testing.T) {
 
 func TestValidateSemantic_CompareValueAndValueParamExclusive(t *testing.T) {
 	errs := validateRulesetDocJSON(t, `{
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "opensspm.ruleset",
   "ruleset": {
-    "key": "example.compare_both.v1",
+    "key": "example.compare_both.v2",
     "name": "Example compare both",
     "scope": { "kind": "global" },
     "data_contracts": [
@@ -515,10 +515,10 @@ func TestValidateSemantic_CompareValueAndValueParamExclusive(t *testing.T) {
 
 func TestValidateSemantic_ParameterSchemaKeysMustExistInDefaults(t *testing.T) {
 	errs := validateRulesetDocJSON(t, `{
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "opensspm.ruleset",
   "ruleset": {
-    "key": "example.param_schema_keys.v1",
+    "key": "example.param_schema_keys.v2",
     "name": "Example param schema keys",
     "scope": { "kind": "global" },
     "rules": [
@@ -545,7 +545,7 @@ func TestValidateSemantic_ParameterSchemaKeysMustExistInDefaults(t *testing.T) {
 
 func minimalRulesetDoc(key string, scope types.Scope) types.RulesetDoc {
 	return types.RulesetDoc{
-		SchemaVersion: 1,
+		SchemaVersion: 2,
 		Kind:          "opensspm.ruleset",
 		Ruleset: types.Ruleset{
 			Key:   key,

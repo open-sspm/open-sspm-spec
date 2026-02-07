@@ -17,13 +17,13 @@ func TestCompile_CISOktaRulesetIndexed(t *testing.T) {
 
 	var rr *types.RulesetRequirement
 	for i := range res.Requirements.Rulesets {
-		if res.Requirements.Rulesets[i].RulesetKey == "cis.okta.idaas_stig.v1" {
+		if res.Requirements.Rulesets[i].RulesetKey == "cis.okta.idaas_stig.v2" {
 			rr = &res.Requirements.Rulesets[i]
 			break
 		}
 	}
 	if rr == nil {
-		t.Fatalf("missing ruleset cis.okta.idaas_stig.v1 in requirements index")
+		t.Fatalf("missing ruleset cis.okta.idaas_stig.v2 in requirements index")
 	}
 
 	if rr.Status != "active" {
