@@ -33,35 +33,15 @@ function escapeHtml(s) {
     .replaceAll("'", "&#039;");
 }
 
-function prettyJson(v) {
-  return JSON.stringify(v, null, 2);
+function prettyYAML(v) {
+  if (v === undefined) return "";
+  const dumped = jsyaml.dump(v, { noRefs: true, lineWidth: 100, sortKeys: false });
+  return dumped.endsWith("\n") ? dumped.slice(0, -1) : dumped;
 }
 
-function highlightJsonString(text) {
-  const tokenRe = /("(?:\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(?:\\s*:)?|\\btrue\\b|\\bfalse\\b|\\bnull\\b|-?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)/g;
-  let out = "";
-  let lastIndex = 0;
-  for (const m of text.matchAll(tokenRe)) {
-    const start = m.index ?? 0;
-    const end = start + m[0].length;
-    out += escapeHtml(text.slice(lastIndex, start));
-
-    const tok = m[0];
-    let cls = "tok-number";
-    if (tok[0] === "\"") cls = tok.endsWith(":") ? "tok-key" : "tok-string";
-    else if (tok === "true" || tok === "false") cls = "tok-bool";
-    else if (tok === "null") cls = "tok-null";
-
-    out += `<span class="${cls}">${escapeHtml(tok)}</span>`;
-    lastIndex = end;
-  }
-  out += escapeHtml(text.slice(lastIndex));
-  return out;
-}
-
-function jsonPre(v) {
-  const raw = prettyJson(v);
-  return el("pre", { class: "json" }, [el("code", { class: "language-json", html: highlightJsonString(raw) })]);
+function yamlPre(v) {
+  const raw = prettyYAML(v);
+  return el("pre", { class: "codeblock" }, [el("code", { class: "language-yaml", text: raw })]);
 }
 
 function syncTopbarHeight() {
@@ -318,16 +298,16 @@ function renderSchemaDoc(kind) {
     ]),
     el("div", { class: "card" }, [
       el("h2", { text: "Fields" }),
-      el("div", { class: "muted", text: "Field list is derived from the JSON Schema descriptions." }),
+      el("div", { class: "muted", text: "Field list is derived from the schema definitions." }),
       renderFieldTable(rows),
     ]),
     example ? el("div", { class: "card" }, [
       el("h2", { text: "Example" }),
-      jsonPre(example),
+      yamlPre(example),
     ]) : el("div"),
     el("div", { class: "card" }, [
-      el("h2", { text: "JSON Schema" }),
-      jsonPre(schema),
+      el("h2", { text: "Schema (YAML)" }),
+      yamlPre(schema),
     ]),
   ];
 }
@@ -355,7 +335,7 @@ function renderOverview() {
   cards.push(el("div", { class: "card" }, [
     el("h2", { text: "Descriptor" }),
     el("div", { class: "muted", text: "This site renders from the compiled descriptor (no evaluation logic)." }),
-    jsonPre(d),
+    yamlPre(d),
   ]));
 
   return cards;
@@ -449,8 +429,8 @@ function renderRulesetDetail(key) {
     ]),
     el("div", { class: "card" }, [table]),
     el("div", { class: "card" }, [
-      el("h2", { text: "JSON" }),
-      jsonPre(c.object),
+      el("h2", { text: "YAML" }),
+      yamlPre(c.object),
     ]),
   ];
 }
@@ -502,7 +482,7 @@ function renderProfileDetail(key) {
       el("h2", { text: "Rulesets" }),
       el("div", { html: `<ul>${rulesets || "<li class=\"muted\">(none)</li>"}</ul>` }),
     ]),
-    el("div", { class: "card" }, [el("h2", { text: "JSON" }), jsonPre(c.object)]),
+    el("div", { class: "card" }, [el("h2", { text: "YAML" }), yamlPre(c.object)]),
   ];
 }
 
