@@ -177,4 +177,21 @@ func normalizeRuleCheck(c *types.Check) {
 	}
 	c.Engine = types.CheckEngine(strings.ToLower(strings.TrimSpace(string(c.Engine))))
 	c.Expression = strings.TrimSpace(c.Expression)
+	if c.Plan == nil {
+		return
+	}
+	c.Plan.Type = strings.TrimSpace(c.Plan.Type)
+	c.Plan.Dataset = strings.TrimSpace(c.Plan.Dataset)
+	c.Plan.WhereExpression = strings.TrimSpace(c.Plan.WhereExpression)
+	c.Plan.AssertExpression = strings.TrimSpace(c.Plan.AssertExpression)
+	c.Plan.OnMissingDataset = strings.ToLower(strings.TrimSpace(c.Plan.OnMissingDataset))
+	c.Plan.OnPermissionDenied = strings.ToLower(strings.TrimSpace(c.Plan.OnPermissionDenied))
+	c.Plan.OnSyncError = strings.ToLower(strings.TrimSpace(c.Plan.OnSyncError))
+	if c.Plan.Expect != nil {
+		c.Plan.Expect.Match = strings.ToLower(strings.TrimSpace(c.Plan.Expect.Match))
+		c.Plan.Expect.OnEmpty = strings.ToLower(strings.TrimSpace(c.Plan.Expect.OnEmpty))
+	}
+	if c.Plan.Compare != nil {
+		c.Plan.Compare.Op = strings.ToLower(strings.TrimSpace(c.Plan.Compare.Op))
+	}
 }

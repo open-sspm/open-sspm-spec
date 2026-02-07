@@ -164,7 +164,31 @@ type Lifecycle struct {
 
 type Check struct {
 	Engine     CheckEngine `json:"engine"`
-	Expression string      `json:"expression"`
+	Expression string      `json:"expression,omitempty"`
+	Plan       *CheckPlan  `json:"plan,omitempty"`
+}
+
+type CheckPlan struct {
+	Type               string            `json:"type"`
+	Dataset            string            `json:"dataset"`
+	WhereExpression    string            `json:"where_expression,omitempty"`
+	AssertExpression   string            `json:"assert_expression,omitempty"`
+	Expect             *CheckPlanExpect  `json:"expect,omitempty"`
+	Compare            *CheckPlanCompare `json:"compare,omitempty"`
+	OnMissingDataset   string            `json:"on_missing_dataset,omitempty"`
+	OnPermissionDenied string            `json:"on_permission_denied,omitempty"`
+	OnSyncError        string            `json:"on_sync_error,omitempty"`
+}
+
+type CheckPlanExpect struct {
+	Match       string `json:"match,omitempty"`
+	MinSelected int    `json:"min_selected,omitempty"`
+	OnEmpty     string `json:"on_empty,omitempty"`
+}
+
+type CheckPlanCompare struct {
+	Op    string `json:"op"`
+	Value any    `json:"value"`
 }
 
 type ProfileDoc struct {
@@ -417,7 +441,17 @@ func EvaluateRule(rule *Rule, input EvaluateInput) (EvaluateResult, error) {
 	}
 
 	if rule.Monitoring.Status == MonitoringStatus_MANUAL || rule.Monitoring.Status == MonitoringStatus_UNSUPPORTED {
-		if rule.Check == nil || strings.TrimSpace(rule.Check.Expression) == "" {
+		if rule.Check == nil {
+			return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "manual_rule"}, nil
+		}
+		engine := strings.TrimSpace(string(rule.Check.Engine))
+		if engine == "" && strings.TrimSpace(rule.Check.Expression) == "" && rule.Check.Plan == nil {
+			return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "manual_rule"}, nil
+		}
+		if engine == string(CheckEngine_CEL) && strings.TrimSpace(rule.Check.Expression) == "" {
+			return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "manual_rule"}, nil
+		}
+		if engine == string(CheckEngine_CEL_PLAN) && rule.Check.Plan == nil {
 			return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "manual_rule"}, nil
 		}
 	}
@@ -425,14 +459,6 @@ func EvaluateRule(rule *Rule, input EvaluateInput) (EvaluateResult, error) {
 	if rule.Check == nil {
 		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "missing_check"}, fmt.Errorf("rule.check is required")
 	}
-	if strings.TrimSpace(string(rule.Check.Engine)) != string(CheckEngine_CEL) {
-		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "unsupported_engine"}, fmt.Errorf("unsupported check.engine %q", rule.Check.Engine)
-	}
-	expression := strings.TrimSpace(rule.Check.Expression)
-	if expression == "" {
-		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "missing_expression"}, fmt.Errorf("check.expression is required")
-	}
-
 	params := make(map[string]any)
 	if rule.Parameters != nil {
 		for k, v := range rule.Parameters.Defaults {
@@ -443,33 +469,289 @@ func EvaluateRule(rule *Rule, input EvaluateInput) (EvaluateResult, error) {
 		params[k] = v
 	}
 
-	refs := extractExpressionReferences(expression)
-	datasets, early, ok := resolveExpressionDatasets(refs.RequiredDatasets, input.Datasets)
-	if !ok {
-		return early, nil
-	}
-	for _, name := range refs.Params {
-		if _, exists := params[name]; !exists {
-			return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "missing_param"}, fmt.Errorf("param %q not found", name)
+	engine := strings.TrimSpace(string(rule.Check.Engine))
+	switch engine {
+	case string(CheckEngine_CEL):
+		expression := strings.TrimSpace(rule.Check.Expression)
+		if expression == "" {
+			return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "missing_expression"}, fmt.Errorf("check.expression is required")
 		}
-	}
 
-	pass, err := evaluateCELExpression(expression, datasets, params)
-	if err != nil {
-		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "cel_error"}, err
-	}
+		refs := extractExpressionReferences(expression)
+		datasets, early, ok := resolveExpressionDatasets(refs.RequiredDatasets, input.Datasets)
+		if !ok {
+			return early, nil
+		}
+		for _, name := range refs.Params {
+			if _, exists := params[name]; !exists {
+				return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "missing_param"}, fmt.Errorf("param %q not found", name)
+			}
+		}
 
-	result := EvaluateResult{Status: EvaluateStatus_FAIL, SelectedCount: 1, PassedCount: 0, CountValue: 0}
-	if pass {
-		result.Status = EvaluateStatus_PASS
-		result.PassedCount = 1
-		result.CountValue = 1
+		pass, err := evaluateCELExpression(expression, datasets, params)
+		if err != nil {
+			return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "cel_error"}, err
+		}
+
+		result := EvaluateResult{Status: EvaluateStatus_FAIL, SelectedCount: 1, PassedCount: 0, CountValue: 0}
+		if pass {
+			result.Status = EvaluateStatus_PASS
+			result.PassedCount = 1
+			result.CountValue = 1
+		}
+		return result, nil
+	case string(CheckEngine_CEL_PLAN):
+		result, err := evaluateCELPlan(rule.Check.Plan, input.Datasets, params)
+		if err != nil {
+			return result, err
+		}
+		return result, nil
+	default:
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "unsupported_engine"}, fmt.Errorf("unsupported check.engine %q", rule.Check.Engine)
 	}
-	return result, nil
 }
 
 func (r *Rule) Evaluate(input EvaluateInput) (EvaluateResult, error) {
 	return EvaluateRule(r, input)
+}
+
+func evaluateCELPlan(plan *CheckPlan, datasets map[string]DatasetInput, params map[string]any) (EvaluateResult, error) {
+	if plan == nil {
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "missing_plan"}, fmt.Errorf("check.plan is required for check.engine=cel_plan")
+	}
+	dataset := strings.TrimSpace(plan.Dataset)
+	if dataset == "" {
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "missing_plan_dataset"}, fmt.Errorf("check.plan.dataset is required")
+	}
+
+	entry, ok := datasets[dataset]
+	if !ok {
+		return datasetResultByPolicy(DatasetErrorKind_MISSING_DATASET, plan.OnMissingDataset)
+	}
+	if entry.Error != nil {
+		action := policyForDatasetError(plan, entry.Error.Kind)
+		return datasetResultByPolicy(entry.Error.Kind, action)
+	}
+
+	selected := entry.Rows
+	whereExpr := strings.TrimSpace(plan.WhereExpression)
+	if whereExpr != "" {
+		filtered := make([]any, 0, len(entry.Rows))
+		for _, row := range entry.Rows {
+			match, err := evaluateCELPredicate(whereExpr, row, params)
+			if err != nil {
+				return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "cel_error"}, err
+			}
+			if match {
+				filtered = append(filtered, row)
+			}
+		}
+		selected = filtered
+	}
+
+	switch strings.TrimSpace(plan.Type) {
+	case "dataset.field_compare":
+		return evaluateFieldComparePlan(plan, selected, params)
+	case "dataset.count_compare":
+		return evaluateCountComparePlan(plan, selected)
+	default:
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "unsupported_plan_type"}, fmt.Errorf("unsupported check.plan.type %q", plan.Type)
+	}
+}
+
+func evaluateFieldComparePlan(plan *CheckPlan, selected []any, params map[string]any) (EvaluateResult, error) {
+	assertExpr := strings.TrimSpace(plan.AssertExpression)
+	if assertExpr == "" {
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "missing_plan_assert"}, fmt.Errorf("check.plan.assert_expression is required")
+	}
+
+	match := "all"
+	minSelected := 1
+	onEmpty := "fail"
+	if plan.Expect != nil {
+		if v := strings.ToLower(strings.TrimSpace(plan.Expect.Match)); v != "" {
+			match = v
+		}
+		minSelected = plan.Expect.MinSelected
+		if v := strings.ToLower(strings.TrimSpace(plan.Expect.OnEmpty)); v != "" {
+			onEmpty = v
+		}
+	}
+	if minSelected < 0 {
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "invalid_plan_expect"}, fmt.Errorf("check.plan.expect.min_selected must be >= 0")
+	}
+	if onEmpty != "fail" && onEmpty != "unknown" {
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "invalid_plan_expect"}, fmt.Errorf("check.plan.expect.on_empty must be fail|unknown")
+	}
+	if match != "all" && match != "any" {
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "invalid_plan_expect"}, fmt.Errorf("check.plan.expect.match must be all|any")
+	}
+
+	selectedCount := len(selected)
+	if selectedCount == 0 {
+		if onEmpty == "unknown" {
+			return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "empty_selection"}, nil
+		}
+		return EvaluateResult{Status: EvaluateStatus_FAIL, ReasonCode: "empty_selection", SelectedCount: 0, PassedCount: 0, CountValue: 0}, nil
+	}
+	if selectedCount < minSelected {
+		target := minSelected
+		return EvaluateResult{
+			Status:        EvaluateStatus_FAIL,
+			ReasonCode:    "min_selected_not_met",
+			SelectedCount: selectedCount,
+			PassedCount:   0,
+			CountValue:    selectedCount,
+			TargetValue:   &target,
+		}, nil
+	}
+
+	passed := 0
+	for _, row := range selected {
+		ok, err := evaluateCELPredicate(assertExpr, row, params)
+		if err != nil {
+			return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "cel_error"}, err
+		}
+		if ok {
+			passed++
+		}
+	}
+
+	pass := false
+	if match == "all" {
+		pass = passed == selectedCount
+	} else {
+		pass = passed > 0
+	}
+
+	result := EvaluateResult{
+		Status:        EvaluateStatus_FAIL,
+		SelectedCount: selectedCount,
+		PassedCount:   passed,
+		CountValue:    passed,
+	}
+	if pass {
+		result.Status = EvaluateStatus_PASS
+	}
+	return result, nil
+}
+
+func evaluateCountComparePlan(plan *CheckPlan, selected []any) (EvaluateResult, error) {
+	if plan.Compare == nil {
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "missing_plan_compare"}, fmt.Errorf("check.plan.compare is required")
+	}
+	target, ok := intValue(plan.Compare.Value)
+	if !ok {
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "invalid_plan_compare"}, fmt.Errorf("check.plan.compare.value must be an integer")
+	}
+
+	count := len(selected)
+	op := strings.ToLower(strings.TrimSpace(plan.Compare.Op))
+	pass, err := compareInts(op, count, target)
+	if err != nil {
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "invalid_plan_compare"}, err
+	}
+
+	result := EvaluateResult{
+		Status:        EvaluateStatus_FAIL,
+		SelectedCount: count,
+		PassedCount:   0,
+		CountValue:    count,
+		TargetValue:   &target,
+	}
+	if pass {
+		result.Status = EvaluateStatus_PASS
+		result.PassedCount = 1
+	}
+	return result, nil
+}
+
+func compareInts(op string, left, right int) (bool, error) {
+	switch op {
+	case "eq":
+		return left == right, nil
+	case "neq":
+		return left != right, nil
+	case "gt":
+		return left > right, nil
+	case "gte":
+		return left >= right, nil
+	case "lt":
+		return left < right, nil
+	case "lte":
+		return left <= right, nil
+	default:
+		return false, fmt.Errorf("unsupported compare op %q", op)
+	}
+}
+
+func intValue(v any) (int, bool) {
+	switch t := v.(type) {
+	case int:
+		return t, true
+	case int8:
+		return int(t), true
+	case int16:
+		return int(t), true
+	case int32:
+		return int(t), true
+	case int64:
+		return int(t), true
+	case uint:
+		return int(t), true
+	case uint8:
+		return int(t), true
+	case uint16:
+		return int(t), true
+	case uint32:
+		return int(t), true
+	case uint64:
+		return int(t), true
+	case float32:
+		i := int(t)
+		return i, float32(i) == t
+	case float64:
+		i := int(t)
+		return i, float64(i) == t
+	case json.Number:
+		i, err := t.Int64()
+		if err != nil {
+			return 0, false
+		}
+		return int(i), true
+	default:
+		return 0, false
+	}
+}
+
+func policyForDatasetError(plan *CheckPlan, kind DatasetErrorKind) string {
+	if plan == nil {
+		return "unknown"
+	}
+	switch kind {
+	case DatasetErrorKind_PERMISSION_DENIED:
+		return strings.ToLower(strings.TrimSpace(plan.OnPermissionDenied))
+	case DatasetErrorKind_SYNC_FAILED, DatasetErrorKind_ENGINE_ERROR:
+		return strings.ToLower(strings.TrimSpace(plan.OnSyncError))
+	default:
+		return strings.ToLower(strings.TrimSpace(plan.OnMissingDataset))
+	}
+}
+
+func datasetResultByPolicy(kind DatasetErrorKind, action string) (EvaluateResult, error) {
+	action = strings.ToLower(strings.TrimSpace(action))
+	if action == "" {
+		action = "unknown"
+	}
+	reason := "dataset_" + string(kind)
+	switch action {
+	case "fail":
+		return EvaluateResult{Status: EvaluateStatus_FAIL, ReasonCode: reason}, nil
+	case "error":
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: reason}, fmt.Errorf("dataset error: %s", kind)
+	default:
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: reason}, nil
+	}
 }
 
 type expressionReferences struct {
@@ -522,7 +804,13 @@ type compiledExpression struct {
 	program cel.Program
 }
 
+type compiledPredicate struct {
+	program cel.Program
+	params  []string
+}
+
 var compiledExpressionCache sync.Map
+var compiledPredicateCache sync.Map
 
 func evaluateCELExpression(expression string, datasets map[string][]any, params map[string]any) (bool, error) {
 	compiled, err := compileExpression(expression)
@@ -549,6 +837,36 @@ func evaluateCELExpression(expression string, datasets map[string][]any, params 
 	value, ok := out.Value().(bool)
 	if !ok {
 		return false, fmt.Errorf("CEL expression must return bool, got %T", out.Value())
+	}
+	return value, nil
+}
+
+func evaluateCELPredicate(expression string, row any, params map[string]any) (bool, error) {
+	compiled, err := compilePredicateExpression(expression)
+	if err != nil {
+		return false, err
+	}
+
+	paramsDyn := map[string]any{}
+	for name, value := range params {
+		paramsDyn[name] = value
+	}
+	for _, param := range compiled.params {
+		if _, ok := paramsDyn[param]; !ok {
+			return false, fmt.Errorf("param %q not found", param)
+		}
+	}
+
+	out, _, err := compiled.program.Eval(map[string]any{
+		"r":      row,
+		"params": paramsDyn,
+	})
+	if err != nil {
+		return false, fmt.Errorf("evaluate CEL predicate: %w", err)
+	}
+	value, ok := out.Value().(bool)
+	if !ok {
+		return false, fmt.Errorf("CEL predicate must return bool, got %T", out.Value())
 	}
 	return value, nil
 }
@@ -588,6 +906,49 @@ func compileExpression(expression string) (compiledExpression, error) {
 	}
 	compiled := compiledExpression{program: program}
 	compiledExpressionCache.Store(expr, compiled)
+	return compiled, nil
+}
+
+func compilePredicateExpression(expression string) (compiledPredicate, error) {
+	expr := strings.TrimSpace(expression)
+	if expr == "" {
+		return compiledPredicate{}, fmt.Errorf("CEL predicate is required")
+	}
+	if cached, ok := compiledPredicateCache.Load(expr); ok {
+		return cached.(compiledPredicate), nil
+	}
+
+	env, err := cel.NewEnv(
+		cel.Variable("r", cel.DynType),
+		cel.Variable("params", cel.MapType(cel.StringType, cel.DynType)),
+	)
+	if err != nil {
+		return compiledPredicate{}, fmt.Errorf("create CEL predicate environment: %w", err)
+	}
+
+	transformed := replaceLiteralCalls(expr, paramCallRe, func(name string) string {
+		return fmt.Sprintf(`params[%s]`, strconv.Quote(name))
+	})
+	ast, iss := env.Compile(transformed)
+	if iss != nil && iss.Err() != nil {
+		return compiledPredicate{}, fmt.Errorf("compile CEL predicate: %w", iss.Err())
+	}
+	if ast == nil {
+		return compiledPredicate{}, fmt.Errorf("compile CEL predicate: empty AST")
+	}
+	if !ast.OutputType().IsEquivalentType(cel.BoolType) {
+		return compiledPredicate{}, fmt.Errorf("CEL predicate must return bool, got %s", ast.OutputType())
+	}
+
+	program, err := env.Program(ast)
+	if err != nil {
+		return compiledPredicate{}, fmt.Errorf("build CEL predicate program: %w", err)
+	}
+	compiled := compiledPredicate{
+		program: program,
+		params:  normalizeStringSet(literalArgs(expr, paramCallRe)),
+	}
+	compiledPredicateCache.Store(expr, compiled)
 	return compiled, nil
 }
 

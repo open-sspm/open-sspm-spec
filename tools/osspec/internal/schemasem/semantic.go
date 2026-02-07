@@ -169,8 +169,19 @@ func validateCheck(path string, rs *types.Ruleset, r *types.Rule, c *types.Check
 	engine := types.CheckEngine(strings.TrimSpace(string(c.Engine)))
 	if engine == "" {
 		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.engine is required", path, r.Key))
-	} else if engine != types.CheckEngineCEL {
+	} else if engine != types.CheckEngineCEL && engine != types.CheckEngineCELPlan {
 		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: unsupported check.engine %q", path, r.Key, c.Engine))
+	}
+
+	if engine == types.CheckEngineCELPlan {
+		if strings.TrimSpace(c.Expression) != "" {
+			errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.expression must be empty for check.engine=cel_plan", path, r.Key))
+		}
+		errs = append(errs, validatePlanCheck(path, rs, r, c, contractsIdx)...)
+		return errs
+	}
+	if c.Plan != nil {
+		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.plan is only allowed with check.engine=cel_plan", path, r.Key))
 	}
 
 	expression := strings.TrimSpace(c.Expression)
@@ -224,4 +235,125 @@ func validateExpressionReferences(path string, rs *types.Ruleset, r *types.Rule,
 
 	_ = rs
 	return errs
+}
+
+func validatePlanCheck(path string, rs *types.Ruleset, r *types.Rule, c *types.Check, contractsIdx datasetContractIndex) []error {
+	var errs []error
+
+	if c.Plan == nil {
+		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.plan is required for check.engine=cel_plan", path, r.Key))
+		return errs
+	}
+	plan := c.Plan
+
+	planType := strings.TrimSpace(plan.Type)
+	if planType == "" {
+		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.plan.type is required", path, r.Key))
+	}
+
+	dataset := strings.TrimSpace(plan.Dataset)
+	if dataset == "" {
+		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.plan.dataset is required", path, r.Key))
+	} else {
+		refs := celengine.References{Datasets: []string{dataset}, RequiredDatasets: []string{dataset}}
+		refs.Params = append(refs.Params, celengine.ExtractParamReferences(plan.WhereExpression)...)
+		refs.Params = append(refs.Params, celengine.ExtractParamReferences(plan.AssertExpression)...)
+		refs.Params = normalizeStringSet(refs.Params)
+		errs = append(errs, validateExpressionReferences(path, rs, r, refs, contractsIdx)...)
+	}
+
+	switch planType {
+	case "dataset.field_compare":
+		if strings.TrimSpace(plan.AssertExpression) == "" {
+			errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.plan.assert_expression is required for type dataset.field_compare", path, r.Key))
+		} else if err := celengine.ValidatePredicateExpression(plan.AssertExpression); err != nil {
+			errs = append(errs, fmt.Errorf("semantic: %s: rule %q: invalid check.plan.assert_expression: %v", path, r.Key, err))
+		}
+		if strings.TrimSpace(plan.WhereExpression) != "" {
+			if err := celengine.ValidatePredicateExpression(plan.WhereExpression); err != nil {
+				errs = append(errs, fmt.Errorf("semantic: %s: rule %q: invalid check.plan.where_expression: %v", path, r.Key, err))
+			}
+		}
+
+		if plan.Expect == nil {
+			errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.plan.expect is required for type dataset.field_compare", path, r.Key))
+		} else {
+			match := strings.ToLower(strings.TrimSpace(plan.Expect.Match))
+			if match != "all" && match != "any" {
+				errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.plan.expect.match must be all|any", path, r.Key))
+			}
+			if plan.Expect.MinSelected < 0 {
+				errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.plan.expect.min_selected must be >= 0", path, r.Key))
+			}
+			onEmpty := strings.ToLower(strings.TrimSpace(plan.Expect.OnEmpty))
+			if onEmpty != "fail" && onEmpty != "unknown" {
+				errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.plan.expect.on_empty must be fail|unknown", path, r.Key))
+			}
+		}
+		if plan.Compare != nil {
+			errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.plan.compare not allowed for type dataset.field_compare", path, r.Key))
+		}
+	case "dataset.count_compare":
+		if plan.Compare == nil {
+			errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.plan.compare is required for type dataset.count_compare", path, r.Key))
+		}
+		if strings.TrimSpace(plan.WhereExpression) != "" {
+			if err := celengine.ValidatePredicateExpression(plan.WhereExpression); err != nil {
+				errs = append(errs, fmt.Errorf("semantic: %s: rule %q: invalid check.plan.where_expression: %v", path, r.Key, err))
+			}
+		}
+		if strings.TrimSpace(plan.AssertExpression) != "" {
+			errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.plan.assert_expression not allowed for type dataset.count_compare", path, r.Key))
+		}
+		if plan.Expect != nil {
+			errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.plan.expect not allowed for type dataset.count_compare", path, r.Key))
+		}
+	default:
+		if planType != "" {
+			errs = append(errs, fmt.Errorf("semantic: %s: rule %q: unsupported check.plan.type %q", path, r.Key, planType))
+		}
+	}
+
+	if err := validatePlanPolicy(path, r.Key, "on_missing_dataset", plan.OnMissingDataset); err != nil {
+		errs = append(errs, err)
+	}
+	if err := validatePlanPolicy(path, r.Key, "on_permission_denied", plan.OnPermissionDenied); err != nil {
+		errs = append(errs, err)
+	}
+	if err := validatePlanPolicy(path, r.Key, "on_sync_error", plan.OnSyncError); err != nil {
+		errs = append(errs, err)
+	}
+
+	return errs
+}
+
+func validatePlanPolicy(path, ruleKey, name, value string) error {
+	value = strings.ToLower(strings.TrimSpace(value))
+	switch value {
+	case "", "unknown", "error", "fail":
+		return nil
+	default:
+		return fmt.Errorf("semantic: %s: rule %q: check.plan.%s must be unknown|error|fail", path, ruleKey, name)
+	}
+}
+
+func normalizeStringSet(values []string) []string {
+	if len(values) == 0 {
+		return []string{}
+	}
+	out := make([]string, 0, len(values))
+	seen := map[string]struct{}{}
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			continue
+		}
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		out = append(out, value)
+	}
+	slices.Sort(out)
+	return out
 }

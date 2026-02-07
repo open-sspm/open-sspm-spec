@@ -20,8 +20,89 @@
       - "display_field"
     "type": "object"
   "check":
+    "description": "Check definition. Supports raw CEL and structured dataset checks."
+    "oneOf":
+      - "$ref": "#/definitions/check_raw_cel"
+      - "$ref": "#/definitions/check_structured"
+  "check_compare":
     "additionalProperties": false
-    "description": "CEL-based check definition. Expression must evaluate to bool."
+    "properties":
+      "op":
+        "enum":
+          - "eq"
+          - "neq"
+          - "gt"
+          - "gte"
+          - "lt"
+          - "lte"
+        "type": "string"
+      "value":
+        "description": "Literal comparison value."
+    "required":
+      - "op"
+      - "value"
+    "type": "object"
+  "check_defaults":
+    "additionalProperties": false
+    "properties":
+      "on_missing_dataset":
+        "$ref": "#/definitions/check_policy_action"
+      "on_permission_denied":
+        "$ref": "#/definitions/check_policy_action"
+      "on_sync_error":
+        "$ref": "#/definitions/check_policy_action"
+    "type": "object"
+  "check_expect":
+    "additionalProperties": false
+    "properties":
+      "match":
+        "enum":
+          - "all"
+          - "any"
+        "type": "string"
+      "min_selected":
+        "minimum": 0
+        "type": "integer"
+      "on_empty":
+        "enum":
+          - "fail"
+          - "unknown"
+        "type": "string"
+    "type": "object"
+  "check_policy_action":
+    "enum":
+      - "unknown"
+      - "error"
+      - "fail"
+    "type": "string"
+  "check_predicate":
+    "additionalProperties": false
+    "properties":
+      "op":
+        "enum":
+          - "eq"
+          - "neq"
+          - "gt"
+          - "gte"
+          - "lt"
+          - "lte"
+          - "in"
+          - "nin"
+        "type": "string"
+      "path":
+        "minLength": 1
+        "pattern": "^/.*"
+        "type": "string"
+      "value":
+        "description": "Literal comparison value."
+    "required":
+      - "op"
+      - "path"
+      - "value"
+    "type": "object"
+  "check_raw_cel":
+    "additionalProperties": false
+    "description": "Raw CEL check. Expression must evaluate to bool."
     "properties":
       "engine":
         "enum":
@@ -34,6 +115,83 @@
       - "engine"
       - "expression"
     "type": "object"
+  "check_structured":
+    "additionalProperties": false
+    "description": "Structured check definition compiled to CEL."
+    "properties":
+      "assert":
+        "$ref": "#/definitions/check_predicate"
+      "compare":
+        "$ref": "#/definitions/check_compare"
+      "dataset":
+        "minLength": 1
+        "type": "string"
+      "expect":
+        "$ref": "#/definitions/check_expect"
+      "on_missing_dataset":
+        "$ref": "#/definitions/check_policy_action"
+      "on_permission_denied":
+        "$ref": "#/definitions/check_policy_action"
+      "on_sync_error":
+        "$ref": "#/definitions/check_policy_action"
+      "selector":
+        "minLength": 1
+        "type": "string"
+      "type":
+        "enum":
+          - "dataset.field_compare"
+          - "dataset.count_compare"
+          - "manual.attestation"
+        "type": "string"
+      "where":
+        "items":
+          "$ref": "#/definitions/check_predicate"
+        "type": "array"
+    "required":
+      - "type"
+    "type": "object"
+    "oneOf":
+      - "properties":
+          "type":
+            "const": "dataset.field_compare"
+        "required":
+          - "type"
+          - "assert"
+        "oneOf":
+          - "required":
+              - "dataset"
+          - "required":
+              - "selector"
+      - "properties":
+          "type":
+            "const": "dataset.count_compare"
+        "required":
+          - "type"
+          - "compare"
+        "oneOf":
+          - "required":
+              - "dataset"
+          - "required":
+              - "selector"
+      - "properties":
+          "type":
+            "const": "manual.attestation"
+        "required":
+          - "type"
+        "not":
+          "anyOf":
+            - "required":
+                - "dataset"
+            - "required":
+                - "selector"
+            - "required":
+                - "where"
+            - "required":
+                - "assert"
+            - "required":
+                - "compare"
+            - "required":
+                - "expect"
   "dataset_contract_ref":
     "additionalProperties": false
     "properties":
@@ -185,6 +343,19 @@
     "required":
       - "instructions"
     "type": "object"
+  "selector":
+    "additionalProperties": false
+    "properties":
+      "dataset":
+        "minLength": 1
+        "type": "string"
+      "where":
+        "items":
+          "$ref": "#/definitions/check_predicate"
+        "type": "array"
+    "required":
+      - "dataset"
+    "type": "object"
   "rule":
     "additionalProperties": false
     "description": "A single control rule evaluated via CEL for automated/partial monitoring."
@@ -193,7 +364,7 @@
         "type": "string"
       "check":
         "$ref": "#/definitions/check"
-        "description": "CEL evaluation check. Required by semantic validation for automated/partial rules and optional for manual/unsupported rules."
+        "description": "Rule check definition (structured or raw CEL). Required by semantic validation for automated/partial rules and optional for manual/unsupported rules."
       "description":
         "description": "Optional longer description."
         "type": "string"
@@ -220,7 +391,7 @@
       "remediation":
         "$ref": "#/definitions/remediation"
       "required_data":
-        "description": "Declarative dataset coverage list (must include datasets referenced by the CEL expression)."
+        "description": "Declarative dataset coverage list (must include datasets referenced by the compiled CEL expression)."
         "items":
           "type": "string"
         "type": "array"
@@ -278,7 +449,7 @@
       "unknown":
         "type": "string"
     "type": "object"
-"description": "Ruleset documents define what to evaluate (rules) and include metadata such as scope and source. Evaluation logic is encoded as CEL expressions in check.expression."
+"description": "Ruleset documents define what to evaluate (rules) and include metadata such as scope and source. Evaluation logic may be authored as structured checks or raw CEL expressions."
 "properties":
   "kind":
     "const": "opensspm.ruleset"
@@ -293,6 +464,13 @@
         "items":
           "$ref": "#/definitions/dataset_contract_ref"
         "type": "array"
+      "defaults":
+        "additionalProperties": false
+        "description": "Optional ruleset-level defaults for structured checks."
+        "properties":
+          "check":
+            "$ref": "#/definitions/check_defaults"
+        "type": "object"
       "description":
         "description": "Optional description (Markdown permitted, treated as opaque text by engines)."
         "type": "string"
@@ -321,6 +499,11 @@
         "items":
           "$ref": "#/definitions/rule"
         "type": "array"
+      "selectors":
+        "additionalProperties":
+          "$ref": "#/definitions/selector"
+        "description": "Reusable dataset+where selectors for structured checks."
+        "type": "object"
       "scope":
         "additionalProperties": false
         "description": "Evaluation scope for this ruleset."

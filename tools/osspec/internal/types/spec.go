@@ -147,7 +147,31 @@ type Lifecycle struct {
 
 type Check struct {
 	Engine     CheckEngine `json:"engine"`
-	Expression string      `json:"expression"`
+	Expression string      `json:"expression,omitempty"`
+	Plan       *CheckPlan  `json:"plan,omitempty"`
+}
+
+type CheckPlan struct {
+	Type               string            `json:"type"`
+	Dataset            string            `json:"dataset"`
+	WhereExpression    string            `json:"where_expression,omitempty"`
+	AssertExpression   string            `json:"assert_expression,omitempty"`
+	Expect             *CheckPlanExpect  `json:"expect,omitempty"`
+	Compare            *CheckPlanCompare `json:"compare,omitempty"`
+	OnMissingDataset   string            `json:"on_missing_dataset,omitempty"`
+	OnPermissionDenied string            `json:"on_permission_denied,omitempty"`
+	OnSyncError        string            `json:"on_sync_error,omitempty"`
+}
+
+type CheckPlanExpect struct {
+	Match       string `json:"match,omitempty"`
+	MinSelected int    `json:"min_selected,omitempty"`
+	OnEmpty     string `json:"on_empty,omitempty"`
+}
+
+type CheckPlanCompare struct {
+	Op    string `json:"op"`
+	Value any    `json:"value"`
 }
 
 type ProfileDoc struct {

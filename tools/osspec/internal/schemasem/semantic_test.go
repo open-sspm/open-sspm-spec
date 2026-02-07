@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/normalize"
+	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/rulecompile"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/testutil"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
 )
@@ -162,20 +163,38 @@ func TestValidateSemantic_CheckEngineAndExpressionValidation(t *testing.T) {
 	}
 }
 
-func TestRulesetSchemaRejectsLegacyCheckDSL(t *testing.T) {
+func TestRulesetSchemaAcceptsStructuredCheckDSL(t *testing.T) {
 	root := testutil.RepoRoot(t)
 	reg, err := LoadRegistry(filepath.Join(root, "metaschema"))
 	if err != nil {
 		t.Fatalf("LoadRegistry error: %v", err)
 	}
 
-	legacy := []byte(`{
+	structured := []byte(`{
   "schema_version": 2,
   "kind": "opensspm.ruleset",
   "ruleset": {
-    "key": "example.legacy_check_shape.v2",
+    "key": "example.structured_check_shape.v2",
     "name": "Example",
     "scope": { "kind": "global" },
+    "data_contracts": [
+      { "dataset": "okta:a", "version": 1 }
+    ],
+    "defaults": {
+      "check": {
+        "on_missing_dataset": "unknown",
+        "on_permission_denied": "unknown",
+        "on_sync_error": "error"
+      }
+    },
+    "selectors": {
+      "active_a": {
+        "dataset": "okta:a",
+        "where": [
+          { "op": "eq", "path": "/status", "value": "ACTIVE" }
+        ]
+      }
+    },
     "rules": [
       {
         "key": "R1",
@@ -184,21 +203,39 @@ func TestRulesetSchemaRejectsLegacyCheckDSL(t *testing.T) {
         "monitoring": { "status": "automated" },
         "required_data": ["okta:a"],
         "check": {
-          "type": "dataset.count_compare",
-          "dataset": "okta:a",
-          "compare": { "op": "gte", "value": 1 }
+          "type": "dataset.field_compare",
+          "selector": "active_a",
+          "assert": { "op": "gte", "path": "/count", "value": 1 },
+          "expect": { "match": "all", "min_selected": 1, "on_empty": "fail" }
         }
       }
     ]
   }
 }`)
 
-	err = reg.ValidateKindJSON("opensspm.ruleset", legacy)
-	if err == nil {
-		t.Fatalf("expected schema validation to reject legacy check DSL fields")
+	err = reg.ValidateKindJSON("opensspm.ruleset", structured)
+	if err != nil {
+		t.Fatalf("expected schema validation to accept structured check DSL fields, got: %v", err)
 	}
-	if !strings.Contains(err.Error(), "engine") || !strings.Contains(err.Error(), "expression") {
-		t.Fatalf("expected CEL check field validation details, got: %v", err)
+
+	var source rulecompile.SourceRulesetDoc
+	if err := json.Unmarshal(structured, &source); err != nil {
+		t.Fatalf("unmarshal source ruleset: %v", err)
+	}
+	compiled, err := rulecompile.CompileRuleset(source)
+	if err != nil {
+		t.Fatalf("CompileRuleset() error: %v", err)
+	}
+	normalize.RulesetDoc(&compiled)
+
+	bundle := &Bundle{
+		Rulesets: []struct {
+			Path string
+			Doc  types.RulesetDoc
+		}{{Path: "inline.json", Doc: compiled}},
+	}
+	if errs := ValidateSemantic(bundle); len(errs) != 0 {
+		t.Fatalf("expected semantic validation to pass after structured compile, got:\n%s", joinErrs(errs))
 	}
 }
 
@@ -268,6 +305,54 @@ func TestValidateSemantic_CELReferences(t *testing.T) {
 			t.Fatalf("expected param defaults error, got:\n%s", joinErrs(errs))
 		}
 	})
+}
+
+func TestValidateSemantic_CELPlanCheck(t *testing.T) {
+	doc := minimalRulesetDoc("example.plan.v2", types.Scope{Kind: types.ScopeKindGlobal})
+	doc.Ruleset.DataContracts = []types.DatasetContractRef{{Dataset: "okta:a", Version: 1}}
+	doc.Ruleset.Rules[0] = types.Rule{
+		Key:          "R1",
+		Title:        "R1",
+		Severity:     types.SeverityLow,
+		Monitoring:   types.Monitoring{Status: types.MonitoringStatusAutomated},
+		RequiredData: []string{"okta:a"},
+		Check: &types.Check{
+			Engine: types.CheckEngineCELPlan,
+			Plan: &types.CheckPlan{
+				Type:             "dataset.field_compare",
+				Dataset:          "okta:a",
+				WhereExpression:  `r["status"] == "ACTIVE"`,
+				AssertExpression: `r["count"] >= int(param("min"))`,
+				Expect: &types.CheckPlanExpect{
+					Match:       "all",
+					MinSelected: 0,
+					OnEmpty:     "unknown",
+				},
+				OnMissingDataset: "unknown",
+			},
+		},
+		Parameters: &types.Parameters{
+			Defaults: map[string]any{"min": 1},
+		},
+	}
+	normalize.RulesetDoc(&doc)
+
+	bundle := &Bundle{
+		Rulesets: []struct {
+			Path string
+			Doc  types.RulesetDoc
+		}{{Path: "inline", Doc: doc}},
+	}
+	errs := ValidateSemantic(bundle)
+	if len(errs) != 0 {
+		t.Fatalf("expected no semantic errors for cel_plan rule, got:\n%s", joinErrs(errs))
+	}
+
+	doc.Ruleset.Rules[0].Check.Expression = "true"
+	errs = ValidateSemantic(bundle)
+	if !containsErr(errs, "must be empty for check.engine=cel_plan") {
+		t.Fatalf("expected cel_plan expression validation error, got:\n%s", joinErrs(errs))
+	}
 }
 
 func minimalRulesetDoc(key string, scope types.Scope) types.RulesetDoc {

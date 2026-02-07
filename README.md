@@ -10,6 +10,12 @@ Source-of-truth repository for Open SSPM **compliance specifications**.
 
 Open SSPM is an open, versioned spec (YAML authoring + JSON Schema semantics) for posture/compliance rulesets and profiles (benchmarks) that tools can evaluate.
 
+Checks can be authored either as:
+- structured DSL (`check.type`, `dataset`, `where`, `assert`/`compare`, `expect`), or
+- raw CEL (`check.engine: cel`, `check.expression`).
+
+The compiler normalizes structured checks to runtime-ready compiled checks.
+
 ## What this repo contains
 
 - YAML specs under `specs/`:
@@ -74,11 +80,24 @@ GitHub Pages:
   - canonicalize YAML via the repository canonical emitter
   - SHA-256 hex digest over canonical YAML bytes
 
+## Check evaluation modes
+
+- `engine: cel`: single boolean CEL expression.
+- `engine: cel_plan`: runtime row-selection plan used for structured checks that need tri-state semantics (notably `expect.on_empty: unknown`).
+
+`cel_plan` evaluation runs in phases:
+1. dataset fetch (with `on_missing_dataset` / `on_permission_denied` / `on_sync_error` policies)
+2. row selection via `where_expression`
+3. empty-selection handling via `expect.on_empty`
+4. assertion/count evaluation (`all`/`any`/`min_selected` or count compare)
+
 ## `required_data` policy
 
-`rule.required_data` declares the dataset keys a rule depends on. `osspec validate` enforces that it includes every dataset referenced by literal helper calls in the rule expression (`rows("...")`, `has_dataset("...")`).
+`rule.required_data` declares the dataset keys a rule depends on. `osspec validate` enforces that it includes datasets referenced by compiled checks:
+- CEL checks: helper references such as `rows("...")` and `has_dataset("...")`
+- CEL plan checks: `check.plan.dataset`
 
-## CEL helper semantics
+## CEL helper semantics (raw CEL checks)
 
 - `rows("dataset")` reads rows for a dataset and is treated as a required dataset reference.
 - `has_dataset("dataset")` is an existence check helper and does not, by itself, force runtime failure when the dataset is absent.

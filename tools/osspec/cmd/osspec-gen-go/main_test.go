@@ -19,6 +19,9 @@ func TestGenerateSpecTypes_CELSurfaceAndHelpers(t *testing.T) {
 		"type Check struct",
 		"Engine     CheckEngine",
 		"Expression string",
+		"type CheckPlan struct",
+		"type CheckPlanExpect struct",
+		"type CheckPlanCompare struct",
 		"type RulesetRequirement struct",
 		"[]CheckEngine",
 		"DatasetsReferenced",
@@ -34,6 +37,8 @@ func TestGenerateSpecTypes_CELSurfaceAndHelpers(t *testing.T) {
 		"func EvaluateRule(rule *Rule, input EvaluateInput) (EvaluateResult, error)",
 		"func (r *Rule) Evaluate(input EvaluateInput) (EvaluateResult, error)",
 		"func evaluateCELExpression(expression string, datasets map[string][]any, params map[string]any) (bool, error)",
+		"func evaluateCELPlan(plan *CheckPlan, datasets map[string]DatasetInput, params map[string]any) (EvaluateResult, error)",
+		"func evaluateCELPredicate(expression string, row any, params map[string]any) (bool, error)",
 	}
 	for _, want := range required {
 		if !strings.Contains(code, want) {

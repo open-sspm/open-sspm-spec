@@ -44,7 +44,13 @@ type compiledExpression struct {
 	refs    References
 }
 
+type compiledPredicate struct {
+	program cel.Program
+	refs    References
+}
+
 var compiledCache sync.Map // map[string]compiledExpression
+var compiledPredicateCache sync.Map
 
 func ExtractReferences(expression string) References {
 	requiredDatasets := literalArgs(expression, rowsCallRe)
@@ -60,6 +66,11 @@ func ExtractReferences(expression string) References {
 
 func ValidateExpression(expression string) error {
 	_, err := compileExpression(expression)
+	return err
+}
+
+func ValidatePredicateExpression(expression string) error {
+	_, err := compilePredicateExpression(expression)
 	return err
 }
 
@@ -103,6 +114,44 @@ func Evaluate(expression string, datasets map[string][]any, params map[string]an
 	return result, nil
 }
 
+func EvaluatePredicate(expression string, row any, params map[string]any) (bool, error) {
+	compiled, err := compilePredicateExpression(expression)
+	if err != nil {
+		return false, err
+	}
+
+	if params == nil {
+		params = map[string]any{}
+	}
+	for _, param := range compiled.refs.Params {
+		if _, ok := params[param]; !ok {
+			return false, MissingParamError{Name: param}
+		}
+	}
+
+	paramsValue := make(map[string]any, len(params))
+	for name, value := range params {
+		paramsValue[name] = value
+	}
+
+	out, _, err := compiled.program.Eval(map[string]any{
+		"r":      row,
+		"params": paramsValue,
+	})
+	if err != nil {
+		return false, fmt.Errorf("evaluate CEL predicate: %w", err)
+	}
+	result, ok := out.Value().(bool)
+	if !ok {
+		return false, fmt.Errorf("CEL predicate must return bool, got %T", out.Value())
+	}
+	return result, nil
+}
+
+func ExtractParamReferences(expression string) []string {
+	return normalizeStringSet(literalArgs(expression, paramCallRe))
+}
+
 func compileExpression(expression string) (compiledExpression, error) {
 	expr := strings.TrimSpace(expression)
 	if expr == "" {
@@ -141,6 +190,51 @@ func compileExpression(expression string) (compiledExpression, error) {
 		refs:    ExtractReferences(expr),
 	}
 	compiledCache.Store(expr, compiled)
+	return compiled, nil
+}
+
+func compilePredicateExpression(expression string) (compiledPredicate, error) {
+	expr := strings.TrimSpace(expression)
+	if expr == "" {
+		return compiledPredicate{}, fmt.Errorf("CEL predicate is required")
+	}
+	if cached, ok := compiledPredicateCache.Load(expr); ok {
+		return cached.(compiledPredicate), nil
+	}
+
+	env, err := cel.NewEnv(
+		cel.Variable("r", cel.DynType),
+		cel.Variable("params", cel.MapType(cel.StringType, cel.DynType)),
+	)
+	if err != nil {
+		return compiledPredicate{}, fmt.Errorf("create CEL predicate environment: %w", err)
+	}
+
+	transformed := replaceLiteralCalls(expr, paramCallRe, func(name string) string {
+		return fmt.Sprintf(`params[%s]`, strconv.Quote(name))
+	})
+	ast, iss := env.Compile(transformed)
+	if iss != nil && iss.Err() != nil {
+		return compiledPredicate{}, fmt.Errorf("compile CEL predicate: %w", iss.Err())
+	}
+	if ast == nil {
+		return compiledPredicate{}, fmt.Errorf("compile CEL predicate: empty AST")
+	}
+	if !ast.OutputType().IsEquivalentType(cel.BoolType) {
+		return compiledPredicate{}, fmt.Errorf("CEL predicate must return bool, got %s", ast.OutputType())
+	}
+
+	program, err := env.Program(ast)
+	if err != nil {
+		return compiledPredicate{}, fmt.Errorf("build CEL predicate program: %w", err)
+	}
+	compiled := compiledPredicate{
+		program: program,
+		refs: References{
+			Params: ExtractParamReferences(expr),
+		},
+	}
+	compiledPredicateCache.Store(expr, compiled)
 	return compiled, nil
 }
 

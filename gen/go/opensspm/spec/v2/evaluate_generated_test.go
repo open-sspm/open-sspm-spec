@@ -192,6 +192,68 @@ func TestEvaluateRuleDirectDatasetAccessUsesProvidedDatasets(t *testing.T) {
 	}
 }
 
+func TestEvaluateRuleCELPlanOnEmptyUnknown(t *testing.T) {
+	rule := Rule{
+		Key:        "P1",
+		Monitoring: Monitoring{Status: MonitoringStatus_AUTOMATED},
+		Check: &Check{
+			Engine: CheckEngine_CEL_PLAN,
+			Plan: &CheckPlan{
+				Type:             "dataset.field_compare",
+				Dataset:          "d",
+				WhereExpression:  `r["enabled"] == true`,
+				AssertExpression: `r["score"] >= 10`,
+				Expect: &CheckPlanExpect{
+					Match:       "all",
+					MinSelected: 0,
+					OnEmpty:     "unknown",
+				},
+			},
+		},
+	}
+
+	res, err := rule.Evaluate(EvaluateInput{
+		Datasets: map[string]DatasetInput{
+			"d": {Rows: []any{map[string]any{"enabled": false, "score": 100}}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("cel_plan evaluation returned error: %v", err)
+	}
+	if res.Status != EvaluateStatus_UNKNOWN || res.ReasonCode != "empty_selection" {
+		t.Fatalf("expected unknown empty-selection result, got %+v", res)
+	}
+}
+
+func TestEvaluateRuleCELPlanDatasetPolicyFail(t *testing.T) {
+	rule := Rule{
+		Key:        "P2",
+		Monitoring: Monitoring{Status: MonitoringStatus_AUTOMATED},
+		Check: &Check{
+			Engine: CheckEngine_CEL_PLAN,
+			Plan: &CheckPlan{
+				Type:             "dataset.field_compare",
+				Dataset:          "d",
+				AssertExpression: `r["enabled"] == true`,
+				Expect: &CheckPlanExpect{
+					Match:       "all",
+					MinSelected: 1,
+					OnEmpty:     "fail",
+				},
+				OnMissingDataset: "fail",
+			},
+		},
+	}
+
+	res, err := rule.Evaluate(EvaluateInput{Datasets: map[string]DatasetInput{}})
+	if err != nil {
+		t.Fatalf("dataset policy fail should not return hard error: %v", err)
+	}
+	if res.Status != EvaluateStatus_FAIL || res.ReasonCode != "dataset_missing_dataset" {
+		t.Fatalf("expected fail on missing dataset policy, got %+v", res)
+	}
+}
+
 func TestEvaluateResultIsAggregateOnly(t *testing.T) {
 	rule := Rule{
 		Key:        "R1",

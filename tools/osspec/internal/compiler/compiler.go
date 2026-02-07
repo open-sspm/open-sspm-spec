@@ -12,6 +12,7 @@ import (
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/hash"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/loader"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/normalize"
+	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/rulecompile"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/schemasem"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/yamlstrict"
@@ -83,9 +84,13 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 
 		switch hdr.Kind {
 		case "opensspm.ruleset":
-			var doc types.RulesetDoc
-			if err := yamlstrict.DecodeSingleStrictYAML(f.Bytes, &doc, true); err != nil {
-				return nil, fmt.Errorf("%s: parse ruleset: %w", f.RelPath, err)
+			var sourceDoc rulecompile.SourceRulesetDoc
+			if err := yamlstrict.DecodeSingleStrictYAML(f.Bytes, &sourceDoc, true); err != nil {
+				return nil, fmt.Errorf("%s: parse ruleset source: %w", f.RelPath, err)
+			}
+			doc, err := rulecompile.CompileRuleset(sourceDoc)
+			if err != nil {
+				return nil, fmt.Errorf("%s: compile structured checks: %w", f.RelPath, err)
 			}
 			normalize.RulesetDoc(&doc)
 			bundle.Rulesets = append(bundle.Rulesets, struct {

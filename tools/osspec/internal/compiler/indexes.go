@@ -47,7 +47,7 @@ func buildRequirements(b *schemasem.Bundle) types.RequirementsIndex {
 		for i := range rs.Doc.Ruleset.Rules {
 			r := &rs.Doc.Ruleset.Rules[i]
 
-			refs := celengine.References{Datasets: []string{}, Params: []string{}}
+			refs := celengine.References{Datasets: []string{}, RequiredDatasets: []string{}, Params: []string{}}
 			var enginePtr *types.CheckEngine
 			expression := ""
 			expressionSHA256 := ""
@@ -64,7 +64,19 @@ func buildRequirements(b *schemasem.Bundle) types.RequirementsIndex {
 					sum := sha256.Sum256([]byte(expression))
 					expressionSHA256 = hex.EncodeToString(sum[:])
 				}
+				if r.Check.Plan != nil {
+					dataset := strings.TrimSpace(r.Check.Plan.Dataset)
+					if dataset != "" {
+						refs.Datasets = append(refs.Datasets, dataset)
+						refs.RequiredDatasets = append(refs.RequiredDatasets, dataset)
+					}
+					refs.Params = append(refs.Params, celengine.ExtractParamReferences(r.Check.Plan.WhereExpression)...)
+					refs.Params = append(refs.Params, celengine.ExtractParamReferences(r.Check.Plan.AssertExpression)...)
+				}
 			}
+			refs.Datasets = normalize.Strings(refs.Datasets)
+			refs.RequiredDatasets = normalize.Strings(refs.RequiredDatasets)
+			refs.Params = normalize.Strings(refs.Params)
 
 			rDatasets := datasetsForRuleReferences(rs.Doc.Ruleset, refs.Datasets)
 			rDatasets = normalize.DatasetRefs(rDatasets)
