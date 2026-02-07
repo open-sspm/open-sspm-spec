@@ -9,6 +9,8 @@ import (
 	"sync"
 
 	"github.com/google/cel-go/cel"
+	"github.com/google/cel-go/common/types"
+	"github.com/google/cel-go/common/types/ref"
 )
 
 var (
@@ -164,6 +166,7 @@ func compileExpression(expression string) (compiledExpression, error) {
 	env, err := cel.NewEnv(
 		cel.Variable("datasets", cel.MapType(cel.StringType, cel.DynType)),
 		cel.Variable("params", cel.MapType(cel.StringType, cel.DynType)),
+		fieldCELFunction(),
 	)
 	if err != nil {
 		return compiledExpression{}, fmt.Errorf("create CEL environment: %w", err)
@@ -205,6 +208,7 @@ func compilePredicateExpression(expression string) (compiledPredicate, error) {
 	env, err := cel.NewEnv(
 		cel.Variable("r", cel.DynType),
 		cel.Variable("params", cel.MapType(cel.StringType, cel.DynType)),
+		fieldCELFunction(),
 	)
 	if err != nil {
 		return compiledPredicate{}, fmt.Errorf("create CEL predicate environment: %w", err)
@@ -306,4 +310,57 @@ func normalizeStringSet(values []string) []string {
 	}
 	slices.Sort(out)
 	return out
+}
+
+// fieldCELFunction returns a cel.EnvOption that registers the field(dyn, string) -> dyn
+// function. field safely navigates a nested map using a dot-separated path string,
+// returning null when any intermediate key is missing instead of a runtime error.
+func fieldCELFunction() cel.EnvOption {
+	return cel.Function("field",
+		cel.Overload("field_dyn_string",
+			[]*cel.Type{cel.DynType, cel.StringType},
+			cel.DynType,
+			cel.BinaryBinding(func(lhs, rhs ref.Val) ref.Val {
+				path, ok := rhs.Value().(string)
+				if !ok {
+					return types.NullValue
+				}
+				return fieldNavigate(lhs, path)
+			}),
+		),
+	)
+}
+
+func fieldNavigate(val ref.Val, path string) ref.Val {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return val
+	}
+
+	parts := strings.Split(path, ".")
+	current := val
+	for _, part := range parts {
+		if part == "" {
+			return types.NullValue
+		}
+		m, ok := current.Value().(map[string]any)
+		if !ok {
+			mRef, ok2 := current.Value().(map[ref.Val]ref.Val)
+			if !ok2 {
+				return types.NullValue
+			}
+			next, found := mRef[types.String(part)]
+			if !found {
+				return types.NullValue
+			}
+			current = next
+			continue
+		}
+		next, found := m[part]
+		if !found {
+			return types.NullValue
+		}
+		current = types.DefaultTypeAdapter.NativeToValue(next)
+	}
+	return current
 }

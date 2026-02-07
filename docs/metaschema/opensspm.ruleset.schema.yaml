@@ -20,10 +20,11 @@
       - "display_field"
     "type": "object"
   "check":
-    "description": "Check definition. Supports raw CEL and structured dataset checks."
+    "description": "Check definition. Supports raw CEL, structured dataset checks, and compiled CEL plans."
     "oneOf":
       - "$ref": "#/definitions/check_raw_cel"
       - "$ref": "#/definitions/check_structured"
+      - "$ref": "#/definitions/check_cel_plan"
   "check_compare":
     "additionalProperties": false
     "properties":
@@ -37,10 +38,18 @@
           - "lte"
         "type": "string"
       "value":
-        "description": "Literal comparison value."
+        "description": "Literal comparison value. Mutually exclusive with value_param."
+      "value_param":
+        "description": "Parameter name whose value is used for comparison. Mutually exclusive with value."
+        "minLength": 1
+        "type": "string"
     "required":
       - "op"
-      - "value"
+    "oneOf":
+      - "required":
+          - "value"
+      - "required":
+          - "value_param"
     "type": "object"
   "check_defaults":
     "additionalProperties": false
@@ -90,15 +99,23 @@
           - "nin"
         "type": "string"
       "path":
+        "description": "Dot-separated field path (e.g. settings.password.complexity.minLength)."
         "minLength": 1
-        "pattern": "^/.*"
         "type": "string"
       "value":
-        "description": "Literal comparison value."
+        "description": "Literal comparison value. Mutually exclusive with value_param."
+      "value_param":
+        "description": "Parameter name whose value is used for comparison. Mutually exclusive with value."
+        "minLength": 1
+        "type": "string"
     "required":
       - "op"
       - "path"
-      - "value"
+    "oneOf":
+      - "required":
+          - "value"
+      - "required":
+          - "value_param"
     "type": "object"
   "check_raw_cel":
     "additionalProperties": false
@@ -114,6 +131,101 @@
     "required":
       - "engine"
       - "expression"
+    "type": "object"
+  "check_cel_plan":
+    "additionalProperties": false
+    "description": "Compiled CEL plan check. Emitted by the compiler for structured checks that require tri-state semantics (e.g. on_empty: unknown)."
+    "properties":
+      "engine":
+        "enum":
+          - "cel_plan"
+        "type": "string"
+      "plan":
+        "$ref": "#/definitions/check_plan"
+    "required":
+      - "engine"
+      - "plan"
+    "type": "object"
+  "check_plan":
+    "additionalProperties": false
+    "description": "CEL plan payload describing a phased evaluation (dataset fetch, selection, assertion/count)."
+    "properties":
+      "assert_expression":
+        "description": "CEL predicate applied to each selected row (dataset.field_compare only)."
+        "type": "string"
+      "compare":
+        "$ref": "#/definitions/check_plan_compare"
+      "dataset":
+        "minLength": 1
+        "type": "string"
+      "expect":
+        "$ref": "#/definitions/check_plan_expect"
+      "on_missing_dataset":
+        "$ref": "#/definitions/check_policy_action"
+      "on_permission_denied":
+        "$ref": "#/definitions/check_policy_action"
+      "on_sync_error":
+        "$ref": "#/definitions/check_policy_action"
+      "type":
+        "enum":
+          - "dataset.field_compare"
+          - "dataset.count_compare"
+        "type": "string"
+      "where_expression":
+        "description": "CEL predicate used to filter rows before assertion."
+        "type": "string"
+    "required":
+      - "type"
+      - "dataset"
+    "type": "object"
+    "oneOf":
+      - "properties":
+          "type":
+            "const": "dataset.field_compare"
+        "required":
+          - "type"
+          - "assert_expression"
+          - "expect"
+      - "properties":
+          "type":
+            "const": "dataset.count_compare"
+        "required":
+          - "type"
+          - "compare"
+  "check_plan_compare":
+    "additionalProperties": false
+    "properties":
+      "op":
+        "enum":
+          - "eq"
+          - "neq"
+          - "gt"
+          - "gte"
+          - "lt"
+          - "lte"
+        "type": "string"
+      "value":
+        "description": "Literal integer comparison value."
+    "required":
+      - "op"
+      - "value"
+    "type": "object"
+  "check_plan_expect":
+    "additionalProperties": false
+    "properties":
+      "match":
+        "enum":
+          - "all"
+          - "any"
+        "type": "string"
+      "min_selected":
+        "minimum": 0
+        "type": "integer"
+      "on_empty":
+        "enum":
+          - "fail"
+          - "unknown"
+        "type": "string"
     "type": "object"
   "check_structured":
     "additionalProperties": false

@@ -7,7 +7,7 @@ import (
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
 )
 
-func TestCompileRuleset_StructuredFieldCompareToCEL(t *testing.T) {
+func TestCompileRuleset_StructuredFieldCompareToCELPlan(t *testing.T) {
 	doc := SourceRulesetDoc{
 		SchemaVersion: 2,
 		Kind:          "opensspm.ruleset",
@@ -26,9 +26,9 @@ func TestCompileRuleset_StructuredFieldCompareToCEL(t *testing.T) {
 						Type:    "dataset.field_compare",
 						Dataset: "okta:policies/password",
 						Where: []SourcePredicate{
-							{Op: "eq", Path: "/status", Value: "ACTIVE"},
+							{Op: "eq", Path: "status", Value: "ACTIVE"},
 						},
-						Assert: &SourcePredicate{Op: "gte", Path: "/settings/password/complexity/minLength", Value: 15},
+						Assert: &SourcePredicate{Op: "gte", Path: "settings.password.complexity.minLength", Value: 15},
 					},
 				},
 			},
@@ -47,13 +47,26 @@ func TestCompileRuleset_StructuredFieldCompareToCEL(t *testing.T) {
 	if check == nil {
 		t.Fatalf("expected compiled check")
 	}
-	if check.Engine != types.CheckEngineCEL {
-		t.Fatalf("expected check.engine=cel, got %q", check.Engine)
+	if check.Engine != types.CheckEngineCELPlan {
+		t.Fatalf("expected check.engine=cel_plan, got %q", check.Engine)
 	}
-
-	want := `rows("okta:policies/password").filter(r, r["status"] == "ACTIVE").size() >= 1 && rows("okta:policies/password").filter(r, r["status"] == "ACTIVE").all(r, r["settings"]["password"]["complexity"]["minLength"] >= 15)`
-	if check.Expression != want {
-		t.Fatalf("unexpected compiled expression:\nwant: %s\ngot:  %s", want, check.Expression)
+	if check.Plan == nil {
+		t.Fatalf("expected plan payload for cel_plan check")
+	}
+	if check.Plan.Type != "dataset.field_compare" {
+		t.Fatalf("expected plan.type=dataset.field_compare, got %q", check.Plan.Type)
+	}
+	if check.Plan.Dataset != "okta:policies/password" {
+		t.Fatalf("expected plan.dataset=okta:policies/password, got %q", check.Plan.Dataset)
+	}
+	if !strings.Contains(check.Plan.WhereExpression, `field(r, "status")`) {
+		t.Fatalf("expected field() in where_expression, got %q", check.Plan.WhereExpression)
+	}
+	if !strings.Contains(check.Plan.AssertExpression, `field(r, "settings.password.complexity.minLength")`) {
+		t.Fatalf("expected field() in assert_expression, got %q", check.Plan.AssertExpression)
+	}
+	if check.Plan.Expect == nil || check.Plan.Expect.Match != "all" || check.Plan.Expect.MinSelected != 1 || check.Plan.Expect.OnEmpty != "fail" {
+		t.Fatalf("unexpected expect: %+v", check.Plan.Expect)
 	}
 }
 
@@ -69,7 +82,7 @@ func TestCompileRuleset_StructuredCountCompareWithSelector(t *testing.T) {
 				"active_streams": {
 					Dataset: "okta:log-streams",
 					Where: []SourcePredicate{
-						{Op: "eq", Path: "/status", Value: "ACTIVE"},
+						{Op: "eq", Path: "status", Value: "ACTIVE"},
 					},
 				},
 			},
@@ -84,7 +97,7 @@ func TestCompileRuleset_StructuredCountCompareWithSelector(t *testing.T) {
 						Type:     "dataset.count_compare",
 						Selector: "active_streams",
 						Where: []SourcePredicate{
-							{Op: "eq", Path: "/region", Value: "US"},
+							{Op: "eq", Path: "region", Value: "US"},
 						},
 						Compare: &SourceCompare{Op: "gte", Value: 1},
 					},
@@ -102,13 +115,27 @@ func TestCompileRuleset_StructuredCountCompareWithSelector(t *testing.T) {
 		t.Fatalf("expected compiled check")
 	}
 
-	want := `rows("okta:log-streams").filter(r, r["status"] == "ACTIVE" && r["region"] == "US").size() >= 1`
-	if check.Expression != want {
-		t.Fatalf("unexpected compiled expression:\nwant: %s\ngot:  %s", want, check.Expression)
+	if check.Engine != types.CheckEngineCELPlan {
+		t.Fatalf("expected check.engine=cel_plan, got %q", check.Engine)
+	}
+	if check.Plan == nil {
+		t.Fatalf("expected plan payload for cel_plan check")
+	}
+	if check.Plan.Type != "dataset.count_compare" {
+		t.Fatalf("expected plan.type=dataset.count_compare, got %q", check.Plan.Type)
+	}
+	if check.Plan.Dataset != "okta:log-streams" {
+		t.Fatalf("expected plan.dataset=okta:log-streams, got %q", check.Plan.Dataset)
+	}
+	if !strings.Contains(check.Plan.WhereExpression, `field(r, "status")`) || !strings.Contains(check.Plan.WhereExpression, `field(r, "region")`) {
+		t.Fatalf("expected field() in where_expression, got %q", check.Plan.WhereExpression)
+	}
+	if check.Plan.Compare == nil || check.Plan.Compare.Op != "gte" {
+		t.Fatalf("expected compare op gte, got %+v", check.Plan.Compare)
 	}
 }
 
-func TestCompileRuleset_StructuredPathEscapes(t *testing.T) {
+func TestCompileRuleset_StructuredDotPath(t *testing.T) {
 	doc := SourceRulesetDoc{
 		SchemaVersion: 2,
 		Kind:          "opensspm.ruleset",
@@ -126,7 +153,7 @@ func TestCompileRuleset_StructuredPathEscapes(t *testing.T) {
 					Check: &SourceCheck{
 						Type:    "dataset.field_compare",
 						Dataset: "okta:example",
-						Assert:  &SourcePredicate{Op: "eq", Path: "/a~1b/c~0d", Value: "x"},
+						Assert:  &SourcePredicate{Op: "eq", Path: "a.b.c", Value: "x"},
 					},
 				},
 			},
@@ -137,9 +164,12 @@ func TestCompileRuleset_StructuredPathEscapes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CompileRuleset() error: %v", err)
 	}
-	expr := compiled.Ruleset.Rules[0].Check.Expression
-	if !strings.Contains(expr, `r["a/b"]["c~d"]`) {
-		t.Fatalf("expected decoded JSON pointer path in expression, got: %s", expr)
+	check := compiled.Ruleset.Rules[0].Check
+	if check == nil || check.Plan == nil {
+		t.Fatalf("expected compiled check with plan")
+	}
+	if !strings.Contains(check.Plan.AssertExpression, `field(r, "a.b.c")`) {
+		t.Fatalf("expected field() with dot path in assert_expression, got: %s", check.Plan.AssertExpression)
 	}
 }
 
@@ -162,7 +192,7 @@ func TestCompileRuleset_OnEmptyUnknownCompilesToCELPlan(t *testing.T) {
 					Check: &SourceCheck{
 						Type:    "dataset.field_compare",
 						Dataset: "okta:example",
-						Assert:  &SourcePredicate{Op: "eq", Path: "/x", Value: 1},
+						Assert:  &SourcePredicate{Op: "eq", Path: "x", Value: 1},
 						Expect: &SourceExpect{
 							OnEmpty:     "unknown",
 							MinSelected: &minSelected,
@@ -216,7 +246,7 @@ func TestCompileRuleset_FieldComparePoliciesCompileToCELPlan(t *testing.T) {
 					Check: &SourceCheck{
 						Type:             "dataset.field_compare",
 						Dataset:          "okta:example",
-						Assert:           &SourcePredicate{Op: "eq", Path: "/x", Value: 1},
+						Assert:           &SourcePredicate{Op: "eq", Path: "x", Value: 1},
 						OnMissingDataset: "fail",
 					},
 				},
@@ -350,7 +380,7 @@ func TestCompileRuleset_RejectsInvalidOnEmptyValue(t *testing.T) {
 					Check: &SourceCheck{
 						Type:    "dataset.field_compare",
 						Dataset: "okta:example",
-						Assert:  &SourcePredicate{Op: "eq", Path: "/x", Value: 1},
+						Assert:  &SourcePredicate{Op: "eq", Path: "x", Value: 1},
 						Expect: &SourceExpect{
 							OnEmpty: "pass",
 						},
@@ -366,5 +396,80 @@ func TestCompileRuleset_RejectsInvalidOnEmptyValue(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "on_empty") {
 		t.Fatalf("expected on_empty validation error detail, got: %v", err)
+	}
+}
+
+func TestCompileRuleset_RejectsCountCompareValueParam(t *testing.T) {
+	doc := SourceRulesetDoc{
+		SchemaVersion: 2,
+		Kind:          "opensspm.ruleset",
+		Ruleset: SourceRuleset{
+			Key:   "example.v2",
+			Name:  "Example",
+			Scope: types.Scope{Kind: types.ScopeKindGlobal},
+			Rules: []SourceRule{
+				{
+					Key:          "R1",
+					Title:        "R1",
+					Severity:     types.SeverityLow,
+					Monitoring:   types.Monitoring{Status: types.MonitoringStatusAutomated},
+					RequiredData: []string{"okta:example"},
+					Check: &SourceCheck{
+						Type:    "dataset.count_compare",
+						Dataset: "okta:example",
+						Compare: &SourceCompare{
+							Op:         "gte",
+							ValueParam: "min_count",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := CompileRuleset(doc)
+	if err == nil {
+		t.Fatalf("expected compile error for count compare value_param")
+	}
+	if !strings.Contains(err.Error(), "value_param is not supported") {
+		t.Fatalf("expected value_param unsupported error, got: %v", err)
+	}
+}
+
+func TestCompileRuleset_RejectsSlashPath(t *testing.T) {
+	doc := SourceRulesetDoc{
+		SchemaVersion: 2,
+		Kind:          "opensspm.ruleset",
+		Ruleset: SourceRuleset{
+			Key:   "example.v2",
+			Name:  "Example",
+			Scope: types.Scope{Kind: types.ScopeKindGlobal},
+			Rules: []SourceRule{
+				{
+					Key:          "R1",
+					Title:        "R1",
+					Severity:     types.SeverityLow,
+					Monitoring:   types.Monitoring{Status: types.MonitoringStatusAutomated},
+					RequiredData: []string{"okta:example"},
+					Check: &SourceCheck{
+						Type:    "dataset.field_compare",
+						Dataset: "okta:example",
+						Assert: &SourcePredicate{
+							Op:    "eq",
+							Path:  "/status",
+							Value: "ACTIVE",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := CompileRuleset(doc)
+	if err == nil {
+		t.Fatalf("expected compile error for slash path")
+	}
+	if !strings.Contains(err.Error(), "must not contain '/'") {
+		t.Fatalf("expected slash path validation error, got: %v", err)
 	}
 }

@@ -27,8 +27,16 @@
   "rules":
     -
       "check":
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/sign-on\").filter(r, r[\"policy\"][\"name\"] == \"Default Policy\" \u0026\u0026 r[\"priority\"] == 1 \u0026\u0026 r[\"name\"] != \"Default Rule\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/sign-on\").filter(r, r[\"policy\"][\"name\"] == \"Default Policy\" \u0026\u0026 r[\"priority\"] == 1 \u0026\u0026 r[\"name\"] != \"Default Rule\").all(r, r[\"actions\"][\"signon\"][\"session\"][\"maxSessionIdleMinutes\"] == 15)"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"actions.signon.session.maxSessionIdleMinutes\") == 15"
+          "dataset": "okta:policies/sign-on"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "fail"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"policy.name\") == \"Default Policy\" \u0026\u0026 field(r, \"priority\") == 1 \u0026\u0026 field(r, \"name\") != \"Default Rule\""
       "key": "OKTA-APP-000020"
       "monitoring":
         "status": "automated"
@@ -70,8 +78,16 @@
       "title": "OKTA-APP-000090"
     -
       "check":
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"lockout\"][\"maxAttempts\"] == 3)"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.lockout.maxAttempts\") == 3"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-000170"
       "monitoring":
         "status": "automated"
@@ -160,8 +176,16 @@
       "title": "OKTA-APP-000570"
     -
       "check":
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"complexity\"][\"minLength\"] \u003e= 15)"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.complexity.minLength\") \u003e= 15"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-000650"
       "monitoring":
         "status": "automated"
@@ -177,8 +201,16 @@
       "title": "OKTA-APP-000650"
     -
       "check":
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"complexity\"][\"minUpperCase\"] \u003e= 1)"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.complexity.minUpperCase\") \u003e= 1"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-000670"
       "monitoring":
         "status": "automated"
@@ -194,8 +226,16 @@
       "title": "OKTA-APP-000670"
     -
       "check":
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"complexity\"][\"minLowerCase\"] \u003e= 1)"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.complexity.minLowerCase\") \u003e= 1"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-000680"
       "monitoring":
         "status": "automated"
@@ -211,8 +251,16 @@
       "title": "OKTA-APP-000680"
     -
       "check":
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"complexity\"][\"minNumber\"] \u003e= 1)"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.complexity.minNumber\") \u003e= 1"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-000690"
       "monitoring":
         "status": "automated"
@@ -228,8 +276,16 @@
       "title": "OKTA-APP-000690"
     -
       "check":
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"complexity\"][\"minSymbol\"] \u003e= 1)"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.complexity.minSymbol\") \u003e= 1"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-000700"
       "monitoring":
         "status": "automated"
@@ -245,8 +301,16 @@
       "title": "OKTA-APP-000700"
     -
       "check":
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"age\"][\"minAgeMinutes\"] \u003e= 1440)"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.age.minAgeMinutes\") \u003e= 1440"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-000740"
       "monitoring":
         "status": "automated"
@@ -262,8 +326,16 @@
       "title": "OKTA-APP-000740"
     -
       "check":
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"age\"][\"maxAgeDays\"] == 60)"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.age.maxAgeDays\") == 60"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-000745"
       "monitoring":
         "status": "automated"
@@ -279,8 +351,14 @@
       "title": "OKTA-APP-000745"
     -
       "check":
-        "engine": "cel"
-        "expression": "rows(\"okta:log-streams\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e= 1"
+        "engine": "cel_plan"
+        "plan":
+          "compare":
+            "op": "gte"
+            "value": 1
+          "dataset": "okta:log-streams"
+          "type": "dataset.count_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-001430"
       "monitoring":
         "reason": "Okta logs can also be exported via the System Log API; this check only covers Log Streaming."
@@ -297,8 +375,16 @@
       "title": "OKTA-APP-001430"
     -
       "check":
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/sign-on\").filter(r, r[\"policy\"][\"name\"] == \"Default Policy\" \u0026\u0026 r[\"priority\"] == 1 \u0026\u0026 r[\"name\"] != \"Default Rule\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/sign-on\").filter(r, r[\"policy\"][\"name\"] == \"Default Policy\" \u0026\u0026 r[\"priority\"] == 1 \u0026\u0026 r[\"name\"] != \"Default Rule\").all(r, r[\"actions\"][\"signon\"][\"session\"][\"maxSessionLifetimeMinutes\"] == 1080)"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"actions.signon.session.maxSessionLifetimeMinutes\") == 1080"
+          "dataset": "okta:policies/sign-on"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "fail"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"policy.name\") == \"Default Policy\" \u0026\u0026 field(r, \"priority\") == 1 \u0026\u0026 field(r, \"name\") != \"Default Rule\""
       "key": "OKTA-APP-001665"
       "monitoring":
         "status": "automated"
@@ -314,8 +400,16 @@
       "title": "OKTA-APP-001665"
     -
       "check":
-        "engine": "cel"
-        "expression": "rows(\"okta:authenticators\").filter(r, r[\"name\"] == \"Smart Card Authenticator\").size() \u003e 0 \u0026\u0026 rows(\"okta:authenticators\").filter(r, r[\"name\"] == \"Smart Card Authenticator\").all(r, r[\"status\"] == \"ACTIVE\")"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"status\") == \"ACTIVE\""
+          "dataset": "okta:authenticators"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "fail"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"name\") == \"Smart Card Authenticator\""
       "key": "OKTA-APP-001670"
       "monitoring":
         "status": "automated"
@@ -344,8 +438,16 @@
       "title": "OKTA-APP-001700"
     -
       "check":
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/sign-on\").filter(r, r[\"policy\"][\"name\"] == \"Default Policy\" \u0026\u0026 r[\"priority\"] == 1 \u0026\u0026 r[\"name\"] != \"Default Rule\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/sign-on\").filter(r, r[\"policy\"][\"name\"] == \"Default Policy\" \u0026\u0026 r[\"priority\"] == 1 \u0026\u0026 r[\"name\"] != \"Default Rule\").all(r, r[\"actions\"][\"signon\"][\"session\"][\"usePersistentCookie\"] == false)"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"actions.signon.session.usePersistentCookie\") == false"
+          "dataset": "okta:policies/sign-on"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "fail"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"policy.name\") == \"Default Policy\" \u0026\u0026 field(r, \"priority\") == 1 \u0026\u0026 field(r, \"name\") != \"Default Rule\""
       "key": "OKTA-APP-001710"
       "monitoring":
         "status": "automated"
@@ -378,8 +480,16 @@
       "title": "OKTA-APP-001920"
     -
       "check":
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"complexity\"][\"dictionary\"][\"common\"][\"exclude\"] == true)"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.complexity.dictionary.common.exclude\") == true"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-002980"
       "monitoring":
         "status": "automated"
@@ -395,8 +505,16 @@
       "title": "OKTA-APP-002980"
     -
       "check":
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"age\"][\"historyCount\"] \u003e= 5)"
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"settings.password.age.historyCount\") \u003e= 5"
+          "dataset": "okta:policies/password"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "type": "dataset.field_compare"
+          "where_expression": "field(r, \"status\") == \"ACTIVE\""
       "key": "OKTA-APP-003010"
       "monitoring":
         "status": "automated"

@@ -20,7 +20,7 @@
       - "okta:policies/password"
       - "okta:policies/sign-on"
     "engines":
-      - "cel"
+      - "cel_plan"
     "inputs": []
     "params_referenced": []
     "rules":
@@ -31,9 +31,7 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/sign-on"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/sign-on\").filter(r, r[\"policy\"][\"name\"] == \"Default Policy\" \u0026\u0026 r[\"priority\"] == 1 \u0026\u0026 r[\"name\"] != \"Default Rule\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/sign-on\").filter(r, r[\"policy\"][\"name\"] == \"Default Policy\" \u0026\u0026 r[\"priority\"] == 1 \u0026\u0026 r[\"name\"] != \"Default Rule\").all(r, r[\"actions\"][\"signon\"][\"session\"][\"maxSessionIdleMinutes\"] == 15)"
-        "expression_sha256": "a26d0bcff17a0608e84ea3b3394c28aca031c7bec2b7c450db4939b7a70cc6d2"
+        "engine": "cel_plan"
         "inputs": []
         "is_manual": false
         "monitoring":
@@ -65,9 +63,7 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"lockout\"][\"maxAttempts\"] == 3)"
-        "expression_sha256": "1b459057649640e8ac89117ad62b32282c061b9d066d863f4b7d1041e5b9615c"
+        "engine": "cel_plan"
         "inputs": []
         "is_manual": false
         "monitoring":
@@ -126,9 +122,7 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"complexity\"][\"minLength\"] \u003e= 15)"
-        "expression_sha256": "fb60c36b8dfab4fafdf0d943c601894ca91139f8ca11114717e00cfdf87c3a2c"
+        "engine": "cel_plan"
         "inputs": []
         "is_manual": false
         "monitoring":
@@ -142,9 +136,7 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"complexity\"][\"minUpperCase\"] \u003e= 1)"
-        "expression_sha256": "df4eda4cfca8a6dd292dbc82b57bdef0fe5acfaa8e288c6251d83c305371f44e"
+        "engine": "cel_plan"
         "inputs": []
         "is_manual": false
         "monitoring":
@@ -158,9 +150,7 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"complexity\"][\"minLowerCase\"] \u003e= 1)"
-        "expression_sha256": "0c39edd3a549b05b1c63aaf12ab8a0252d02a8ecf996ad0931b7c3458e680ffb"
+        "engine": "cel_plan"
         "inputs": []
         "is_manual": false
         "monitoring":
@@ -174,9 +164,7 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"complexity\"][\"minNumber\"] \u003e= 1)"
-        "expression_sha256": "06c734795748de5d63e609e1c5d579f5d1c4aa65c9e0be2f5cf5d9318af76d8d"
+        "engine": "cel_plan"
         "inputs": []
         "is_manual": false
         "monitoring":
@@ -190,9 +178,7 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"complexity\"][\"minSymbol\"] \u003e= 1)"
-        "expression_sha256": "f2900dc07380fa335771c05f4b067b0dd08465f7bc30a79724aaf582c11d2bcc"
+        "engine": "cel_plan"
         "inputs": []
         "is_manual": false
         "monitoring":
@@ -206,9 +192,7 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"age\"][\"minAgeMinutes\"] \u003e= 1440)"
-        "expression_sha256": "e441dc739616d76207cded5d033ec2f70cea154f9e72ae2ac495f630f9e54edb"
+        "engine": "cel_plan"
         "inputs": []
         "is_manual": false
         "monitoring":
@@ -222,9 +206,7 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"age\"][\"maxAgeDays\"] == 60)"
-        "expression_sha256": "31186683623a440e72095761ca764714a89b1141fcd37b354b5106e678927568"
+        "engine": "cel_plan"
         "inputs": []
         "is_manual": false
         "monitoring":
@@ -238,9 +220,7 @@
             "version": 1
         "datasets_referenced":
           - "okta:log-streams"
-        "engine": "cel"
-        "expression": "rows(\"okta:log-streams\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e= 1"
-        "expression_sha256": "f25fe649c137a4dc1327bf41f7c78cc97ea8978a6f943e71668fc057e523dc5b"
+        "engine": "cel_plan"
         "inputs": []
         "is_manual": false
         "monitoring":
@@ -254,9 +234,7 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/sign-on"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/sign-on\").filter(r, r[\"policy\"][\"name\"] == \"Default Policy\" \u0026\u0026 r[\"priority\"] == 1 \u0026\u0026 r[\"name\"] != \"Default Rule\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/sign-on\").filter(r, r[\"policy\"][\"name\"] == \"Default Policy\" \u0026\u0026 r[\"priority\"] == 1 \u0026\u0026 r[\"name\"] != \"Default Rule\").all(r, r[\"actions\"][\"signon\"][\"session\"][\"maxSessionLifetimeMinutes\"] == 1080)"
-        "expression_sha256": "391fd7c1082ddacbfd59314cbe20392c14487183ad576f77605b9ae9ebadd7a2"
+        "engine": "cel_plan"
         "inputs": []
         "is_manual": false
         "monitoring":
@@ -270,9 +248,7 @@
             "version": 1
         "datasets_referenced":
           - "okta:authenticators"
-        "engine": "cel"
-        "expression": "rows(\"okta:authenticators\").filter(r, r[\"name\"] == \"Smart Card Authenticator\").size() \u003e 0 \u0026\u0026 rows(\"okta:authenticators\").filter(r, r[\"name\"] == \"Smart Card Authenticator\").all(r, r[\"status\"] == \"ACTIVE\")"
-        "expression_sha256": "2a5129a1991775f1d7cbad64c6211b5b1023a679bc367a60d5655f9d02c5668f"
+        "engine": "cel_plan"
         "inputs": []
         "is_manual": false
         "monitoring":
@@ -295,9 +271,7 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/sign-on"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/sign-on\").filter(r, r[\"policy\"][\"name\"] == \"Default Policy\" \u0026\u0026 r[\"priority\"] == 1 \u0026\u0026 r[\"name\"] != \"Default Rule\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/sign-on\").filter(r, r[\"policy\"][\"name\"] == \"Default Policy\" \u0026\u0026 r[\"priority\"] == 1 \u0026\u0026 r[\"name\"] != \"Default Rule\").all(r, r[\"actions\"][\"signon\"][\"session\"][\"usePersistentCookie\"] == false)"
-        "expression_sha256": "d56b0e61e6701bf049f21c0731fed45b3e196faf81ea6bbcd5a5c402517a581b"
+        "engine": "cel_plan"
         "inputs": []
         "is_manual": false
         "monitoring":
@@ -320,9 +294,7 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"complexity\"][\"dictionary\"][\"common\"][\"exclude\"] == true)"
-        "expression_sha256": "2db41a225e1c0d1b5094d89c272754052e2daa1e92acab2bd260ad9b7981be8d"
+        "engine": "cel_plan"
         "inputs": []
         "is_manual": false
         "monitoring":
@@ -336,9 +308,7 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").size() \u003e 0 \u0026\u0026 rows(\"okta:policies/password\").filter(r, r[\"status\"] == \"ACTIVE\").all(r, r[\"settings\"][\"password\"][\"age\"][\"historyCount\"] \u003e= 5)"
-        "expression_sha256": "e12424984821ed126071517c2290ca3d8ea54f6ee308b70fd4e1d050ac6041e9"
+        "engine": "cel_plan"
         "inputs": []
         "is_manual": false
         "monitoring":

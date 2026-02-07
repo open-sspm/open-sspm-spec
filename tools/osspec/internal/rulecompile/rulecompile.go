@@ -90,14 +90,16 @@ type SourceCheck struct {
 }
 
 type SourcePredicate struct {
-	Op    string `json:"op"`
-	Path  string `json:"path"`
-	Value any    `json:"value"`
+	Op         string `json:"op"`
+	Path       string `json:"path"`
+	Value      any    `json:"value,omitempty"`
+	ValueParam string `json:"value_param,omitempty"`
 }
 
 type SourceCompare struct {
-	Op    string `json:"op"`
-	Value any    `json:"value"`
+	Op         string `json:"op"`
+	Value      any    `json:"value,omitempty"`
+	ValueParam string `json:"value_param,omitempty"`
 }
 
 type SourceExpect struct {
@@ -276,17 +278,6 @@ func validatePolicyAction(name, value string) error {
 	}
 }
 
-func requiresCELPlanForPolicies(policies resolvedPolicies) bool {
-	return policyRequiresCELPlan(policies.OnMissingDataset) ||
-		policyRequiresCELPlan(policies.OnPermissionDenied) ||
-		policyRequiresCELPlan(policies.OnSyncError)
-}
-
-func policyRequiresCELPlan(value string) bool {
-	value = strings.ToLower(strings.TrimSpace(value))
-	return value != "" && value != "unknown"
-}
-
 func compileDatasetFieldCompare(ruleKey string, sourceCheck *SourceCheck, selectors map[string]SourceSelector, policies resolvedPolicies) (*types.Check, error) {
 	if sourceCheck == nil {
 		return nil, fmt.Errorf("rule %q: check is required", ruleKey)
@@ -351,41 +342,22 @@ func compileDatasetFieldCompare(ruleKey string, sourceCheck *SourceCheck, select
 		return nil, err
 	}
 
-	if onEmpty == "unknown" || requiresCELPlanForPolicies(policies) {
-		return &types.Check{
-			Engine: types.CheckEngineCELPlan,
-			Plan: &types.CheckPlan{
-				Type:             checkTypeDatasetFieldCompare,
-				Dataset:          dataset,
-				WhereExpression:  whereExpr,
-				AssertExpression: assertExpr,
-				Expect: &types.CheckPlanExpect{
-					Match:       matchMode,
-					MinSelected: minExpected,
-					OnEmpty:     onEmpty,
-				},
-				OnMissingDataset:   policies.OnMissingDataset,
-				OnPermissionDenied: policies.OnPermissionDenied,
-				OnSyncError:        policies.OnSyncError,
-			},
-		}, nil
-	}
-
-	minExpectedCEL := minExpected
-	if minExpectedCEL == 0 {
-		// Boolean CEL cannot represent unknown-on-empty semantics.
-		minExpectedCEL = 1
-	}
-
-	selectedExpr := fmt.Sprintf(`rows(%s).filter(r, %s)`, strconv.Quote(dataset), whereExpr)
-	matchExpr := fmt.Sprintf(`%s.all(r, %s)`, selectedExpr, assertExpr)
-	if matchMode == "any" {
-		matchExpr = fmt.Sprintf(`%s.exists(r, %s)`, selectedExpr, assertExpr)
-	}
-
 	return &types.Check{
-		Engine:     types.CheckEngineCEL,
-		Expression: fmt.Sprintf(`%s.size() >= %d && %s`, selectedExpr, minExpectedCEL, matchExpr),
+		Engine: types.CheckEngineCELPlan,
+		Plan: &types.CheckPlan{
+			Type:             checkTypeDatasetFieldCompare,
+			Dataset:          dataset,
+			WhereExpression:  whereExpr,
+			AssertExpression: assertExpr,
+			Expect: &types.CheckPlanExpect{
+				Match:       matchMode,
+				MinSelected: minExpected,
+				OnEmpty:     onEmpty,
+			},
+			OnMissingDataset:   policies.OnMissingDataset,
+			OnPermissionDenied: policies.OnPermissionDenied,
+			OnSyncError:        policies.OnSyncError,
+		},
 	}, nil
 }
 
@@ -412,29 +384,30 @@ func compileDatasetCountCompare(ruleKey string, sourceCheck *SourceCheck, select
 	if err != nil {
 		return nil, err
 	}
-	filteredCountExpr := fmt.Sprintf(`rows(%s).filter(r, %s).size()`, strconv.Quote(dataset), whereExpr)
-	compareExpr, err := compileComparison(ruleKey, filteredCountExpr, sourceCheck.Compare.Op, sourceCheck.Compare.Value)
-	if err != nil {
-		return nil, err
+
+	hasValueParam := strings.TrimSpace(sourceCheck.Compare.ValueParam) != ""
+	if hasValueParam && sourceCheck.Compare.Value != nil {
+		return nil, fmt.Errorf("rule %q: check.compare cannot have both value and value_param", ruleKey)
 	}
-	if requiresCELPlanForPolicies(policies) {
-		return &types.Check{
-			Engine: types.CheckEngineCELPlan,
-			Plan: &types.CheckPlan{
-				Type:            checkTypeDatasetCountCompare,
-				Dataset:         dataset,
-				WhereExpression: whereExpr,
-				Compare: &types.CheckPlanCompare{
-					Op:    strings.ToLower(strings.TrimSpace(sourceCheck.Compare.Op)),
-					Value: sourceCheck.Compare.Value,
-				},
-				OnMissingDataset:   policies.OnMissingDataset,
-				OnPermissionDenied: policies.OnPermissionDenied,
-				OnSyncError:        policies.OnSyncError,
+	if hasValueParam {
+		return nil, fmt.Errorf("rule %q: check.compare.value_param is not supported for %q", ruleKey, checkTypeDatasetCountCompare)
+	}
+
+	return &types.Check{
+		Engine: types.CheckEngineCELPlan,
+		Plan: &types.CheckPlan{
+			Type:            checkTypeDatasetCountCompare,
+			Dataset:         dataset,
+			WhereExpression: whereExpr,
+			Compare: &types.CheckPlanCompare{
+				Op:    strings.ToLower(strings.TrimSpace(sourceCheck.Compare.Op)),
+				Value: sourceCheck.Compare.Value,
 			},
-		}, nil
-	}
-	return &types.Check{Engine: types.CheckEngineCEL, Expression: compareExpr}, nil
+			OnMissingDataset:   policies.OnMissingDataset,
+			OnPermissionDenied: policies.OnPermissionDenied,
+			OnSyncError:        policies.OnSyncError,
+		},
+	}, nil
 }
 
 func resolveDatasetAndWhere(ruleKey string, sourceCheck *SourceCheck, selectors map[string]SourceSelector) (string, []SourcePredicate, error) {
@@ -489,7 +462,46 @@ func compilePredicate(ruleKey string, predicate SourcePredicate, varName string)
 	if err != nil {
 		return "", fmt.Errorf("rule %q: invalid predicate.path %q: %w", ruleKey, predicate.Path, err)
 	}
+	if strings.TrimSpace(predicate.ValueParam) != "" {
+		if predicate.Value != nil {
+			return "", fmt.Errorf("rule %q: predicate cannot have both value and value_param", ruleKey)
+		}
+		return compileComparisonParam(ruleKey, pathExpr, predicate.Op, predicate.ValueParam)
+	}
 	return compileComparison(ruleKey, pathExpr, predicate.Op, predicate.Value)
+}
+
+func compileComparisonParam(ruleKey, leftExpr, op string, paramName string) (string, error) {
+	operator := strings.ToLower(strings.TrimSpace(op))
+	if operator == "" {
+		return "", fmt.Errorf("rule %q: predicate op is required", ruleKey)
+	}
+	paramName = strings.TrimSpace(paramName)
+	if paramName == "" {
+		return "", fmt.Errorf("rule %q: value_param name is required", ruleKey)
+	}
+	paramRef := fmt.Sprintf(`param(%s)`, strconv.Quote(paramName))
+
+	switch operator {
+	case "eq":
+		return fmt.Sprintf(`%s == %s`, leftExpr, paramRef), nil
+	case "neq":
+		return fmt.Sprintf(`%s != %s`, leftExpr, paramRef), nil
+	case "gt":
+		return fmt.Sprintf(`%s > %s`, leftExpr, paramRef), nil
+	case "gte":
+		return fmt.Sprintf(`%s >= %s`, leftExpr, paramRef), nil
+	case "lt":
+		return fmt.Sprintf(`%s < %s`, leftExpr, paramRef), nil
+	case "lte":
+		return fmt.Sprintf(`%s <= %s`, leftExpr, paramRef), nil
+	case "in":
+		return fmt.Sprintf(`%s in %s`, leftExpr, paramRef), nil
+	case "nin":
+		return fmt.Sprintf(`!(%s in %s)`, leftExpr, paramRef), nil
+	default:
+		return "", fmt.Errorf("rule %q: unsupported comparison op %q", ruleKey, op)
+	}
 }
 
 func compileComparison(ruleKey, leftExpr, op string, value any) (string, error) {
@@ -525,63 +537,26 @@ func compileComparison(ruleKey, leftExpr, op string, value any) (string, error) 
 }
 
 func pathToCEL(varName, path string) (string, error) {
-	parts, err := parseJSONPointer(path)
-	if err != nil {
+	if err := validateDotPath(path); err != nil {
 		return "", err
 	}
-
-	expr := varName
-	for _, part := range parts {
-		expr += "[" + strconv.Quote(part) + "]"
-	}
-	return expr, nil
+	return fmt.Sprintf(`field(%s, %s)`, varName, strconv.Quote(path)), nil
 }
 
-func parseJSONPointer(path string) ([]string, error) {
+func validateDotPath(path string) error {
 	path = strings.TrimSpace(path)
 	if path == "" {
-		return nil, fmt.Errorf("path is required")
+		return fmt.Errorf("path is required")
 	}
-	if !strings.HasPrefix(path, "/") {
-		return nil, fmt.Errorf("path must start with '/'")
+	if strings.Contains(path, "/") {
+		return fmt.Errorf("path must use dot notation and must not contain '/'")
 	}
-
-	rawParts := strings.Split(path[1:], "/")
-	parts := make([]string, 0, len(rawParts))
-	for _, rawPart := range rawParts {
-		decoded, err := decodePointerToken(rawPart)
-		if err != nil {
-			return nil, err
+	for _, segment := range strings.Split(path, ".") {
+		if segment == "" {
+			return fmt.Errorf("path contains empty segment: %q", path)
 		}
-		parts = append(parts, decoded)
 	}
-	return parts, nil
-}
-
-func decodePointerToken(token string) (string, error) {
-	var b strings.Builder
-	b.Grow(len(token))
-	for i := 0; i < len(token); i++ {
-		ch := token[i]
-		if ch != '~' {
-			b.WriteByte(ch)
-			continue
-		}
-		if i+1 >= len(token) {
-			return "", fmt.Errorf("invalid JSON pointer escape")
-		}
-		next := token[i+1]
-		switch next {
-		case '0':
-			b.WriteByte('~')
-		case '1':
-			b.WriteByte('/')
-		default:
-			return "", fmt.Errorf("invalid JSON pointer escape")
-		}
-		i++
-	}
-	return b.String(), nil
+	return nil
 }
 
 func celLiteral(value any) (string, error) {

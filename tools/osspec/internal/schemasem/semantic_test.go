@@ -136,6 +136,31 @@ func TestValidateSemantic_MonitoringConstraints(t *testing.T) {
 			t.Fatalf("expected no errors, got:\n%s", joinErrs(errs))
 		}
 	})
+
+	t.Run("manual rejects check", func(t *testing.T) {
+		errs := validateRulesetDocJSON(t, `{
+  "schema_version": 2,
+  "kind": "opensspm.ruleset",
+  "ruleset": {
+    "key": "example.manual_with_check.v2",
+    "name": "Example manual with check",
+    "scope": { "kind": "global" },
+    "rules": [
+      {
+        "key": "R1",
+        "title": "R1",
+        "severity": "low",
+        "monitoring": { "status": "manual" },
+        "required_data": [],
+        "check": { "engine": "cel", "expression": "true" }
+      }
+    ]
+  }
+}`)
+		if !containsErr(errs, "requires rule.check to be omitted") {
+			t.Fatalf("expected manual rule check omission error, got:\n%s", joinErrs(errs))
+		}
+	})
 }
 
 func TestValidateSemantic_CheckEngineAndExpressionValidation(t *testing.T) {
@@ -191,7 +216,7 @@ func TestRulesetSchemaAcceptsStructuredCheckDSL(t *testing.T) {
       "active_a": {
         "dataset": "okta:a",
         "where": [
-          { "op": "eq", "path": "/status", "value": "ACTIVE" }
+          { "op": "eq", "path": "status", "value": "ACTIVE" }
         ]
       }
     },
@@ -205,7 +230,7 @@ func TestRulesetSchemaAcceptsStructuredCheckDSL(t *testing.T) {
         "check": {
           "type": "dataset.field_compare",
           "selector": "active_a",
-          "assert": { "op": "gte", "path": "/count", "value": 1 },
+          "assert": { "op": "gte", "path": "count", "value": 1 },
           "expect": { "match": "all", "min_selected": 1, "on_empty": "fail" }
         }
       }

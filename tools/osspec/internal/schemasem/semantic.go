@@ -155,6 +155,13 @@ func validateRule(path string, rs *types.Ruleset, r *types.Rule, contractsIdx da
 		return errs
 	}
 
+	if !requiresCheck {
+		if r.Check != nil {
+			errs = append(errs, fmt.Errorf("semantic: %s: rule %q: monitoring.status=%q requires rule.check to be omitted", path, r.Key, r.Monitoring.Status))
+		}
+		return errs
+	}
+
 	if r.Check == nil {
 		return errs
 	}

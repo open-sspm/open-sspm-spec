@@ -13,6 +13,8 @@ import (
 	"sync"
 
 	"github.com/google/cel-go/cel"
+	"github.com/google/cel-go/common/types"
+	"github.com/google/cel-go/common/types/ref"
 )
 
 type CheckEngine string
@@ -508,19 +510,7 @@ func EvaluateRule(rule *Rule, input EvaluateInput) (EvaluateResult, error) {
 	}
 
 	if rule.Monitoring.Status == MonitoringStatus_MANUAL || rule.Monitoring.Status == MonitoringStatus_UNSUPPORTED {
-		if rule.Check == nil {
-			return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "manual_rule"}, nil
-		}
-		engine := strings.TrimSpace(string(rule.Check.Engine))
-		if engine == "" && strings.TrimSpace(rule.Check.Expression) == "" && rule.Check.Plan == nil {
-			return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "manual_rule"}, nil
-		}
-		if engine == string(CheckEngine_CEL) && strings.TrimSpace(rule.Check.Expression) == "" {
-			return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "manual_rule"}, nil
-		}
-		if engine == string(CheckEngine_CEL_PLAN) && rule.Check.Plan == nil {
-			return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "manual_rule"}, nil
-		}
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "manual_rule"}, nil
 	}
 
 	if rule.Check == nil {
@@ -602,7 +592,7 @@ func evaluateCELPlan(plan *CheckPlan, datasets map[string]DatasetInput, params m
 
 	selected := entry.Rows
 	whereExpr := strings.TrimSpace(plan.WhereExpression)
-	if whereExpr != "" {
+	if whereExpr != "" && whereExpr != "true" {
 		filtered := make([]any, 0, len(entry.Rows))
 		for _, row := range entry.Rows {
 			match, err := evaluateCELPredicate(whereExpr, row, params)
@@ -950,6 +940,7 @@ func compileExpression(expression string) (compiledExpression, error) {
 	env, err := cel.NewEnv(
 		cel.Variable("datasets", cel.MapType(cel.StringType, cel.DynType)),
 		cel.Variable("params", cel.MapType(cel.StringType, cel.DynType)),
+		fieldCELFunction(),
 	)
 	if err != nil {
 		return compiledExpression{}, fmt.Errorf("create CEL environment: %w", err)
@@ -988,6 +979,7 @@ func compilePredicateExpression(expression string) (compiledPredicate, error) {
 	env, err := cel.NewEnv(
 		cel.Variable("r", cel.DynType),
 		cel.Variable("params", cel.MapType(cel.StringType, cel.DynType)),
+		fieldCELFunction(),
 	)
 	if err != nil {
 		return compiledPredicate{}, fmt.Errorf("create CEL predicate environment: %w", err)
@@ -1087,6 +1079,56 @@ func normalizeStringSet(values []string) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+func fieldCELFunction() cel.EnvOption {
+	return cel.Function("field",
+		cel.Overload("field_dyn_string",
+			[]*cel.Type{cel.DynType, cel.StringType},
+			cel.DynType,
+			cel.BinaryBinding(func(lhs, rhs ref.Val) ref.Val {
+				path, ok := rhs.Value().(string)
+				if !ok {
+					return types.NullValue
+				}
+				return fieldNavigate(lhs, path)
+			}),
+		),
+	)
+}
+
+func fieldNavigate(val ref.Val, path string) ref.Val {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return val
+	}
+
+	parts := strings.Split(path, ".")
+	current := val
+	for _, part := range parts {
+		if part == "" {
+			return types.NullValue
+		}
+		m, ok := current.Value().(map[string]any)
+		if !ok {
+			mRef, ok2 := current.Value().(map[ref.Val]ref.Val)
+			if !ok2 {
+				return types.NullValue
+			}
+			next, found := mRef[types.String(part)]
+			if !found {
+				return types.NullValue
+			}
+			current = next
+			continue
+		}
+		next, found := m[part]
+		if !found {
+			return types.NullValue
+		}
+		current = types.DefaultTypeAdapter.NativeToValue(next)
+	}
+	return current
 }
 
 func (r *RulesetRequirement) RuleKeys() []string {
