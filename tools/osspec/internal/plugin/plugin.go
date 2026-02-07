@@ -45,7 +45,7 @@ func (r Runner) Run(ctx context.Context, language string, req types.CodegenReque
 	if err := json.Unmarshal(stdout.Bytes(), &resp); err != nil {
 		return types.CodegenResponse{}, fmt.Errorf("plugin: parse response: %w", err)
 	}
-	if resp.SchemaVersion != 1 || resp.Kind != "opensspm.codegen_response" {
+	if resp.SchemaVersion != 2 || resp.Kind != "opensspm.codegen_response" {
 		return types.CodegenResponse{}, fmt.Errorf("plugin: invalid response header: schema_version=%d kind=%q", resp.SchemaVersion, resp.Kind)
 	}
 	return resp, nil
@@ -65,4 +65,3 @@ func (r Runner) commandForLanguage(ctx context.Context, pluginName, language str
 	cmd.Dir = r.RepoRoot
 	return cmd, nil
 }
-

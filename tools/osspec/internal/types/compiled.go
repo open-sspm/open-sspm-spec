@@ -46,7 +46,7 @@ type Compiled[T any] struct {
 	Object     T      `json:"object"`
 }
 
-type DescriptorV1 struct {
+type Descriptor struct {
 	SchemaVersion int                    `json:"schema_version"`
 	Kind          string                 `json:"kind"`
 	Version       Version                `json:"version"`
@@ -62,7 +62,7 @@ type CodegenRequest struct {
 	SchemaVersion int          `json:"schema_version"`
 	Kind          string       `json:"kind"`
 	Language      string       `json:"language"`
-	Descriptor    DescriptorV1 `json:"descriptor"`
+	Descriptor    Descriptor   `json:"descriptor"`
 }
 
 type CodegenResponse struct {

@@ -26,7 +26,7 @@ type Options struct {
 }
 
 type Result struct {
-	Descriptor   types.DescriptorV1
+	Descriptor   types.Descriptor
 	Artifacts    types.ArtifactsIndex
 	Requirements types.RequirementsIndex
 }
@@ -70,7 +70,7 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 		if err := yamlstrict.DecodeSingleStrictYAML(f.Bytes, &hdr, false); err != nil {
 			return nil, fmt.Errorf("%s: parse header: %w", f.RelPath, err)
 		}
-		if hdr.SchemaVersion != 1 {
+		if hdr.SchemaVersion != 2 {
 			return nil, fmt.Errorf("%s: unsupported schema_version %d", f.RelPath, hdr.SchemaVersion)
 		}
 		jsonDoc, err := yamlstrict.DecodeSingleStrictYAMLToJSON(f.Bytes)
@@ -116,15 +116,15 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 
 	reqIndex := buildRequirements(&bundle)
 	artifactsIndex := types.ArtifactsIndex{
-		SchemaVersion: 1,
+		SchemaVersion: 2,
 		Kind:          "opensspm.artifacts_index",
 		Artifacts: []types.Artifact{
 			{Kind: "opensspm.version", Key: "version", SourcePath: "version.yaml", Hash: versionHash},
 		},
 	}
 
-	desc := types.DescriptorV1{
-		SchemaVersion: 1,
+	desc := types.Descriptor{
+		SchemaVersion: 2,
 		Kind:          "opensspm.compliance_descriptor",
 		Version:       version,
 		Index: struct {
@@ -181,7 +181,7 @@ func loadVersion(repoRootAbs string) (types.Version, string, error) {
 	if err := yamlstrict.DecodeSingleStrictYAML(b, &v, true); err != nil {
 		return types.Version{}, "", fmt.Errorf("compiler: parse version.yaml: %w", err)
 	}
-	if v.Project == "" || v.Repo == "" || v.SpecVersion == "" || v.SchemaVersion != 1 {
+	if v.Project == "" || v.Repo == "" || v.SpecVersion == "" || v.SchemaVersion != 2 {
 		return types.Version{}, "", fmt.Errorf("compiler: invalid version.yaml (missing required fields)")
 	}
 	h, _, err := hash.HashObjectCanonicalYAML(v)

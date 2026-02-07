@@ -11,10 +11,10 @@ func TestHashObjectJCS_NormalizedRulesetStableAcrossOrdering(t *testing.T) {
 	zero := 0
 
 	doc1 := types.RulesetDoc{
-		SchemaVersion: 1,
+		SchemaVersion: 2,
 		Kind:          "opensspm.ruleset",
 		Ruleset: types.Ruleset{
-			Key:   "example.ruleset.v1",
+			Key:   "example.ruleset.v2",
 			Name:  "Example",
 			Scope: types.Scope{Kind: types.ScopeKindGlobal},
 			// omit status to exercise defaulting
@@ -68,10 +68,10 @@ func TestHashObjectJCS_NormalizedRulesetStableAcrossOrdering(t *testing.T) {
 	}
 
 	doc2 := types.RulesetDoc{
-		SchemaVersion: 1,
+		SchemaVersion: 2,
 		Kind:          "opensspm.ruleset",
 		Ruleset: types.Ruleset{
-			Key:    "example.ruleset.v1",
+			Key:    "example.ruleset.v2",
 			Name:   "Example",
 			Scope:  types.Scope{Kind: types.ScopeKindGlobal},
 			Status: "active",
@@ -144,10 +144,10 @@ func TestHashObjectJCS_NormalizedRulesetStableAcrossJoinWhereOrdering(t *testing
 	zero := 0
 
 	doc1 := types.RulesetDoc{
-		SchemaVersion: 1,
+		SchemaVersion: 2,
 		Kind:          "opensspm.ruleset",
 		Ruleset: types.Ruleset{
-			Key:   "example.join.ruleset.v1",
+			Key:   "example.join.ruleset.v2",
 			Name:  "Example join",
 			Scope: types.Scope{Kind: types.ScopeKindGlobal},
 			DataContracts: []types.DatasetContractRef{
@@ -179,10 +179,10 @@ func TestHashObjectJCS_NormalizedRulesetStableAcrossJoinWhereOrdering(t *testing
 	}
 
 	doc2 := types.RulesetDoc{
-		SchemaVersion: 1,
+		SchemaVersion: 2,
 		Kind:          "opensspm.ruleset",
 		Ruleset: types.Ruleset{
-			Key:   "example.join.ruleset.v1",
+			Key:   "example.join.ruleset.v2",
 			Name:  "Example join",
 			Scope: types.Scope{Kind: types.ScopeKindGlobal},
 			DataContracts: []types.DatasetContractRef{

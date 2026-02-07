@@ -13,16 +13,14 @@
     -
       "dataset": "okta:policies/sign-on"
       "version": 1
-  "key": "cis.okta.idaas_stig.v1"
-  "name": "CIS Okta IDaaS STIG Benchmark v1.0.0"
+  "key": "cis.okta.idaas_stig.v2"
+  "name": "CIS Okta IDaaS STIG Benchmark v2.0.0"
   "references":
     -
       "title": "CIS Benchmarks (obtain the official PDF via CIS)"
-      "type": "other"
       "url": "https://www.cisecurity.org"
     -
       "title": "Severity mapping: CAT I -\u003e high, CAT II -\u003e medium"
-      "type": "other"
       "url": "https://www.cisecurity.org"
   "rules":
     -
@@ -36,15 +34,8 @@
           "match": "all"
           "min_selected": 1
           "on_empty": "fail"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "dataset.field_compare"
         "where":
-          -
-            "op": "neq"
-            "path": "/name"
-            "value": "Default Rule"
           -
             "op": "eq"
             "path": "/policy/name"
@@ -53,6 +44,10 @@
             "op": "eq"
             "path": "/priority"
             "value": 1
+          -
+            "op": "neq"
+            "path": "/name"
+            "value": "Default Rule"
       "key": "OKTA-APP-000020"
       "monitoring":
         "status": "automated"
@@ -68,9 +63,6 @@
       "title": "OKTA-APP-000020"
     -
       "check":
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "manual.attestation"
       "key": "OKTA-APP-000025"
       "monitoring":
@@ -86,9 +78,6 @@
       "title": "OKTA-APP-000025"
     -
       "check":
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "manual.attestation"
       "key": "OKTA-APP-000090"
       "monitoring":
@@ -113,9 +102,6 @@
           "match": "all"
           "min_selected": 1
           "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "dataset.field_compare"
         "where":
           -
@@ -137,53 +123,44 @@
       "title": "OKTA-APP-000170"
     -
       "check":
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "manual.attestation"
       "key": "OKTA-APP-000180"
       "monitoring":
         "status": "manual"
       "references":
         -
-          "title": "Okta Management API: Authenticator"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Authenticator/"
-        -
           "title": "Okta Management API: Policy (authentication policies and rules)"
           "type": "documentation"
           "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
+        -
+          "title": "Okta Management API: Authenticator"
+          "type": "documentation"
+          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Authenticator/"
       "required_data": []
       "severity": "medium"
       "summary": "See CIS benchmark recommendation OKTA-APP-000180"
       "title": "OKTA-APP-000180"
     -
       "check":
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "manual.attestation"
       "key": "OKTA-APP-000190"
       "monitoring":
         "status": "manual"
       "references":
         -
-          "title": "Okta Management API: Authenticator"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Authenticator/"
-        -
           "title": "Okta Management API: Policy (authentication policies and rules)"
           "type": "documentation"
           "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/"
+        -
+          "title": "Okta Management API: Authenticator"
+          "type": "documentation"
+          "url": "https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Authenticator/"
       "required_data": []
       "severity": "medium"
       "summary": "See CIS benchmark recommendation OKTA-APP-000190"
       "title": "OKTA-APP-000190"
     -
       "check":
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "manual.attestation"
       "key": "OKTA-APP-000200"
       "monitoring":
@@ -199,9 +176,6 @@
       "title": "OKTA-APP-000200"
     -
       "check":
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "manual.attestation"
       "key": "OKTA-APP-000560"
       "monitoring":
@@ -217,9 +191,6 @@
       "title": "OKTA-APP-000560"
     -
       "check":
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "manual.attestation"
       "key": "OKTA-APP-000570"
       "monitoring":
@@ -244,9 +215,6 @@
           "match": "all"
           "min_selected": 1
           "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "dataset.field_compare"
         "where":
           -
@@ -277,9 +245,6 @@
           "match": "all"
           "min_selected": 1
           "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "dataset.field_compare"
         "where":
           -
@@ -310,9 +275,6 @@
           "match": "all"
           "min_selected": 1
           "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "dataset.field_compare"
         "where":
           -
@@ -343,9 +305,6 @@
           "match": "all"
           "min_selected": 1
           "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "dataset.field_compare"
         "where":
           -
@@ -376,9 +335,6 @@
           "match": "all"
           "min_selected": 1
           "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "dataset.field_compare"
         "where":
           -
@@ -409,9 +365,6 @@
           "match": "all"
           "min_selected": 1
           "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "dataset.field_compare"
         "where":
           -
@@ -442,9 +395,6 @@
           "match": "all"
           "min_selected": 1
           "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "dataset.field_compare"
         "where":
           -
@@ -470,9 +420,6 @@
           "op": "gte"
           "value": 1
         "dataset": "okta:log-streams"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "dataset.count_compare"
         "where":
           -
@@ -504,15 +451,8 @@
           "match": "all"
           "min_selected": 1
           "on_empty": "fail"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "dataset.field_compare"
         "where":
-          -
-            "op": "neq"
-            "path": "/name"
-            "value": "Default Rule"
           -
             "op": "eq"
             "path": "/policy/name"
@@ -521,6 +461,10 @@
             "op": "eq"
             "path": "/priority"
             "value": 1
+          -
+            "op": "neq"
+            "path": "/name"
+            "value": "Default Rule"
       "key": "OKTA-APP-001665"
       "monitoring":
         "status": "automated"
@@ -545,9 +489,6 @@
           "match": "all"
           "min_selected": 1
           "on_empty": "fail"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "dataset.field_compare"
         "where":
           -
@@ -569,9 +510,6 @@
       "title": "OKTA-APP-001670"
     -
       "check":
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "manual.attestation"
       "key": "OKTA-APP-001700"
       "monitoring":
@@ -596,15 +534,8 @@
           "match": "all"
           "min_selected": 1
           "on_empty": "fail"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "dataset.field_compare"
         "where":
-          -
-            "op": "neq"
-            "path": "/name"
-            "value": "Default Rule"
           -
             "op": "eq"
             "path": "/policy/name"
@@ -613,6 +544,10 @@
             "op": "eq"
             "path": "/priority"
             "value": 1
+          -
+            "op": "neq"
+            "path": "/name"
+            "value": "Default Rule"
       "key": "OKTA-APP-001710"
       "monitoring":
         "status": "automated"
@@ -628,22 +563,19 @@
       "title": "OKTA-APP-001710"
     -
       "check":
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "manual.attestation"
       "key": "OKTA-APP-001920"
       "monitoring":
         "status": "manual"
       "references":
         -
-          "title": "Okta API: Identity Provider Keys"
-          "type": "documentation"
-          "url": "https://developer.okta.com/docs/reference/api/idp-keys/"
-        -
           "title": "Okta API: Identity Providers"
           "type": "documentation"
           "url": "https://developer.okta.com/docs/reference/api/idps/"
+        -
+          "title": "Okta API: Identity Provider Keys"
+          "type": "documentation"
+          "url": "https://developer.okta.com/docs/reference/api/idp-keys/"
       "required_data": []
       "severity": "medium"
       "summary": "See CIS benchmark recommendation OKTA-APP-001920"
@@ -659,9 +591,6 @@
           "match": "all"
           "min_selected": 1
           "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "dataset.field_compare"
         "where":
           -
@@ -692,9 +621,6 @@
           "match": "all"
           "min_selected": 1
           "on_empty": "unknown"
-        "on_missing_dataset": "unknown"
-        "on_permission_denied": "unknown"
-        "on_sync_error": "error"
         "type": "dataset.field_compare"
         "where":
           -
@@ -721,10 +647,10 @@
     "date": "2025-08-21"
     "name": "CIS"
     "url": "https://www.cisecurity.org"
-    "version": "v1.0.0"
+    "version": "v2.0.0"
   "status": "active"
   "tags":
     - "cis"
     - "okta"
     - "stig"
-"schema_version": 1
+"schema_version": 2

@@ -2,22 +2,22 @@
   "artifacts":
     "artifacts":
       -
-        "hash": "63375d2b0e76f7cd2999e1d9aace65c695566c1dffc4f2e9f61c75ef0346aa5a"
-        "key": "cis.okta.idaas_stig.profile.v1"
+        "hash": "a403f26ba79289ad7ce567afbc138822c3361874a7988189ee34453c39543c01"
+        "key": "cis.okta.idaas_stig.profile.v2"
         "kind": "opensspm.profile"
-        "source_path": "specs/profiles/cis.okta.idaas_stig.profile.v1.yaml"
+        "source_path": "specs/profiles/cis.okta.idaas_stig.profile.v2.yaml"
       -
-        "hash": "cc8932d39e64dfabb5c4e9ba2ba28360ce145460c80e0584ab83811db0cc0b8a"
-        "key": "cis.okta.idaas_stig.v1"
+        "hash": "8759cd6497838265d86229ac0eabc4620abc9e34cae544e7e059c22fdc15c23c"
+        "key": "cis.okta.idaas_stig.v2"
         "kind": "opensspm.ruleset"
-        "source_path": "specs/rulesets/cis/okta/cis.okta.idaas_stig.v1.yaml"
+        "source_path": "specs/rulesets/cis/okta/cis.okta.idaas_stig.v2.yaml"
       -
-        "hash": "ae0619fbe43fe8d8e692dcf3992311f6ab12d850e7b0b0b8c2fcddd55d27cfb8"
+        "hash": "6576272f27d257fa10cce8ff8089638286e80bb8437db447f9bd51bd07b06dcd"
         "key": "version"
         "kind": "opensspm.version"
         "source_path": "version.yaml"
     "kind": "opensspm.artifacts_index"
-    "schema_version": 1
+    "schema_version": 2
   "requirements":
     "kind": "opensspm.requirements_index"
     "rulesets":
@@ -277,32 +277,32 @@
               "status": "automated"
             "rule_key": "OKTA-APP-003010"
             "value_params": []
-        "ruleset_key": "cis.okta.idaas_stig.v1"
+        "ruleset_key": "cis.okta.idaas_stig.v2"
         "scope":
           "connector_kind": "okta"
           "kind": "connector_instance"
         "status": "active"
         "value_params": []
-    "schema_version": 1
+    "schema_version": 2
 "kind": "opensspm.compliance_descriptor"
 "profiles":
   -
-    "hash": "63375d2b0e76f7cd2999e1d9aace65c695566c1dffc4f2e9f61c75ef0346aa5a"
+    "hash": "a403f26ba79289ad7ce567afbc138822c3361874a7988189ee34453c39543c01"
     "object":
       "kind": "opensspm.profile"
       "profile":
         "description": "Profile bundling the CIS Okta IDaaS STIG ruleset (mixed automated + manual coverage)."
-        "key": "cis.okta.idaas_stig.profile.v1"
+        "key": "cis.okta.idaas_stig.profile.v2"
         "name": "CIS Okta IDaaS STIG Profile"
         "rulesets":
           -
-            "key": "cis.okta.idaas_stig.v1"
-            "version": "v1.0.0"
-      "schema_version": 1
-    "source_path": "specs/profiles/cis.okta.idaas_stig.profile.v1.yaml"
+            "key": "cis.okta.idaas_stig.v2"
+            "version": "v2.0.0"
+      "schema_version": 2
+    "source_path": "specs/profiles/cis.okta.idaas_stig.profile.v2.yaml"
 "rulesets":
   -
-    "hash": "cc8932d39e64dfabb5c4e9ba2ba28360ce145460c80e0584ab83811db0cc0b8a"
+    "hash": "8759cd6497838265d86229ac0eabc4620abc9e34cae544e7e059c22fdc15c23c"
     "object":
       "kind": "opensspm.ruleset"
       "ruleset":
@@ -319,8 +319,8 @@
           -
             "dataset": "okta:policies/sign-on"
             "version": 1
-        "key": "cis.okta.idaas_stig.v1"
-        "name": "CIS Okta IDaaS STIG Benchmark v1.0.0"
+        "key": "cis.okta.idaas_stig.v2"
+        "name": "CIS Okta IDaaS STIG Benchmark v2.0.0"
         "references":
           -
             "title": "CIS Benchmarks (obtain the official PDF via CIS)"
@@ -1027,18 +1027,18 @@
           "date": "2025-08-21"
           "name": "CIS"
           "url": "https://www.cisecurity.org"
-          "version": "v1.0.0"
+          "version": "v2.0.0"
         "status": "active"
         "tags":
           - "cis"
           - "okta"
           - "stig"
-      "schema_version": 1
-    "source_path": "specs/rulesets/cis/okta/cis.okta.idaas_stig.v1.yaml"
-"schema_version": 1
+      "schema_version": 2
+    "source_path": "specs/rulesets/cis/okta/cis.okta.idaas_stig.v2.yaml"
+"schema_version": 2
 "version":
   "generator_min_version": "0.1.0"
   "project": "open-sspm"
   "repo": "open-sspm-spec"
-  "schema_version": 1
-  "spec_version": "1.0.0"
+  "schema_version": 2
+  "spec_version": "2.0.0"

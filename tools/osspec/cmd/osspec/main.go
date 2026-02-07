@@ -117,7 +117,7 @@ func runCodegen(args []string) {
 	}
 
 	req := types.CodegenRequest{
-		SchemaVersion: 1,
+		SchemaVersion: 2,
 		Kind:          "opensspm.codegen_request",
 		Language:      *lang,
 		Descriptor:    res.Descriptor,

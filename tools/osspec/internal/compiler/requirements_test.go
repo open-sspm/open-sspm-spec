@@ -20,10 +20,10 @@ func TestBuildRequirements_CapturesRulesetAndRuleDetails(t *testing.T) {
 			{
 				Path: "specs/rulesets/example.json",
 				Doc: types.RulesetDoc{
-					SchemaVersion: 1,
+					SchemaVersion: 2,
 					Kind:          "opensspm.ruleset",
 					Ruleset: types.Ruleset{
-						Key:    "example.ruleset.v1",
+						Key:    "example.ruleset.v2",
 						Name:   "Example",
 						Scope:  types.Scope{Kind: types.ScopeKindGlobal},
 						Status: "active",
@@ -65,11 +65,11 @@ func TestBuildRequirements_CapturesRulesetAndRuleDetails(t *testing.T) {
 
 	got := buildRequirements(b)
 	want := types.RequirementsIndex{
-		SchemaVersion: 1,
+		SchemaVersion: 2,
 		Kind:          "opensspm.requirements_index",
 		Rulesets: []types.RulesetRequirement{
 			{
-				RulesetKey: "example.ruleset.v1",
+				RulesetKey: "example.ruleset.v2",
 				Status:     "active",
 				Scope:      types.Scope{Kind: types.ScopeKindGlobal},
 				Datasets: []types.DatasetRefSpec{

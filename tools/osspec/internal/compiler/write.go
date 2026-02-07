@@ -46,14 +46,20 @@ func writeDist(repoRoot, distDir string, res *Result) error {
 	if err := os.MkdirAll(filepath.Join(distAbs, "compiled", "profiles"), 0o755); err != nil {
 		return err
 	}
+	if err := removeLegacyDescriptors(distAbs, "descriptor.v2.yaml"); err != nil {
+		return err
+	}
 
-	if err := writeCanonicalYAML(filepath.Join(distAbs, "descriptor.v1.yaml"), res.Descriptor); err != nil {
+	if err := writeCanonicalYAML(filepath.Join(distAbs, "descriptor.v2.yaml"), res.Descriptor); err != nil {
 		return err
 	}
 	if err := os.MkdirAll(docsAbs, 0o755); err != nil {
 		return err
 	}
-	if err := writeCanonicalYAML(filepath.Join(docsAbs, "descriptor.v1.yaml"), res.Descriptor); err != nil {
+	if err := removeLegacyDescriptors(docsAbs, "descriptor.v2.yaml"); err != nil {
+		return err
+	}
+	if err := writeCanonicalYAML(filepath.Join(docsAbs, "descriptor.v2.yaml"), res.Descriptor); err != nil {
 		return err
 	}
 	if err := copyMetaschemaToDocs(repoRootAbs, docsAbs); err != nil {
@@ -154,4 +160,24 @@ func sanitizeFilename(s string) string {
 		}
 	}
 	return b.String()
+}
+
+func removeLegacyDescriptors(dir, keepName string) error {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if !strings.HasPrefix(name, "descriptor.") || !strings.HasSuffix(name, ".yaml") || name == keepName {
+			continue
+		}
+		if err := os.Remove(filepath.Join(dir, name)); err != nil {
+			return err
+		}
+	}
+	return nil
 }

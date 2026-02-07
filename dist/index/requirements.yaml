@@ -256,10 +256,10 @@
           "status": "automated"
         "rule_key": "OKTA-APP-003010"
         "value_params": []
-    "ruleset_key": "cis.okta.idaas_stig.v1"
+    "ruleset_key": "cis.okta.idaas_stig.v2"
     "scope":
       "connector_kind": "okta"
       "kind": "connector_instance"
     "status": "active"
     "value_params": []
-"schema_version": 1
+"schema_version": 2

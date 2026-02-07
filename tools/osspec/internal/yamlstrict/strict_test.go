@@ -7,22 +7,22 @@ import (
 )
 
 func TestDecodeSingleStrictYAML_AcceptsValidDocument(t *testing.T) {
-	input := []byte(`schema_version: 1
+	input := []byte(`schema_version: 2
 kind: opensspm.profile
 profile:
-  key: "p.v1"
+  key: "p.v2"
   name: "Profile"
   rulesets:
-    - key: "r.v1"
-      version: "v1.0.0"
+    - key: "r.v2"
+      version: "v2.0.0"
 `)
 
 	var out map[string]any
 	if err := DecodeSingleStrictYAML(input, &out, true); err != nil {
 		t.Fatalf("DecodeSingleStrictYAML() error: %v", err)
 	}
-	if out["schema_version"].(float64) != 1 {
-		t.Fatalf("expected schema_version=1, got %#v", out["schema_version"])
+	if out["schema_version"].(float64) != 2 {
+		t.Fatalf("expected schema_version=2, got %#v", out["schema_version"])
 	}
 }
 
