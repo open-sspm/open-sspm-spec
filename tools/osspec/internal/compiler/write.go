@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/hash"
+	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/cyaml"
 )
 
 func Build(ctx context.Context, opts Options) (*Result, error) {
@@ -47,22 +47,22 @@ func writeDist(repoRoot, distDir string, res *Result) error {
 		return err
 	}
 
-	if err := writeCanonicalJSON(filepath.Join(distAbs, "descriptor.v1.json"), res.Descriptor); err != nil {
+	if err := writeCanonicalYAML(filepath.Join(distAbs, "descriptor.v1.yaml"), res.Descriptor); err != nil {
 		return err
 	}
 	if err := os.MkdirAll(docsAbs, 0o755); err != nil {
 		return err
 	}
-	if err := writeCanonicalJSON(filepath.Join(docsAbs, "descriptor.v1.json"), res.Descriptor); err != nil {
+	if err := writeCanonicalYAML(filepath.Join(docsAbs, "descriptor.v1.yaml"), res.Descriptor); err != nil {
 		return err
 	}
 	if err := copyMetaschemaToDocs(repoRootAbs, docsAbs); err != nil {
 		return err
 	}
-	if err := writeCanonicalJSON(filepath.Join(distAbs, "index", "artifacts.json"), res.Artifacts); err != nil {
+	if err := writeCanonicalYAML(filepath.Join(distAbs, "index", "artifacts.yaml"), res.Artifacts); err != nil {
 		return err
 	}
-	if err := writeCanonicalJSON(filepath.Join(distAbs, "index", "requirements.json"), res.Requirements); err != nil {
+	if err := writeCanonicalYAML(filepath.Join(distAbs, "index", "requirements.yaml"), res.Requirements); err != nil {
 		return err
 	}
 
@@ -90,7 +90,7 @@ func copyMetaschemaToDocs(repoRootAbs, docsAbs string) error {
 			continue
 		}
 		name := e.Name()
-		if !strings.HasSuffix(name, ".json") {
+		if !strings.HasSuffix(name, ".yaml") {
 			continue
 		}
 		srcPath := filepath.Join(srcDir, name)
@@ -106,27 +106,26 @@ func copyMetaschemaToDocs(repoRootAbs, docsAbs string) error {
 	return nil
 }
 
-func writeCanonicalJSON(path string, v any) error {
-	_, canonical, err := hash.HashObjectJCS(v)
+func writeCanonicalYAML(path string, v any) error {
+	canonical, err := cyaml.MarshalCanonical(v)
 	if err != nil {
 		return err
 	}
-	canonical = append(canonical, '\n')
 	return os.WriteFile(path, canonical, 0o644)
 }
 
 func writeCompiled(distAbs string, res *Result) error {
 	// Rulesets
 	for _, rs := range res.Descriptor.Rulesets {
-		name := sanitizeFilename(rs.Object.Ruleset.Key) + ".json"
-		if err := writeCanonicalJSON(filepath.Join(distAbs, "compiled", "rulesets", name), rs.Object); err != nil {
+		name := sanitizeFilename(rs.Object.Ruleset.Key) + ".yaml"
+		if err := writeCanonicalYAML(filepath.Join(distAbs, "compiled", "rulesets", name), rs.Object); err != nil {
 			return fmt.Errorf("write compiled ruleset %s: %w", rs.Object.Ruleset.Key, err)
 		}
 	}
 	// Profiles
 	for _, p := range res.Descriptor.Profiles {
-		name := sanitizeFilename(p.Object.Profile.Key) + ".json"
-		if err := writeCanonicalJSON(filepath.Join(distAbs, "compiled", "profiles", name), p.Object); err != nil {
+		name := sanitizeFilename(p.Object.Profile.Key) + ".yaml"
+		if err := writeCanonicalYAML(filepath.Join(distAbs, "compiled", "profiles", name), p.Object); err != nil {
 			return fmt.Errorf("write compiled profile %s: %w", p.Object.Profile.Key, err)
 		}
 	}

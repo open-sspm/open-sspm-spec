@@ -2,7 +2,6 @@ package compiler
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -15,6 +14,7 @@ import (
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/normalize"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/schemasem"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
+	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/yamlstrict"
 )
 
 type Options struct {
@@ -67,20 +67,24 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 
 	for _, f := range specFiles {
 		var hdr types.Header
-		if err := json.Unmarshal(f.Bytes, &hdr); err != nil {
+		if err := yamlstrict.DecodeSingleStrictYAML(f.Bytes, &hdr, false); err != nil {
 			return nil, fmt.Errorf("%s: parse header: %w", f.RelPath, err)
 		}
 		if hdr.SchemaVersion != 1 {
 			return nil, fmt.Errorf("%s: unsupported schema_version %d", f.RelPath, hdr.SchemaVersion)
 		}
-		if err := reg.ValidateKindJSON(hdr.Kind, f.Bytes); err != nil {
+		jsonDoc, err := yamlstrict.DecodeSingleStrictYAMLToJSON(f.Bytes)
+		if err != nil {
+			return nil, fmt.Errorf("%s: decode yaml to json: %w", f.RelPath, err)
+		}
+		if err := reg.ValidateKindJSON(hdr.Kind, jsonDoc); err != nil {
 			return nil, fmt.Errorf("%s: %w", f.RelPath, err)
 		}
 
 		switch hdr.Kind {
 		case "opensspm.ruleset":
 			var doc types.RulesetDoc
-			if err := json.Unmarshal(f.Bytes, &doc); err != nil {
+			if err := yamlstrict.DecodeSingleStrictYAML(f.Bytes, &doc, true); err != nil {
 				return nil, fmt.Errorf("%s: parse ruleset: %w", f.RelPath, err)
 			}
 			normalize.RulesetDoc(&doc)
@@ -90,7 +94,7 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 			}{Path: f.RelPath, Doc: doc})
 		case "opensspm.profile":
 			var doc types.ProfileDoc
-			if err := json.Unmarshal(f.Bytes, &doc); err != nil {
+			if err := yamlstrict.DecodeSingleStrictYAML(f.Bytes, &doc, true); err != nil {
 				return nil, fmt.Errorf("%s: parse profile: %w", f.RelPath, err)
 			}
 			normalize.ProfileDoc(&doc)
@@ -115,7 +119,7 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 		SchemaVersion: 1,
 		Kind:          "opensspm.artifacts_index",
 		Artifacts: []types.Artifact{
-			{Kind: "opensspm.version", Key: "version", SourcePath: "version.json", Hash: versionHash},
+			{Kind: "opensspm.version", Key: "version", SourcePath: "version.yaml", Hash: versionHash},
 		},
 	}
 
@@ -130,7 +134,7 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 	}
 
 	for _, rs := range bundle.Rulesets {
-		h, _, err := hash.HashObjectJCS(rs.Doc)
+		h, _, err := hash.HashObjectCanonicalYAML(rs.Doc)
 		if err != nil {
 			return nil, fmt.Errorf("%s: hash: %w", rs.Path, err)
 		}
@@ -138,7 +142,7 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 		artifactsIndex.Artifacts = append(artifactsIndex.Artifacts, types.Artifact{Kind: rs.Doc.Kind, Key: rs.Doc.Ruleset.Key, SourcePath: rs.Path, Hash: h})
 	}
 	for _, p := range bundle.Profiles {
-		h, _, err := hash.HashObjectJCS(p.Doc)
+		h, _, err := hash.HashObjectCanonicalYAML(p.Doc)
 		if err != nil {
 			return nil, fmt.Errorf("%s: hash: %w", p.Path, err)
 		}
@@ -162,18 +166,25 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 }
 
 func loadVersion(repoRootAbs string) (types.Version, string, error) {
-	b, err := os.ReadFile(filepath.Join(repoRootAbs, "version.json"))
-	if err != nil {
-		return types.Version{}, "", fmt.Errorf("compiler: read version.json: %w", err)
+	if _, err := os.Stat(filepath.Join(repoRootAbs, "version.json")); err == nil {
+		return types.Version{}, "", fmt.Errorf("compiler: version.json is not allowed; use version.yaml")
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return types.Version{}, "", fmt.Errorf("compiler: stat version.json: %w", err)
 	}
+
+	b, err := os.ReadFile(filepath.Join(repoRootAbs, "version.yaml"))
+	if err != nil {
+		return types.Version{}, "", fmt.Errorf("compiler: read version.yaml: %w", err)
+	}
+
 	var v types.Version
-	if err := json.Unmarshal(b, &v); err != nil {
-		return types.Version{}, "", fmt.Errorf("compiler: parse version.json: %w", err)
+	if err := yamlstrict.DecodeSingleStrictYAML(b, &v, true); err != nil {
+		return types.Version{}, "", fmt.Errorf("compiler: parse version.yaml: %w", err)
 	}
 	if v.Project == "" || v.Repo == "" || v.SpecVersion == "" || v.SchemaVersion != 1 {
-		return types.Version{}, "", fmt.Errorf("compiler: invalid version.json (missing required fields)")
+		return types.Version{}, "", fmt.Errorf("compiler: invalid version.yaml (missing required fields)")
 	}
-	h, _, err := hash.HashObjectJCS(v)
+	h, _, err := hash.HashObjectCanonicalYAML(v)
 	if err != nil {
 		return types.Version{}, "", err
 	}

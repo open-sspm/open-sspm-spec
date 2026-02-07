@@ -1,9 +1,9 @@
 /* global location, fetch, document, window, requestAnimationFrame */
 
 const SCHEMA_FILES = {
-  "opensspm.ruleset": "opensspm.ruleset.schema.json",
-  "opensspm.profile": "opensspm.profile.schema.json",
-  "opensspm.test_case": "opensspm.test_case.schema.json",
+  "opensspm.ruleset": "opensspm.ruleset.schema.yaml",
+  "opensspm.profile": "opensspm.profile.schema.yaml",
+  "opensspm.test_case": "opensspm.test_case.schema.yaml",
 };
 
 const state = {
@@ -582,9 +582,9 @@ async function load() {
       setStatus(`This docs site is running from ${location.href}. Open http://localhost:8080/ (or any http(s) URL) instead of file://.`, true);
       return;
     }
-    const resp = await fetch("./descriptor.v1.json", { cache: "no-store" });
+    const resp = await fetch("./descriptor.v1.yaml", { cache: "no-store" });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const d = await resp.json();
+    const d = jsyaml.load(await resp.text(), { schema: jsyaml.JSON_SCHEMA });
     state.descriptor = d;
 
     // Load metaschemas for schema documentation pages.
@@ -592,7 +592,7 @@ async function load() {
     await Promise.all(schemaEntries.map(async ([kind, filename]) => {
       const r = await fetch(`./metaschema/${filename}`, { cache: "no-store" });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      state.schemas[kind] = await r.json();
+      state.schemas[kind] = jsyaml.load(await r.text(), { schema: jsyaml.JSON_SCHEMA });
     }));
 
     const v = d.version || {};

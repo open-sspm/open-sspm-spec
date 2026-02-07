@@ -1,0 +1,16 @@
+"description": "Should pass when maxSessionIdleMinutes is exactly 15"
+"expect": "pass"
+"inputs":
+  "okta:policies/sign-on":
+    -
+      "actions":
+        "signon":
+          "session":
+            "maxSessionIdleMinutes": 15
+      "name": "Custom Rule"
+      "policy":
+        "name": "Default Policy"
+      "priority": 1
+"kind": "opensspm.test_case"
+"rule_key": "OKTA-APP-000020"
+"schema_version": 1

@@ -8,15 +8,15 @@ THIS IS WORKING DOCUMENT, I AM STILL WORKING ON IT AND IT WILL CHANGE A LOT!
 
 Source-of-truth repository for Open SSPM **compliance specifications**.
 
-Open SSPM is an open, versioned spec (JSON + JSON Schema) for posture/compliance rulesets and profiles (benchmarks) that tools can evaluate.
+Open SSPM is an open, versioned spec (YAML authoring + JSON Schema semantics) for posture/compliance rulesets and profiles (benchmarks) that tools can evaluate.
 
 ## What this repo contains
 
-- JSON specs under `specs/`:
+- YAML specs under `specs/`:
   - rulesets (`opensspm.ruleset`)
   - profiles (`opensspm.profile`)
-  - test cases (`opensspm.test_case`, `*.test.json`)
-- JSON Schemas under `metaschema/` (strict top-level validation)
+  - test cases (`opensspm.test_case`, `*.test.yaml`)
+- YAML-authored schemas under `metaschema/` (strict top-level validation via JSON Schema)
 - Deterministic compiler `osspec` under `tools/osspec`
 - Generated, committed distribution artifacts under `dist/`
 
@@ -50,9 +50,9 @@ Generate the static documentation site data (renders from the compiled descripto
 go run ./tools/osspec/cmd/osspec build
 ```
 
-This writes `docs/descriptor.v1.json` and `docs/metaschema/*.json`.
+This writes `docs/descriptor.v1.yaml` and `docs/metaschema/*.yaml`.
 
-Serve `docs/` using any static file server (opening `docs/index.html` via `file://` will fail because the site loads JSON via `fetch`):
+Serve `docs/` using any static file server (opening `docs/index.html` via `file://` will fail because the site loads YAML via `fetch`):
 
 ```sh
 cd docs && python3 -m http.server 8080
@@ -67,12 +67,12 @@ GitHub Pages:
 
 - Specs are loaded from `specs/**`:
   - symlinks are rejected
-  - `.json` only
+  - `.yaml` only
   - max size 2 MiB per file
 - Hashing is stable:
   - normalize objects (stable ordering)
-  - canonicalize JSON using JCS (RFC 8785)
-  - SHA-256 hex digest
+  - canonicalize YAML via the repository canonical emitter
+  - SHA-256 hex digest over canonical YAML bytes
 
 ## `required_data` policy
 

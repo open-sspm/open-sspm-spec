@@ -13,6 +13,8 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: Enforce no tracked JSON files
+        run: test -z "$(git ls-files '*.json')"
       - name: Test
         run: go test ./...
       - name: Validate specs
@@ -23,3 +25,5 @@ jobs:
         run: go run ./tools/osspec/cmd/osspec codegen --lang go --out gen/go
       - name: Determinism check
         run: git diff --exit-code
+      - name: Clean tree check
+        run: test -z "$(git status --porcelain)"
