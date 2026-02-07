@@ -342,22 +342,30 @@ func compileDatasetFieldCompare(ruleKey string, sourceCheck *SourceCheck, select
 		return nil, err
 	}
 
-	return &types.Check{
-		Engine: types.CheckEngineCELPlan,
-		Plan: &types.CheckPlan{
-			Type:             checkTypeDatasetFieldCompare,
-			Dataset:          dataset,
-			WhereExpression:  whereExpr,
-			AssertExpression: assertExpr,
-			Expect: &types.CheckPlanExpect{
-				Match:       matchMode,
-				MinSelected: minExpected,
-				OnEmpty:     onEmpty,
+	if shouldCompileFieldCompareToCELPlan(sourceCheck, onEmpty) {
+		return &types.Check{
+			Engine: types.CheckEngineCELPlan,
+			Plan: &types.CheckPlan{
+				Type:             checkTypeDatasetFieldCompare,
+				Dataset:          dataset,
+				WhereExpression:  whereExpr,
+				AssertExpression: assertExpr,
+				Expect: &types.CheckPlanExpect{
+					Match:       matchMode,
+					MinSelected: minExpected,
+					OnEmpty:     onEmpty,
+				},
+				OnMissingDataset:   policies.OnMissingDataset,
+				OnPermissionDenied: policies.OnPermissionDenied,
+				OnSyncError:        policies.OnSyncError,
 			},
-			OnMissingDataset:   policies.OnMissingDataset,
-			OnPermissionDenied: policies.OnPermissionDenied,
-			OnSyncError:        policies.OnSyncError,
-		},
+		}, nil
+	}
+
+	expression := compileFieldCompareCELExpression(dataset, whereExpr, assertExpr, matchMode, minExpected)
+	return &types.Check{
+		Engine:     types.CheckEngineCEL,
+		Expression: expression,
 	}, nil
 }
 
@@ -393,21 +401,75 @@ func compileDatasetCountCompare(ruleKey string, sourceCheck *SourceCheck, select
 		return nil, fmt.Errorf("rule %q: check.compare.value_param is not supported for %q", ruleKey, checkTypeDatasetCountCompare)
 	}
 
-	return &types.Check{
-		Engine: types.CheckEngineCELPlan,
-		Plan: &types.CheckPlan{
-			Type:            checkTypeDatasetCountCompare,
-			Dataset:         dataset,
-			WhereExpression: whereExpr,
-			Compare: &types.CheckPlanCompare{
-				Op:    strings.ToLower(strings.TrimSpace(sourceCheck.Compare.Op)),
-				Value: sourceCheck.Compare.Value,
+	if hasExplicitPolicyOverrides(sourceCheck) {
+		return &types.Check{
+			Engine: types.CheckEngineCELPlan,
+			Plan: &types.CheckPlan{
+				Type:            checkTypeDatasetCountCompare,
+				Dataset:         dataset,
+				WhereExpression: whereExpr,
+				Compare: &types.CheckPlanCompare{
+					Op:    strings.ToLower(strings.TrimSpace(sourceCheck.Compare.Op)),
+					Value: sourceCheck.Compare.Value,
+				},
+				OnMissingDataset:   policies.OnMissingDataset,
+				OnPermissionDenied: policies.OnPermissionDenied,
+				OnSyncError:        policies.OnSyncError,
 			},
-			OnMissingDataset:   policies.OnMissingDataset,
-			OnPermissionDenied: policies.OnPermissionDenied,
-			OnSyncError:        policies.OnSyncError,
-		},
+		}, nil
+	}
+
+	selectedExpr := datasetSelectionCELExpr(dataset, whereExpr)
+	countExpr := fmt.Sprintf(`%s.size()`, selectedExpr)
+	compareExpr, err := compileComparison(ruleKey, countExpr, sourceCheck.Compare.Op, sourceCheck.Compare.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.Check{
+		Engine:     types.CheckEngineCEL,
+		Expression: compareExpr,
 	}, nil
+}
+
+func shouldCompileFieldCompareToCELPlan(sourceCheck *SourceCheck, onEmpty string) bool {
+	if strings.EqualFold(strings.TrimSpace(onEmpty), "unknown") {
+		return true
+	}
+	return hasExplicitPolicyOverrides(sourceCheck)
+}
+
+func hasExplicitPolicyOverrides(sourceCheck *SourceCheck) bool {
+	if sourceCheck == nil {
+		return false
+	}
+	return strings.TrimSpace(sourceCheck.OnMissingDataset) != "" ||
+		strings.TrimSpace(sourceCheck.OnPermissionDenied) != "" ||
+		strings.TrimSpace(sourceCheck.OnSyncError) != ""
+}
+
+func compileFieldCompareCELExpression(dataset, whereExpr, assertExpr, matchMode string, minExpected int) string {
+	selectedExpr := datasetSelectionCELExpr(dataset, whereExpr)
+	requiredSelected := minExpected
+	if requiredSelected < 1 {
+		requiredSelected = 1
+	}
+	selectionGuard := fmt.Sprintf(`%s.size() >= %d`, selectedExpr, requiredSelected)
+
+	switch matchMode {
+	case "any":
+		return fmt.Sprintf(`%s && %s.exists(r, %s)`, selectionGuard, selectedExpr, assertExpr)
+	default:
+		return fmt.Sprintf(`%s && %s.all(r, %s)`, selectionGuard, selectedExpr, assertExpr)
+	}
+}
+
+func datasetSelectionCELExpr(dataset, whereExpr string) string {
+	predicate := strings.TrimSpace(whereExpr)
+	if predicate == "" {
+		predicate = "true"
+	}
+	return fmt.Sprintf(`rows(%s).filter(r, %s)`, strconv.Quote(dataset), predicate)
 }
 
 func resolveDatasetAndWhere(ruleKey string, sourceCheck *SourceCheck, selectors map[string]SourceSelector) (string, []SourcePredicate, error) {

@@ -7,7 +7,7 @@ import (
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
 )
 
-func TestCompileRuleset_StructuredFieldCompareToCELPlan(t *testing.T) {
+func TestCompileRuleset_StructuredFieldCompareToCEL(t *testing.T) {
 	doc := SourceRulesetDoc{
 		SchemaVersion: 2,
 		Kind:          "opensspm.ruleset",
@@ -47,26 +47,23 @@ func TestCompileRuleset_StructuredFieldCompareToCELPlan(t *testing.T) {
 	if check == nil {
 		t.Fatalf("expected compiled check")
 	}
-	if check.Engine != types.CheckEngineCELPlan {
-		t.Fatalf("expected check.engine=cel_plan, got %q", check.Engine)
+	if check.Engine != types.CheckEngineCEL {
+		t.Fatalf("expected check.engine=cel, got %q", check.Engine)
 	}
-	if check.Plan == nil {
-		t.Fatalf("expected plan payload for cel_plan check")
+	if check.Plan != nil {
+		t.Fatalf("expected no plan payload for cel check, got %+v", check.Plan)
 	}
-	if check.Plan.Type != "dataset.field_compare" {
-		t.Fatalf("expected plan.type=dataset.field_compare, got %q", check.Plan.Type)
+	if !strings.Contains(check.Expression, `rows("okta:policies/password").filter`) {
+		t.Fatalf("expected rows/filter expression, got %q", check.Expression)
 	}
-	if check.Plan.Dataset != "okta:policies/password" {
-		t.Fatalf("expected plan.dataset=okta:policies/password, got %q", check.Plan.Dataset)
+	if !strings.Contains(check.Expression, `field(r, "status") == "ACTIVE"`) {
+		t.Fatalf("expected where predicate in expression, got %q", check.Expression)
 	}
-	if !strings.Contains(check.Plan.WhereExpression, `field(r, "status")`) {
-		t.Fatalf("expected field() in where_expression, got %q", check.Plan.WhereExpression)
+	if !strings.Contains(check.Expression, `field(r, "settings.password.complexity.minLength") >= 15`) {
+		t.Fatalf("expected assert predicate in expression, got %q", check.Expression)
 	}
-	if !strings.Contains(check.Plan.AssertExpression, `field(r, "settings.password.complexity.minLength")`) {
-		t.Fatalf("expected field() in assert_expression, got %q", check.Plan.AssertExpression)
-	}
-	if check.Plan.Expect == nil || check.Plan.Expect.Match != "all" || check.Plan.Expect.MinSelected != 1 || check.Plan.Expect.OnEmpty != "fail" {
-		t.Fatalf("unexpected expect: %+v", check.Plan.Expect)
+	if !strings.Contains(check.Expression, `.all(r,`) {
+		t.Fatalf("expected all() semantics in expression, got %q", check.Expression)
 	}
 }
 
@@ -115,23 +112,20 @@ func TestCompileRuleset_StructuredCountCompareWithSelector(t *testing.T) {
 		t.Fatalf("expected compiled check")
 	}
 
-	if check.Engine != types.CheckEngineCELPlan {
-		t.Fatalf("expected check.engine=cel_plan, got %q", check.Engine)
+	if check.Engine != types.CheckEngineCEL {
+		t.Fatalf("expected check.engine=cel, got %q", check.Engine)
 	}
-	if check.Plan == nil {
-		t.Fatalf("expected plan payload for cel_plan check")
+	if check.Plan != nil {
+		t.Fatalf("expected no plan payload for cel check, got %+v", check.Plan)
 	}
-	if check.Plan.Type != "dataset.count_compare" {
-		t.Fatalf("expected plan.type=dataset.count_compare, got %q", check.Plan.Type)
+	if !strings.Contains(check.Expression, `rows("okta:log-streams").filter`) {
+		t.Fatalf("expected rows/filter in expression, got %q", check.Expression)
 	}
-	if check.Plan.Dataset != "okta:log-streams" {
-		t.Fatalf("expected plan.dataset=okta:log-streams, got %q", check.Plan.Dataset)
+	if !strings.Contains(check.Expression, `field(r, "status") == "ACTIVE"`) || !strings.Contains(check.Expression, `field(r, "region") == "US"`) {
+		t.Fatalf("expected selector and rule predicates in expression, got %q", check.Expression)
 	}
-	if !strings.Contains(check.Plan.WhereExpression, `field(r, "status")`) || !strings.Contains(check.Plan.WhereExpression, `field(r, "region")`) {
-		t.Fatalf("expected field() in where_expression, got %q", check.Plan.WhereExpression)
-	}
-	if check.Plan.Compare == nil || check.Plan.Compare.Op != "gte" {
-		t.Fatalf("expected compare op gte, got %+v", check.Plan.Compare)
+	if !strings.Contains(check.Expression, `.size() >= 1`) {
+		t.Fatalf("expected count compare expression, got %q", check.Expression)
 	}
 }
 
@@ -165,11 +159,14 @@ func TestCompileRuleset_StructuredDotPath(t *testing.T) {
 		t.Fatalf("CompileRuleset() error: %v", err)
 	}
 	check := compiled.Ruleset.Rules[0].Check
-	if check == nil || check.Plan == nil {
-		t.Fatalf("expected compiled check with plan")
+	if check == nil {
+		t.Fatalf("expected compiled check")
 	}
-	if !strings.Contains(check.Plan.AssertExpression, `field(r, "a.b.c")`) {
-		t.Fatalf("expected field() with dot path in assert_expression, got: %s", check.Plan.AssertExpression)
+	if check.Engine != types.CheckEngineCEL {
+		t.Fatalf("expected engine cel, got %q", check.Engine)
+	}
+	if !strings.Contains(check.Expression, `field(r, "a.b.c")`) {
+		t.Fatalf("expected field() with dot path in expression, got: %s", check.Expression)
 	}
 }
 
@@ -225,6 +222,54 @@ func TestCompileRuleset_OnEmptyUnknownCompilesToCELPlan(t *testing.T) {
 	}
 	if check.Plan.Expect.MinSelected != 0 {
 		t.Fatalf("expected min_selected=0 in plan, got %d", check.Plan.Expect.MinSelected)
+	}
+}
+
+func TestCompileRuleset_DefaultPoliciesDoNotForceCELPlan(t *testing.T) {
+	doc := SourceRulesetDoc{
+		SchemaVersion: 2,
+		Kind:          "opensspm.ruleset",
+		Ruleset: SourceRuleset{
+			Key:   "example.v2",
+			Name:  "Example",
+			Scope: types.Scope{Kind: types.ScopeKindGlobal},
+			Defaults: &SourceDefaults{
+				Check: SourceCheckDefaults{
+					OnMissingDataset:   "unknown",
+					OnPermissionDenied: "unknown",
+					OnSyncError:        "error",
+				},
+			},
+			Rules: []SourceRule{
+				{
+					Key:          "R1",
+					Title:        "R1",
+					Severity:     types.SeverityLow,
+					Monitoring:   types.Monitoring{Status: types.MonitoringStatusAutomated},
+					RequiredData: []string{"okta:example"},
+					Check: &SourceCheck{
+						Type:    "dataset.field_compare",
+						Dataset: "okta:example",
+						Assert:  &SourcePredicate{Op: "eq", Path: "x", Value: 1},
+					},
+				},
+			},
+		},
+	}
+
+	compiled, err := CompileRuleset(doc)
+	if err != nil {
+		t.Fatalf("CompileRuleset() error: %v", err)
+	}
+	check := compiled.Ruleset.Rules[0].Check
+	if check == nil {
+		t.Fatalf("expected compiled check")
+	}
+	if check.Engine != types.CheckEngineCEL {
+		t.Fatalf("expected engine cel with defaults-only policies, got %q", check.Engine)
+	}
+	if check.Expression == "" {
+		t.Fatalf("expected CEL expression")
 	}
 }
 
