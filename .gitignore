@@ -33,3 +33,7 @@ tools/osspec/cmd/osspec-gen-go/osspec-gen-go
 *.swp
 *.swo
 *~
+
+# Playwright CLI local artifacts
+.playwright-cli/
+output/playwright/
