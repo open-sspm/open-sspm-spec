@@ -187,6 +187,7 @@ pre code {
   padding: 22px;
   display: flex;
   justify-content: center;
+  min-width: 0;
 }
 .main > * {
   width: min(1100px, 100%);
