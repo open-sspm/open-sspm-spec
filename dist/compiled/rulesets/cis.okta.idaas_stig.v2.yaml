@@ -2,10 +2,16 @@
 "ruleset":
   "data_contracts":
     -
+      "dataset": "okta:apps/admin-console-settings"
+      "version": 1
+    -
       "dataset": "okta:authenticators"
       "version": 1
     -
       "dataset": "okta:log-streams"
+      "version": 1
+    -
+      "dataset": "okta:policies/app-signin"
       "version": 1
     -
       "dataset": "okta:policies/password"
@@ -38,10 +44,25 @@
       "summary": "Global Session Policy idle timeout is 15 minutes for the Priority 1 rule in Default Policy."
       "title": "OKTA-APP-000020"
     -
+      "check":
+        "engine": "cel_plan"
+        "plan":
+          "assert_expression": "field(r, \"session_idle_timeout_minutes\") == 15"
+          "dataset": "okta:apps/admin-console-settings"
+          "expect":
+            "match": "all"
+            "min_selected": 1
+            "on_empty": "unknown"
+          "on_missing_dataset": "unknown"
+          "on_permission_denied": "unknown"
+          "on_sync_error": "error"
+          "type": "dataset.field_compare"
+          "where_expression": "true"
       "key": "OKTA-APP-000025"
       "monitoring":
-        "status": "manual"
-      "required_data": []
+        "status": "automated"
+      "required_data":
+        - "okta:apps/admin-console-settings"
       "severity": "medium"
       "summary": "Okta Admin Console application session idle timeout is 15 minutes."
       "title": "OKTA-APP-000025"
@@ -77,18 +98,26 @@
       "summary": "Password policies lock out after 3 unsuccessful attempts."
       "title": "OKTA-APP-000170"
     -
+      "check":
+        "engine": "cel"
+        "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).all(r, field(r, \"requires_phishing_resistant\") == true)"
       "key": "OKTA-APP-000180"
       "monitoring":
-        "status": "manual"
-      "required_data": []
+        "status": "automated"
+      "required_data":
+        - "okta:policies/app-signin"
       "severity": "medium"
       "summary": "Okta Dashboard authentication policy requires phishing-resistant authenticators."
       "title": "OKTA-APP-000180"
     -
+      "check":
+        "engine": "cel"
+        "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).all(r, field(r, \"requires_phishing_resistant\") == true)"
       "key": "OKTA-APP-000190"
       "monitoring":
-        "status": "manual"
-      "required_data": []
+        "status": "automated"
+      "required_data":
+        - "okta:policies/app-signin"
       "severity": "medium"
       "summary": "Okta Admin Console authentication policy requires phishing-resistant authenticators."
       "title": "OKTA-APP-000190"
@@ -101,18 +130,26 @@
       "summary": "DoD notice and consent banner is displayed before login."
       "title": "OKTA-APP-000200"
     -
+      "check":
+        "engine": "cel"
+        "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).all(r, field(r, \"requires_mfa\") == true)"
       "key": "OKTA-APP-000560"
       "monitoring":
-        "status": "manual"
-      "required_data": []
+        "status": "automated"
+      "required_data":
+        - "okta:policies/app-signin"
       "severity": "high"
       "summary": "Okta Admin Console requires multi-factor authentication."
       "title": "OKTA-APP-000560"
     -
+      "check":
+        "engine": "cel"
+        "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).all(r, field(r, \"requires_mfa\") == true)"
       "key": "OKTA-APP-000570"
       "monitoring":
-        "status": "manual"
-      "required_data": []
+        "status": "automated"
+      "required_data":
+        - "okta:policies/app-signin"
       "severity": "high"
       "summary": "Okta Dashboard requires multi-factor authentication."
       "title": "OKTA-APP-000570"
@@ -314,10 +351,14 @@
       "summary": "Smart Card Authenticator is present and active."
       "title": "OKTA-APP-001670"
     -
+      "check":
+        "engine": "cel"
+        "expression": "rows(\"okta:authenticators\").filter(r, field(r, \"name\") == \"Okta Verify\").size() \u003e= 1 \u0026\u0026 rows(\"okta:authenticators\").filter(r, field(r, \"name\") == \"Okta Verify\").all(r, field(r, \"okta_verify_compliance_fips\") == \"REQUIRED\")"
       "key": "OKTA-APP-001700"
       "monitoring":
-        "status": "manual"
-      "required_data": []
+        "status": "automated"
+      "required_data":
+        - "okta:authenticators"
       "severity": "medium"
       "summary": "Okta Verify is configured with FIPS-compliant device enforcement (org-defined)."
       "title": "OKTA-APP-001700"
