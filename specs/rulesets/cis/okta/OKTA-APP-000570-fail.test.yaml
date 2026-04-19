@@ -1,0 +1,17 @@
+"description": "Should fail when Okta Dashboard access policy does not require MFA"
+"expect": "fail"
+"inputs":
+  "okta:policies/app-signin":
+    -
+      "resource_id": "okta_policy_rule:rule-dashboard"
+      "display": "Default Rule"
+      "policy_id": "pol-dashboard"
+      "policy_name": "Okta Dashboard Policy"
+      "app_labels":
+        - "Okta Dashboard"
+      "is_top_rule": true
+      "requires_mfa": false
+      "requires_phishing_resistant": false
+"kind": "opensspm.test_case"
+"rule_key": "OKTA-APP-000570"
+"schema_version": 2

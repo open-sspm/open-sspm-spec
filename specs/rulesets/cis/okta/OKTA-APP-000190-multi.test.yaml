@@ -1,0 +1,27 @@
+"description": "Should fail when one of multiple Okta Admin Console policy rules does not require phishing-resistant auth"
+"expect": "fail"
+"inputs":
+  "okta:policies/app-signin":
+    -
+      "resource_id": "okta_policy_rule:rule-admin-1"
+      "display": "Default Rule"
+      "policy_id": "pol-admin"
+      "policy_name": "Okta Admin Console Policy"
+      "app_labels":
+        - "Okta Admin Console"
+      "is_top_rule": true
+      "requires_mfa": true
+      "requires_phishing_resistant": true
+    -
+      "resource_id": "okta_policy_rule:rule-admin-2"
+      "display": "Catch-all Rule"
+      "policy_id": "pol-admin"
+      "policy_name": "Okta Admin Console Policy"
+      "app_labels":
+        - "Okta Admin Console"
+      "is_top_rule": false
+      "requires_mfa": true
+      "requires_phishing_resistant": false
+"kind": "opensspm.test_case"
+"rule_key": "OKTA-APP-000190"
+"schema_version": 2

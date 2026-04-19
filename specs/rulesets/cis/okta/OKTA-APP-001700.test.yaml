@@ -1,0 +1,15 @@
+"description": "Should pass when Okta Verify authenticator has FIPS compliance REQUIRED"
+"expect": "pass"
+"inputs":
+  "okta:authenticators":
+    -
+      "resource_id": "okta_authenticator:aut-okta-verify"
+      "display": "Okta Verify"
+      "id": "aut-okta-verify"
+      "key": "okta_verify"
+      "name": "Okta Verify"
+      "status": "ACTIVE"
+      "okta_verify_compliance_fips": "REQUIRED"
+"kind": "opensspm.test_case"
+"rule_key": "OKTA-APP-001700"
+"schema_version": 2
