@@ -138,3 +138,53 @@ func TestEvaluateRuleManualAlwaysUnknown(t *testing.T) {
 		t.Fatalf("expected unknown for manual rule, got %q", status)
 	}
 }
+
+func TestEvaluateEntityPolicyParsesTimestampInputs(t *testing.T) {
+	pack := &types.EntityPolicyPack{
+		Metadata: types.EntityPolicyMetadata{
+			ID:      "builtin.test.credential",
+			Version: "1.0.0",
+			Domain:  types.EntityPolicyDomainCredential,
+		},
+		Spec: types.EntityPolicySpec{
+			Inputs: types.EntityPolicyInputs{Schema: "credential_risk_input.v1"},
+			Constants: map[string][]string{
+				"active_like_statuses": {"active"},
+			},
+			Rules: []types.EntityPolicyRule{
+				{
+					ID:       "expired_active",
+					Severity: "critical",
+					When:     `expires_at != null && expires_at < evaluated_at && status in active_like_statuses`,
+					Title:    "Credential has expired while still marked active",
+				},
+			},
+			Aggregation: types.EntityPolicyAggregation{
+				RiskLevel: types.EntityPolicyAggregationStrategy{
+					Default: "low",
+				},
+			},
+		},
+	}
+
+	got, err := evaluateEntityPolicyPack(pack, map[string]any{
+		"status":       "ACTIVE",
+		"expires_at":   "2026-05-01T12:00:00Z",
+		"evaluated_at": "2026-05-09T12:00:00Z",
+	})
+	if err != nil {
+		t.Fatalf("evaluateEntityPolicyPack() error = %v", err)
+	}
+	if got.RiskLevel != "critical" || len(got.Signals) != 1 || got.Signals[0].ID != "expired_active" {
+		t.Fatalf("evaluateEntityPolicyPack() = %+v, want expired_active critical signal", got)
+	}
+
+	_, err = evaluateEntityPolicyPack(pack, map[string]any{
+		"status":       "active",
+		"expires_at":   "not-a-timestamp",
+		"evaluated_at": "2026-05-09T12:00:00Z",
+	})
+	if err == nil {
+		t.Fatal("evaluateEntityPolicyPack() error = nil, want invalid timestamp error")
+	}
+}

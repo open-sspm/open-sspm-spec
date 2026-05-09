@@ -1,0 +1,49 @@
+kind: opensspm.test_case
+schema_version: 2
+artifact_kind: opensspm.entity_policy_pack
+artifact_key: builtin.saas.risk
+description: Unmanaged privileged SaaS app with broad usage is critical.
+entity_input:
+  canonical_key: slack
+  display_name: Slack
+  primary_domain: slack.com
+  vendor_name: slack
+  source_kind: google_workspace
+  source_name: production
+  category: collaboration
+  actors_30d: 60
+  has_privileged_scope: true
+  has_confidential_scope: false
+  managed_state: unmanaged
+  managed_reason: missing_connector_binding
+  owner_identity_id: 0
+  governance_state: unreviewed
+  review_disposition: ""
+  configured_business_criticality: unknown
+  configured_data_classification: unknown
+  connector_binding_configured: false
+  connector_binding_enabled: false
+  connector_binding_stale: false
+  connector_binding_healthy: false
+expect_entity:
+  risk_level: critical
+  risk_score: 100
+  signals:
+    - id: unmanaged_app
+      severity: high
+      title: App is not managed by a fresh connector binding
+    - id: privileged_scopes
+      severity: high
+      title: App has privileged OAuth scopes
+    - id: missing_owner
+      severity: high
+      title: App has no accountable owner
+    - id: high_actor_count
+      severity: medium
+      title: App has broad recent usage
+    - id: unmanaged_high_business_app
+      severity: high
+      title: Unmanaged app appears business critical
+    - id: unmanaged_sensitive_data_app
+      severity: high
+      title: Unmanaged app may access sensitive data

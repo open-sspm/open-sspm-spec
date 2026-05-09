@@ -1,0 +1,35 @@
+kind: opensspm.entity_policy_pack
+schema_version: 2
+entity_policy_pack:
+  metadata:
+    id: builtin.saas.app_overrides
+    version: 1.0.0
+    domain: saas
+  spec:
+    scoped_rules:
+      - id: github_domain_policy
+        scope:
+          app:
+            domain_matches:
+              - github.com
+              - "*.github.com"
+        suggestions:
+          business_criticality: high
+        rules:
+          - id: github_missing_owner
+            severity: critical
+            score_delta: 20
+            when: owner_identity_id == 0
+            title: GitHub app has no accountable owner
+      - id: github_vendor_policy
+        scope:
+          app:
+            vendor_name: github
+        suggestions:
+          business_criticality: high
+        rules:
+          - id: github_missing_owner
+            severity: critical
+            score_delta: 20
+            when: owner_identity_id == 0
+            title: GitHub app has no accountable owner

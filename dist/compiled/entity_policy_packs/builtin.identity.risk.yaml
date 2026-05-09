@@ -1,0 +1,49 @@
+"entity_policy_pack":
+  "metadata":
+    "domain": "identity"
+    "id": "builtin.identity.risk"
+    "version": "1.0.0"
+  "spec":
+    "aggregation":
+      "risk_level":
+        "default": "low"
+        "strategy": "max_severity"
+      "risk_reason_count":
+        "strategy": "count_matching_rules"
+    "inputs":
+      "schema": "identity_risk_input.v1"
+    "rules":
+      -
+        "id": "linked_critical_credential"
+        "severity": "critical"
+        "title": "Linked credential is critical"
+        "when": "has_critical_credential"
+      -
+        "id": "missing_accountable_owner"
+        "severity": "high"
+        "title": "No accountable owner"
+        "when": "owner_presence == \"unknown\""
+      -
+        "id": "linked_high_risk_credential"
+        "severity": "high"
+        "title": "Linked credential is high risk"
+        "when": "has_high_risk_credential \u0026\u0026 !has_critical_credential"
+      -
+        "id": "linked_expired_credential"
+        "severity": "high"
+        "title": "Linked credential is expired"
+        "when": "has_expired_credential"
+      -
+        "id": "unreviewed_risky_principal"
+        "severity": "high"
+        "title": "Unreviewed principal has risky evidence"
+        "when": "governance_state == \"unreviewed\" \u0026\u0026 (has_high_risk_credential || has_expired_credential || has_expiring_credential || has_unused_credential || has_stale_evidence)"
+      -
+        "id": "stale_or_unused_evidence"
+        "severity": "medium"
+        "title": "Principal has stale or aging evidence"
+        "when": "has_expiring_credential || has_unused_credential || has_stale_evidence"
+    "scoring": {}
+    "suggestions": {}
+"kind": "opensspm.entity_policy_pack"
+"schema_version": 2

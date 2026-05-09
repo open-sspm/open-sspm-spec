@@ -1,3 +1,59 @@
+"entity_policy_packs":
+  -
+    "domain": "credential"
+    "expression_refs":
+      - "expired_active"
+      - "expired_inactive"
+      - "expiring_within_30_days"
+      - "expiring_within_7_days"
+      - "high_privilege_missing_provenance"
+      - "missing_creator"
+      - "unused_over_90_days"
+    "input_schema": "credential_risk_input.v1"
+    "policy_pack_id": "builtin.credential.risk"
+    "version": "1.0.0"
+  -
+    "domain": "identity"
+    "expression_refs":
+      - "linked_critical_credential"
+      - "linked_expired_credential"
+      - "linked_high_risk_credential"
+      - "missing_accountable_owner"
+      - "stale_or_unused_evidence"
+      - "unreviewed_risky_principal"
+    "input_schema": "identity_risk_input.v1"
+    "policy_pack_id": "builtin.identity.risk"
+    "version": "1.0.0"
+  -
+    "domain": "saas"
+    "expression_refs":
+      - "github_domain_policy/github_missing_owner"
+      - "github_vendor_policy/github_missing_owner"
+    "policy_pack_id": "builtin.saas.app_overrides"
+    "version": "1.0.0"
+  -
+    "domain": "saas"
+    "expression_refs":
+      - "confidential_scopes_confidential"
+      - "default_business_low"
+      - "default_data_internal"
+      - "high_actor_count"
+      - "high_usage_critical"
+      - "high_usage_or_privileged"
+      - "level:critical"
+      - "level:high"
+      - "level:low"
+      - "level:medium"
+      - "missing_owner"
+      - "moderate_usage"
+      - "privileged_scopes"
+      - "privileged_scopes_restricted"
+      - "unmanaged_app"
+      - "unmanaged_high_business_app"
+      - "unmanaged_sensitive_data_app"
+    "input_schema": "saas_app_risk_input.v1"
+    "policy_pack_id": "builtin.saas.risk"
+    "version": "1.0.0"
 "kind": "opensspm.requirements_index"
 "rulesets":
   -

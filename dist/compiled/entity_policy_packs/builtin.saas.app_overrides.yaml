@@ -1,0 +1,45 @@
+"entity_policy_pack":
+  "metadata":
+    "domain": "saas"
+    "id": "builtin.saas.app_overrides"
+    "version": "1.0.0"
+  "spec":
+    "aggregation":
+      "risk_level": {}
+      "risk_reason_count": {}
+    "inputs": {}
+    "scoped_rules":
+      -
+        "id": "github_domain_policy"
+        "rules":
+          -
+            "id": "github_missing_owner"
+            "score_delta": 20
+            "severity": "critical"
+            "title": "GitHub app has no accountable owner"
+            "when": "owner_identity_id == 0"
+        "scope":
+          "app":
+            "domain_matches":
+              - "github.com"
+              - "*.github.com"
+        "suggestions":
+          "business_criticality": "high"
+      -
+        "id": "github_vendor_policy"
+        "rules":
+          -
+            "id": "github_missing_owner"
+            "score_delta": 20
+            "severity": "critical"
+            "title": "GitHub app has no accountable owner"
+            "when": "owner_identity_id == 0"
+        "scope":
+          "app":
+            "vendor_name": "github"
+        "suggestions":
+          "business_criticality": "high"
+    "scoring": {}
+    "suggestions": {}
+"kind": "opensspm.entity_policy_pack"
+"schema_version": 2

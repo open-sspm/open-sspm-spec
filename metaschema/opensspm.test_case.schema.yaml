@@ -2,15 +2,52 @@
 "$schema": "http://json-schema.org/draft-07/schema#"
 "additionalProperties": false
 "description": "Test cases for verifying Open SSPM rules against mock data."
+"definitions":
+  "entity_expect":
+    "additionalProperties": false
+    "properties":
+      "risk_level":
+        "type": "string"
+      "risk_score":
+        "type": "integer"
+      "signals":
+        "items":
+          "$ref": "#/definitions/entity_signal_expect"
+        "type": "array"
+    "type": "object"
+  "entity_signal_expect":
+    "additionalProperties": false
+    "properties":
+      "id":
+        "minLength": 1
+        "type": "string"
+      "severity":
+        "type": "string"
+      "title":
+        "type": "string"
+    "required":
+      - "id"
+    "type": "object"
 "properties":
+  "artifact_kind":
+    "description": "Artifact kind under test for non-ruleset test cases."
+    "type": "string"
+  "artifact_key":
+    "description": "Artifact key under test for non-ruleset test cases."
+    "type": "string"
   "description":
     "type": "string"
+  "entity_input":
+    "description": "Entity input for entity policy pack tests."
+    "type": "object"
   "expect":
     "enum":
       - "pass"
       - "fail"
       - "unknown"
     "type": "string"
+  "expect_entity":
+    "$ref": "#/definitions/entity_expect"
   "inputs":
     "additionalProperties":
       "items":
@@ -33,7 +70,17 @@
 "required":
   - "schema_version"
   - "kind"
-  - "rule_key"
-  - "expect"
+"oneOf":
+  - "required":
+      - "rule_key"
+      - "expect"
+  - "properties":
+      "artifact_kind":
+        "const": "opensspm.entity_policy_pack"
+    "required":
+      - "artifact_kind"
+      - "artifact_key"
+      - "entity_input"
+      - "expect_entity"
 "title": "Open SSPM Test Case (v2)"
 "type": "object"

@@ -119,10 +119,48 @@ func buildRequirements(b *schemasem.Bundle) types.RequirementsIndex {
 		out.Rulesets = append(out.Rulesets, req)
 	}
 
+	for _, pack := range b.EntityPolicyPacks {
+		out.EntityPolicyPacks = append(out.EntityPolicyPacks, types.EntityPolicyPackRequirement{
+			PolicyPackID:   pack.Doc.EntityPolicyPack.Metadata.ID,
+			Version:        pack.Doc.EntityPolicyPack.Metadata.Version,
+			Domain:         pack.Doc.EntityPolicyPack.Metadata.Domain,
+			InputSchema:    pack.Doc.EntityPolicyPack.Spec.Inputs.Schema,
+			ExpressionRefs: entityPolicyExpressionRefs(pack.Doc.EntityPolicyPack),
+		})
+	}
+
 	slices.SortFunc(out.Rulesets, func(a, b types.RulesetRequirement) int {
 		return strings.Compare(a.RulesetKey, b.RulesetKey)
 	})
+	slices.SortFunc(out.EntityPolicyPacks, func(a, b types.EntityPolicyPackRequirement) int {
+		return strings.Compare(a.PolicyPackID, b.PolicyPackID)
+	})
 	return out
+}
+
+func entityPolicyExpressionRefs(pack types.EntityPolicyPack) []string {
+	refs := make([]string, 0)
+	for _, rule := range pack.Spec.Suggestions.BusinessCriticality {
+		refs = append(refs, rule.ID)
+	}
+	for _, rule := range pack.Spec.Suggestions.DataClassification {
+		refs = append(refs, rule.ID)
+	}
+	for _, rule := range pack.Spec.Scoring.Rules {
+		refs = append(refs, rule.ID)
+	}
+	for _, rule := range pack.Spec.Levels {
+		refs = append(refs, "level:"+rule.Level)
+	}
+	for _, rule := range pack.Spec.Rules {
+		refs = append(refs, rule.ID)
+	}
+	for _, scopedRule := range pack.Spec.ScopedRules {
+		for _, rule := range scopedRule.Rules {
+			refs = append(refs, scopedRule.ID+"/"+rule.ID)
+		}
+	}
+	return setToSortedStringSlice(sliceToSet(refs))
 }
 
 func isManualRule(r *types.Rule) bool {
@@ -382,5 +420,17 @@ func setToSortedStringSlice(m map[string]struct{}) []string {
 		out = append(out, k)
 	}
 	slices.Sort(out)
+	return out
+}
+
+func sliceToSet(values []string) map[string]struct{} {
+	out := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			continue
+		}
+		out[value] = struct{}{}
+	}
 	return out
 }

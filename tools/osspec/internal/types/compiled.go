@@ -14,9 +14,10 @@ type ArtifactsIndex struct {
 }
 
 type RequirementsIndex struct {
-	SchemaVersion int                  `json:"schema_version"`
-	Kind          string               `json:"kind"`
-	Rulesets      []RulesetRequirement `json:"rulesets"`
+	SchemaVersion     int                           `json:"schema_version"`
+	Kind              string                        `json:"kind"`
+	Rulesets          []RulesetRequirement          `json:"rulesets"`
+	EntityPolicyPacks []EntityPolicyPackRequirement `json:"entity_policy_packs,omitempty"`
 }
 
 type RuleInputRequirement struct {
@@ -63,6 +64,14 @@ type RuleRequirement struct {
 	Monitoring         RuleRequirementMonitoring `json:"monitoring"`
 }
 
+type EntityPolicyPackRequirement struct {
+	PolicyPackID   string             `json:"policy_pack_id"`
+	Version        string             `json:"version"`
+	Domain         EntityPolicyDomain `json:"domain"`
+	InputSchema    string             `json:"input_schema,omitempty"`
+	ExpressionRefs []string           `json:"expression_refs"`
+}
+
 type Compiled[T any] struct {
 	SourcePath string `json:"source_path"`
 	Hash       string `json:"hash"`
@@ -75,12 +84,13 @@ type DescriptorIndex struct {
 }
 
 type Descriptor struct {
-	SchemaVersion int                    `json:"schema_version"`
-	Kind          string                 `json:"kind"`
-	Version       Version                `json:"version"`
-	Rulesets      []Compiled[RulesetDoc] `json:"rulesets"`
-	Profiles      []Compiled[ProfileDoc] `json:"profiles"`
-	Index         DescriptorIndex        `json:"index"`
+	SchemaVersion     int                             `json:"schema_version"`
+	Kind              string                          `json:"kind"`
+	Version           Version                         `json:"version"`
+	Rulesets          []Compiled[RulesetDoc]          `json:"rulesets"`
+	EntityPolicyPacks []Compiled[EntityPolicyPackDoc] `json:"entity_policy_packs,omitempty"`
+	Profiles          []Compiled[ProfileDoc]          `json:"profiles"`
+	Index             DescriptorIndex                 `json:"index"`
 }
 
 type CodegenRequest struct {

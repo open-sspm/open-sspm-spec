@@ -43,6 +43,9 @@ func writeDist(repoRoot, distDir string, res *Result) error {
 	if err := os.MkdirAll(filepath.Join(distAbs, "compiled", "rulesets"), 0o755); err != nil {
 		return err
 	}
+	if err := os.MkdirAll(filepath.Join(distAbs, "compiled", "entity_policy_packs"), 0o755); err != nil {
+		return err
+	}
 	if err := os.MkdirAll(filepath.Join(distAbs, "compiled", "profiles"), 0o755); err != nil {
 		return err
 	}
@@ -126,6 +129,13 @@ func writeCompiled(distAbs string, res *Result) error {
 		name := sanitizeFilename(rs.Object.Ruleset.Key) + ".yaml"
 		if err := writeCanonicalYAML(filepath.Join(distAbs, "compiled", "rulesets", name), rs.Object); err != nil {
 			return fmt.Errorf("write compiled ruleset %s: %w", rs.Object.Ruleset.Key, err)
+		}
+	}
+	// Entity policy packs
+	for _, pack := range res.Descriptor.EntityPolicyPacks {
+		name := sanitizeFilename(pack.Object.EntityPolicyPack.Metadata.ID) + ".yaml"
+		if err := writeCanonicalYAML(filepath.Join(distAbs, "compiled", "entity_policy_packs", name), pack.Object); err != nil {
+			return fmt.Errorf("write compiled entity policy pack %s: %w", pack.Object.EntityPolicyPack.Metadata.ID, err)
 		}
 	}
 	// Profiles

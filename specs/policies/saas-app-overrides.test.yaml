@@ -1,0 +1,21 @@
+kind: opensspm.test_case
+schema_version: 2
+artifact_kind: opensspm.entity_policy_pack
+artifact_key: builtin.saas.app_overrides
+description: GitHub app override emits one deduplicated scoped owner signal.
+entity_input:
+  canonical_key: github
+  display_name: GitHub
+  primary_domain: github.com
+  vendor_name: github
+  source_kind: google_workspace
+  source_name: production
+  category: developer_tools
+  owner_identity_id: 0
+expect_entity:
+  risk_level: low
+  risk_score: 20
+  signals:
+    - id: github_missing_owner
+      severity: critical
+      title: GitHub app has no accountable owner

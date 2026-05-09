@@ -1,9 +1,12 @@
 package schemasem
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
+
+	"github.com/google/cel-go/cel"
 
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/celengine"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
@@ -18,6 +21,10 @@ type Bundle struct {
 	Profiles []struct {
 		Path string
 		Doc  types.ProfileDoc
+	}
+	EntityPolicyPacks []struct {
+		Path string
+		Doc  types.EntityPolicyPackDoc
 	}
 }
 
@@ -41,6 +48,17 @@ func ValidateSemantic(b *Bundle) []error {
 
 		errs = append(errs, validateScope(rs.Path, rs.Doc.Ruleset.Scope)...)
 		errs = append(errs, validateRulesetRules(rs.Path, &rs.Doc)...)
+	}
+
+	seenEntityPolicyPackIDs := map[string]string{}
+	for _, pack := range b.EntityPolicyPacks {
+		id := pack.Doc.EntityPolicyPack.Metadata.ID
+		if prev, ok := seenEntityPolicyPackIDs[id]; ok {
+			errs = append(errs, fmt.Errorf("semantic: duplicate entity_policy_pack.metadata.id %q in %s and %s", id, prev, pack.Path))
+		} else {
+			seenEntityPolicyPackIDs[id] = pack.Path
+		}
+		errs = append(errs, validateEntityPolicyPack(pack.Path, &pack.Doc)...)
 	}
 
 	seenProfileKeys := map[string]string{}
@@ -67,6 +85,372 @@ func ValidateSemantic(b *Bundle) []error {
 	}
 
 	return errs
+}
+
+func validateEntityPolicyPack(path string, doc *types.EntityPolicyPackDoc) []error {
+	var errs []error
+	if doc == nil {
+		return []error{fmt.Errorf("semantic: %s: nil entity policy pack", path)}
+	}
+	pack := doc.EntityPolicyPack
+	if strings.TrimSpace(pack.Metadata.ID) == "" {
+		errs = append(errs, fmt.Errorf("semantic: %s: entity_policy_pack.metadata.id is required", path))
+	}
+	if strings.TrimSpace(pack.Metadata.Version) == "" {
+		errs = append(errs, fmt.Errorf("semantic: %s: entity_policy_pack.metadata.version is required", path))
+	}
+	switch pack.Metadata.Domain {
+	case types.EntityPolicyDomainCredential, types.EntityPolicyDomainSaaS, types.EntityPolicyDomainIdentity:
+	default:
+		errs = append(errs, fmt.Errorf("semantic: %s: entity_policy_pack.metadata.domain %q is not supported", path, pack.Metadata.Domain))
+	}
+	if strings.TrimSpace(pack.Spec.Inputs.Schema) == "" && len(pack.Spec.ScopedRules) == 0 {
+		errs = append(errs, fmt.Errorf("semantic: %s: entity_policy_pack.spec.inputs.schema is required", path))
+	}
+
+	ruleIDs := map[string]string{}
+	validateEntityPolicySuggestions(&errs, path, "spec.suggestions.business_criticality", pack.Spec.Suggestions.BusinessCriticality, ruleIDs, validBusinessCriticality)
+	validateEntityPolicySuggestions(&errs, path, "spec.suggestions.data_classification", pack.Spec.Suggestions.DataClassification, ruleIDs, validDataClassification)
+	validateEntityPolicyScoring(&errs, path, pack.Spec.Scoring, ruleIDs)
+	validateEntityPolicyLevelRules(&errs, path, "spec.levels", pack.Spec.Levels)
+	validateEntityPolicyRules(&errs, path, "spec.rules", pack.Spec.Rules, ruleIDs)
+	validateEntityPolicyAggregation(&errs, path, pack.Spec.Aggregation)
+	validateEntityPolicyScopedRules(&errs, path, pack.Spec.ScopedRules, ruleIDs)
+	validateEntityPolicyExpressionRefs(&errs, path, pack)
+
+	if len(errs) == 0 {
+		if err := validateEntityPolicyCEL(path, pack); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errs
+}
+
+func validateEntityPolicySuggestions(errs *[]error, path, fieldPath string, rules []types.EntityPolicySuggestionRule, ruleIDs map[string]string, validLevel func(string) bool) {
+	for i, rule := range rules {
+		currentPath := fmt.Sprintf("%s.%s[%d]", path, fieldPath, i)
+		validateEntityPolicyID(errs, currentPath+".id", rule.ID, ruleIDs)
+		if rule.Level == "" {
+			*errs = append(*errs, fmt.Errorf("semantic: %s.level is required", currentPath))
+		} else if !validLevel(rule.Level) {
+			*errs = append(*errs, fmt.Errorf("semantic: %s.level %q is invalid", currentPath, rule.Level))
+		}
+		if rule.When == "" {
+			*errs = append(*errs, fmt.Errorf("semantic: %s.when is required", currentPath))
+		}
+	}
+	if len(rules) > 0 && strings.TrimSpace(rules[len(rules)-1].When) != "true" {
+		*errs = append(*errs, fmt.Errorf("semantic: %s.%s must end with a deterministic fallback where when is true", path, fieldPath))
+	}
+}
+
+func validateEntityPolicyScoring(errs *[]error, path string, scoring types.EntityPolicyScoring, ruleIDs map[string]string) {
+	if scoring.Max == 0 && len(scoring.Rules) == 0 {
+		return
+	}
+	if scoring.Max <= 0 {
+		*errs = append(*errs, fmt.Errorf("semantic: %s: spec.scoring.max must be greater than zero", path))
+	}
+	if scoring.Base < 0 {
+		*errs = append(*errs, fmt.Errorf("semantic: %s: spec.scoring.base must be non-negative", path))
+	}
+	if scoring.Max > 0 && scoring.Base > scoring.Max {
+		*errs = append(*errs, fmt.Errorf("semantic: %s: spec.scoring.base must not exceed spec.scoring.max", path))
+	}
+	for i, rule := range scoring.Rules {
+		currentPath := fmt.Sprintf("%s.spec.scoring.rules[%d]", path, i)
+		validateEntityPolicyID(errs, currentPath+".id", rule.ID, ruleIDs)
+		if rule.Points == 0 {
+			*errs = append(*errs, fmt.Errorf("semantic: %s.points must be non-zero", currentPath))
+		}
+		if rule.When == "" {
+			*errs = append(*errs, fmt.Errorf("semantic: %s.when is required", currentPath))
+		}
+		if rule.Signal.Severity != "" && !validSeverity(rule.Signal.Severity) {
+			*errs = append(*errs, fmt.Errorf("semantic: %s.signal.severity %q is invalid", currentPath, rule.Signal.Severity))
+		}
+		if rule.Signal.Severity != "" && rule.Signal.Title == "" {
+			*errs = append(*errs, fmt.Errorf("semantic: %s.signal.title is required when signal.severity is set", currentPath))
+		}
+	}
+}
+
+func validateEntityPolicyLevelRules(errs *[]error, path, fieldPath string, rules []types.EntityPolicyLevelRule) {
+	for i, rule := range rules {
+		currentPath := fmt.Sprintf("%s.%s[%d]", path, fieldPath, i)
+		if !validSeverity(rule.Level) {
+			*errs = append(*errs, fmt.Errorf("semantic: %s.level %q is invalid", currentPath, rule.Level))
+		}
+		if rule.When == "" {
+			*errs = append(*errs, fmt.Errorf("semantic: %s.when is required", currentPath))
+		}
+	}
+	if len(rules) > 0 && strings.TrimSpace(rules[len(rules)-1].When) != "true" {
+		*errs = append(*errs, fmt.Errorf("semantic: %s.%s must end with a deterministic fallback where when is true", path, fieldPath))
+	}
+}
+
+func validateEntityPolicyRules(errs *[]error, path, fieldPath string, rules []types.EntityPolicyRule, ruleIDs map[string]string) {
+	for i, rule := range rules {
+		currentPath := fmt.Sprintf("%s.%s[%d]", path, fieldPath, i)
+		validateEntityPolicyID(errs, currentPath+".id", rule.ID, ruleIDs)
+		if !validSeverity(rule.Severity) {
+			*errs = append(*errs, fmt.Errorf("semantic: %s.severity %q is invalid", currentPath, rule.Severity))
+		}
+		if rule.When == "" {
+			*errs = append(*errs, fmt.Errorf("semantic: %s.when is required", currentPath))
+		}
+		if rule.Title == "" {
+			*errs = append(*errs, fmt.Errorf("semantic: %s.title is required", currentPath))
+		}
+	}
+}
+
+func validateEntityPolicyAggregation(errs *[]error, path string, aggregation types.EntityPolicyAggregation) {
+	if aggregation.RiskLevel.Strategy != "" {
+		if aggregation.RiskLevel.Strategy != "max_severity" {
+			*errs = append(*errs, fmt.Errorf("semantic: %s: spec.aggregation.risk_level.strategy %q is not supported", path, aggregation.RiskLevel.Strategy))
+		}
+		if aggregation.RiskLevel.Default != "" && !validSeverity(aggregation.RiskLevel.Default) {
+			*errs = append(*errs, fmt.Errorf("semantic: %s: spec.aggregation.risk_level.default %q is invalid", path, aggregation.RiskLevel.Default))
+		}
+	}
+	if aggregation.RiskReasonCount.Strategy != "" && aggregation.RiskReasonCount.Strategy != "count_matching_rules" {
+		*errs = append(*errs, fmt.Errorf("semantic: %s: spec.aggregation.risk_reason_count.strategy %q is not supported", path, aggregation.RiskReasonCount.Strategy))
+	}
+}
+
+func validateEntityPolicyScopedRules(errs *[]error, path string, scopedRules []types.EntityPolicyScopedRule, ruleIDs map[string]string) {
+	for i, scopedRule := range scopedRules {
+		currentPath := fmt.Sprintf("%s.spec.scoped_rules[%d]", path, i)
+		validateEntityPolicyID(errs, currentPath+".id", scopedRule.ID, ruleIDs)
+		if !entityPolicyAppScopeHasSelector(scopedRule.Scope.App) {
+			*errs = append(*errs, fmt.Errorf("semantic: %s.scope.app must include at least one selector", currentPath))
+		}
+		validateEntityPolicyScopedSuggestions(errs, currentPath+".suggestions", scopedRule.Suggestions)
+		scopedRuleIDs := make(map[string]string, len(scopedRule.Rules))
+		validateEntityPolicyRules(errs, path, fmt.Sprintf("spec.scoped_rules[%d].rules", i), scopedRule.Rules, scopedRuleIDs)
+	}
+}
+
+func validateEntityPolicyScopedSuggestions(errs *[]error, path string, suggestions types.EntityPolicyScopedSuggestions) {
+	if suggestions.BusinessCriticality != "" && !validBusinessCriticality(suggestions.BusinessCriticality) {
+		*errs = append(*errs, fmt.Errorf("semantic: %s.business_criticality %q is invalid", path, suggestions.BusinessCriticality))
+	}
+	if suggestions.DataClassification != "" && !validDataClassification(suggestions.DataClassification) {
+		*errs = append(*errs, fmt.Errorf("semantic: %s.data_classification %q is invalid", path, suggestions.DataClassification))
+	}
+}
+
+func validSeverity(value string) bool {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "low", "medium", "high", "critical":
+		return true
+	default:
+		return false
+	}
+}
+
+func validBusinessCriticality(value string) bool {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "low", "medium", "high", "critical":
+		return true
+	default:
+		return false
+	}
+}
+
+func validDataClassification(value string) bool {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "public", "internal", "confidential", "restricted":
+		return true
+	default:
+		return false
+	}
+}
+
+func entityPolicyAppScopeHasSelector(scope types.EntityPolicyAppScope) bool {
+	return scope.CanonicalKey != "" ||
+		scope.PrimaryDomain != "" ||
+		len(scope.DomainMatches) > 0 ||
+		scope.VendorName != "" ||
+		scope.SourceKind != "" ||
+		scope.SourceName != "" ||
+		scope.Category != ""
+}
+
+func validateEntityPolicyID(errs *[]error, path, id string, seen map[string]string) {
+	if id == "" {
+		*errs = append(*errs, fmt.Errorf("semantic: %s is required", path))
+		return
+	}
+	if strings.ContainsAny(id, ":/") {
+		*errs = append(*errs, fmt.Errorf("semantic: %s %q must not contain reserved expression separators ':' or '/'", path, id))
+		return
+	}
+	if previousPath := seen[id]; previousPath != "" {
+		*errs = append(*errs, fmt.Errorf("semantic: %s duplicates id %q from %s", path, id, previousPath))
+		return
+	}
+	seen[id] = path
+}
+
+func validateEntityPolicyExpressionRefs(errs *[]error, path string, pack types.EntityPolicyPack) {
+	seen := map[string]string{}
+	add := func(ref, refPath string) {
+		ref = strings.TrimSpace(ref)
+		if ref == "" {
+			return
+		}
+		if previousPath := seen[ref]; previousPath != "" {
+			*errs = append(*errs, fmt.Errorf("semantic: %s duplicates generated expression ref %q from %s", refPath, ref, previousPath))
+			return
+		}
+		seen[ref] = refPath
+	}
+
+	for i, rule := range pack.Spec.Suggestions.BusinessCriticality {
+		add(rule.ID, fmt.Sprintf("%s.spec.suggestions.business_criticality[%d].id", path, i))
+	}
+	for i, rule := range pack.Spec.Suggestions.DataClassification {
+		add(rule.ID, fmt.Sprintf("%s.spec.suggestions.data_classification[%d].id", path, i))
+	}
+	for i, rule := range pack.Spec.Scoring.Rules {
+		add(rule.ID, fmt.Sprintf("%s.spec.scoring.rules[%d].id", path, i))
+	}
+	for i, rule := range pack.Spec.Levels {
+		add("level:"+rule.Level, fmt.Sprintf("%s.spec.levels[%d].level", path, i))
+	}
+	for i, rule := range pack.Spec.Rules {
+		add(rule.ID, fmt.Sprintf("%s.spec.rules[%d].id", path, i))
+	}
+	for i, scopedRule := range pack.Spec.ScopedRules {
+		for j, rule := range scopedRule.Rules {
+			add(scopedRule.ID+"/"+rule.ID, fmt.Sprintf("%s.spec.scoped_rules[%d].rules[%d].id", path, i, j))
+		}
+	}
+}
+
+func validateEntityPolicyCEL(path string, pack types.EntityPolicyPack) error {
+	env, err := newEntityPolicyEnv(pack)
+	if err != nil {
+		return fmt.Errorf("semantic: %s: create entity policy CEL env: %w", path, err)
+	}
+	var errs []error
+	compile := func(ruleID, expression string) {
+		ast, issues := env.Compile(expression)
+		if issues != nil && issues.Err() != nil {
+			errs = append(errs, fmt.Errorf("semantic: %s: %s: compile %q: %w", path, ruleID, expression, issues.Err()))
+			return
+		}
+		if !ast.OutputType().IsExactType(cel.BoolType) {
+			errs = append(errs, fmt.Errorf("semantic: %s: %s: compile %q: expression must return bool, got %s", path, ruleID, expression, ast.OutputType()))
+		}
+	}
+	for _, rule := range pack.Spec.Suggestions.BusinessCriticality {
+		compile(rule.ID, rule.When)
+	}
+	for _, rule := range pack.Spec.Suggestions.DataClassification {
+		compile(rule.ID, rule.When)
+	}
+	for _, rule := range pack.Spec.Scoring.Rules {
+		compile(rule.ID, rule.When)
+	}
+	for _, rule := range pack.Spec.Levels {
+		compile("level:"+rule.Level, rule.When)
+	}
+	for _, rule := range pack.Spec.Rules {
+		compile(rule.ID, rule.When)
+	}
+	for _, scopedRule := range pack.Spec.ScopedRules {
+		for _, rule := range scopedRule.Rules {
+			compile(scopedRule.ID+"/"+rule.ID, rule.When)
+		}
+	}
+	return errors.Join(errs...)
+}
+
+func newEntityPolicyEnv(pack types.EntityPolicyPack) (*cel.Env, error) {
+	opts := entityPolicyDomainEnvOptions(pack.Metadata.Domain)
+	for name := range pack.Spec.Constants {
+		opts = append(opts, cel.Variable(name, cel.ListType(cel.StringType)))
+	}
+	return cel.NewEnv(opts...)
+}
+
+func entityPolicyDomainEnvOptions(domain types.EntityPolicyDomain) []cel.EnvOption {
+	switch domain {
+	case types.EntityPolicyDomainCredential:
+		return []cel.EnvOption{
+			cel.Variable("source_kind", cel.StringType),
+			cel.Variable("source_name", cel.StringType),
+			cel.Variable("credential_kind", cel.StringType),
+			cel.Variable("status", cel.StringType),
+			cel.Variable("expires_at", cel.NullableType(cel.TimestampType)),
+			cel.Variable("last_used_at", cel.NullableType(cel.TimestampType)),
+			cel.Variable("created_at", cel.NullableType(cel.TimestampType)),
+			cel.Variable("created_by_external_id", cel.StringType),
+			cel.Variable("created_by_display_name", cel.StringType),
+			cel.Variable("approved_by_external_id", cel.StringType),
+			cel.Variable("approved_by_display_name", cel.StringType),
+			cel.Variable("asset_ref_kind", cel.StringType),
+			cel.Variable("asset_ref_external_id", cel.StringType),
+			cel.Variable("scope_json", cel.DynType),
+			cel.Variable("evaluated_at", cel.TimestampType),
+		}
+	case types.EntityPolicyDomainSaaS:
+		return []cel.EnvOption{
+			cel.Variable("canonical_key", cel.StringType),
+			cel.Variable("display_name", cel.StringType),
+			cel.Variable("primary_domain", cel.StringType),
+			cel.Variable("vendor_name", cel.StringType),
+			cel.Variable("source_kind", cel.StringType),
+			cel.Variable("source_name", cel.StringType),
+			cel.Variable("category", cel.StringType),
+			cel.Variable("actors_30d", cel.IntType),
+			cel.Variable("has_privileged_scope", cel.BoolType),
+			cel.Variable("has_confidential_scope", cel.BoolType),
+			cel.Variable("managed_state", cel.StringType),
+			cel.Variable("managed_reason", cel.StringType),
+			cel.Variable("owner_identity_id", cel.IntType),
+			cel.Variable("governance_state", cel.StringType),
+			cel.Variable("review_disposition", cel.StringType),
+			cel.Variable("follow_up_due_date", cel.NullableType(cel.TimestampType)),
+			cel.Variable("configured_business_criticality", cel.StringType),
+			cel.Variable("configured_data_classification", cel.StringType),
+			cel.Variable("effective_business_criticality", cel.StringType),
+			cel.Variable("effective_data_classification", cel.StringType),
+			cel.Variable("connector_binding_configured", cel.BoolType),
+			cel.Variable("connector_binding_enabled", cel.BoolType),
+			cel.Variable("connector_binding_stale", cel.BoolType),
+			cel.Variable("connector_binding_healthy", cel.BoolType),
+			cel.Variable("score", cel.IntType),
+		}
+	case types.EntityPolicyDomainIdentity:
+		return []cel.EnvOption{
+			cel.Variable("identity_id", cel.IntType),
+			cel.Variable("principal_ref", cel.StringType),
+			cel.Variable("principal_type", cel.StringType),
+			cel.Variable("source_kind", cel.StringType),
+			cel.Variable("source_name", cel.StringType),
+			cel.Variable("display_name", cel.StringType),
+			cel.Variable("primary_email", cel.StringType),
+			cel.Variable("last_seen_at", cel.NullableType(cel.TimestampType)),
+			cel.Variable("owner_presence", cel.StringType),
+			cel.Variable("governance_state", cel.StringType),
+			cel.Variable("linked_assets_count", cel.IntType),
+			cel.Variable("linked_credentials_count", cel.IntType),
+			cel.Variable("credential_signals", cel.ListType(cel.StringType)),
+			cel.Variable("has_critical_credential", cel.BoolType),
+			cel.Variable("has_high_risk_credential", cel.BoolType),
+			cel.Variable("has_expired_credential", cel.BoolType),
+			cel.Variable("has_expiring_credential", cel.BoolType),
+			cel.Variable("has_unused_credential", cel.BoolType),
+			cel.Variable("has_stale_evidence", cel.BoolType),
+		}
+	default:
+		return nil
+	}
 }
 
 func validateScope(path string, s types.Scope) []error {

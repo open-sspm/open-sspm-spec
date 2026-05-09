@@ -26,6 +26,14 @@ const (
 	SeverityInfo     Severity = "info"
 )
 
+type EntityPolicyDomain string
+
+const (
+	EntityPolicyDomainCredential EntityPolicyDomain = "credential"
+	EntityPolicyDomainSaaS       EntityPolicyDomain = "saas"
+	EntityPolicyDomainIdentity   EntityPolicyDomain = "identity"
+)
+
 type CheckEngine string
 
 const (
@@ -83,6 +91,7 @@ func EnumValues() map[string][]string {
 		"ScopeKind":             enumStrings([]ScopeKind{ScopeKindGlobal, ScopeKindConnectorInstance}),
 		"MonitoringStatus":      enumStrings([]MonitoringStatus{MonitoringStatusAutomated, MonitoringStatusPartial, MonitoringStatusManual, MonitoringStatusUnsupported}),
 		"Severity":              enumStrings([]Severity{SeverityCritical, SeverityHigh, SeverityMedium, SeverityLow, SeverityInfo}),
+		"EntityPolicyDomain":    enumStrings([]EntityPolicyDomain{EntityPolicyDomainCredential, EntityPolicyDomainSaaS, EntityPolicyDomainIdentity}),
 		"CheckEngine":           enumStrings([]CheckEngine{CheckEngineCEL, CheckEngineCELPlan}),
 		"ReferenceType":         enumStrings([]ReferenceType{ReferenceTypeDocumentation, ReferenceTypeStandard, ReferenceTypeBlog, ReferenceTypeTicket, ReferenceTypeOther}),
 		"FrameworkCoverageKind": enumStrings([]FrameworkCoverageKind{FrameworkCoverageDirect, FrameworkCoveragePartial, FrameworkCoverageSupporting}),

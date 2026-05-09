@@ -193,6 +193,118 @@ type CheckPlanCompare struct {
 	Value any    `json:"value"`
 }
 
+type EntityPolicyPackDoc struct {
+	SchemaVersion    int              `json:"schema_version" yaml:"schema_version"`
+	Kind             string           `json:"kind" yaml:"kind"`
+	EntityPolicyPack EntityPolicyPack `json:"entity_policy_pack" yaml:"entity_policy_pack"`
+}
+
+type EntityPolicyPack struct {
+	Metadata EntityPolicyMetadata `json:"metadata" yaml:"metadata"`
+	Spec     EntityPolicySpec     `json:"spec" yaml:"spec"`
+}
+
+type EntityPolicyMetadata struct {
+	ID      string             `json:"id" yaml:"id"`
+	Version string             `json:"version" yaml:"version"`
+	Domain  EntityPolicyDomain `json:"domain" yaml:"domain"`
+}
+
+type EntityPolicySpec struct {
+	Inputs      EntityPolicyInputs            `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Constants   map[string][]string           `json:"constants,omitempty" yaml:"constants,omitempty"`
+	Suggestions EntityPolicySuggestions       `json:"suggestions,omitempty" yaml:"suggestions,omitempty"`
+	Scoring     EntityPolicyScoring           `json:"scoring,omitempty" yaml:"scoring,omitempty"`
+	Levels      []EntityPolicyLevelRule       `json:"levels,omitempty" yaml:"levels,omitempty"`
+	Rules       []EntityPolicyRule            `json:"rules,omitempty" yaml:"rules,omitempty"`
+	Aggregation EntityPolicyAggregation       `json:"aggregation,omitempty" yaml:"aggregation,omitempty"`
+	ScopedRules []EntityPolicyScopedRule      `json:"scoped_rules,omitempty" yaml:"scoped_rules,omitempty"`
+}
+
+type EntityPolicyInputs struct {
+	Schema string `json:"schema,omitempty" yaml:"schema,omitempty"`
+}
+
+type EntityPolicySuggestions struct {
+	BusinessCriticality []EntityPolicySuggestionRule `json:"business_criticality,omitempty" yaml:"business_criticality,omitempty"`
+	DataClassification  []EntityPolicySuggestionRule `json:"data_classification,omitempty" yaml:"data_classification,omitempty"`
+}
+
+type EntityPolicySuggestionRule struct {
+	ID    string `json:"id" yaml:"id"`
+	Level string `json:"level" yaml:"level"`
+	When  string `json:"when" yaml:"when"`
+}
+
+type EntityPolicyScoring struct {
+	Base  int                       `json:"base,omitempty" yaml:"base,omitempty"`
+	Max   int                       `json:"max,omitempty" yaml:"max,omitempty"`
+	Rules []EntityPolicyScoringRule `json:"rules,omitempty" yaml:"rules,omitempty"`
+}
+
+type EntityPolicyScoringRule struct {
+	ID     string             `json:"id" yaml:"id"`
+	Points int                `json:"points" yaml:"points"`
+	When   string             `json:"when" yaml:"when"`
+	Signal EntityPolicySignal `json:"signal,omitempty" yaml:"signal,omitempty"`
+}
+
+type EntityPolicySignal struct {
+	Severity string `json:"severity,omitempty" yaml:"severity,omitempty"`
+	Title    string `json:"title,omitempty" yaml:"title,omitempty"`
+	Evidence string `json:"evidence,omitempty" yaml:"evidence,omitempty"`
+}
+
+type EntityPolicyLevelRule struct {
+	Level string `json:"level" yaml:"level"`
+	When  string `json:"when" yaml:"when"`
+}
+
+type EntityPolicyRule struct {
+	ID         string `json:"id" yaml:"id"`
+	Severity   string `json:"severity" yaml:"severity"`
+	ScoreDelta int    `json:"score_delta,omitempty" yaml:"score_delta,omitempty"`
+	When       string `json:"when" yaml:"when"`
+	Title      string `json:"title" yaml:"title"`
+	Evidence   string `json:"evidence,omitempty" yaml:"evidence,omitempty"`
+}
+
+type EntityPolicyAggregation struct {
+	RiskLevel       EntityPolicyAggregationStrategy `json:"risk_level,omitempty" yaml:"risk_level,omitempty"`
+	RiskReasonCount EntityPolicyAggregationStrategy `json:"risk_reason_count,omitempty" yaml:"risk_reason_count,omitempty"`
+}
+
+type EntityPolicyAggregationStrategy struct {
+	Strategy string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+	Default  string `json:"default,omitempty" yaml:"default,omitempty"`
+}
+
+type EntityPolicyScopedRule struct {
+	ID          string                        `json:"id" yaml:"id"`
+	Scope       EntityPolicyScope            `json:"scope" yaml:"scope"`
+	Rules       []EntityPolicyRule           `json:"rules,omitempty" yaml:"rules,omitempty"`
+	Suggestions EntityPolicyScopedSuggestions `json:"suggestions,omitempty" yaml:"suggestions,omitempty"`
+}
+
+type EntityPolicyScope struct {
+	App EntityPolicyAppScope `json:"app" yaml:"app"`
+}
+
+type EntityPolicyAppScope struct {
+	CanonicalKey  string   `json:"canonical_key,omitempty" yaml:"canonical_key,omitempty"`
+	PrimaryDomain string   `json:"primary_domain,omitempty" yaml:"primary_domain,omitempty"`
+	DomainMatches []string `json:"domain_matches,omitempty" yaml:"domain_matches,omitempty"`
+	VendorName    string   `json:"vendor_name,omitempty" yaml:"vendor_name,omitempty"`
+	SourceKind    string   `json:"source_kind,omitempty" yaml:"source_kind,omitempty"`
+	SourceName    string   `json:"source_name,omitempty" yaml:"source_name,omitempty"`
+	Category      string   `json:"category,omitempty" yaml:"category,omitempty"`
+}
+
+type EntityPolicyScopedSuggestions struct {
+	BusinessCriticality string `json:"business_criticality,omitempty" yaml:"business_criticality,omitempty"`
+	DataClassification  string `json:"data_classification,omitempty" yaml:"data_classification,omitempty"`
+}
+
 type ProfileDoc struct {
 	SchemaVersion int     `json:"schema_version"`
 	Kind          string  `json:"kind"`
@@ -212,13 +324,29 @@ type ProfileRulesetRef struct {
 }
 
 type TestCaseDoc struct {
-	SchemaVersion int              `json:"schema_version"`
-	Kind          string           `json:"kind"`
-	RuleKey       string           `json:"rule_key"`
-	Description   string           `json:"description,omitempty"`
-	Parameters    map[string]any   `json:"parameters,omitempty"`
-	Inputs        map[string][]any `json:"inputs,omitempty"`
-	Expect        string           `json:"expect"`
+	SchemaVersion int                     `json:"schema_version"`
+	Kind          string                  `json:"kind"`
+	ArtifactKind  string                  `json:"artifact_kind,omitempty"`
+	ArtifactKey   string                  `json:"artifact_key,omitempty"`
+	RuleKey       string                  `json:"rule_key,omitempty"`
+	Description   string                  `json:"description,omitempty"`
+	Parameters    map[string]any          `json:"parameters,omitempty"`
+	Inputs        map[string][]any        `json:"inputs,omitempty"`
+	EntityInput   map[string]any          `json:"entity_input,omitempty"`
+	Expect        string                  `json:"expect,omitempty"`
+	ExpectEntity  *EntityPolicyTestExpect `json:"expect_entity,omitempty"`
+}
+
+type EntityPolicyTestExpect struct {
+	RiskLevel string                   `json:"risk_level,omitempty"`
+	RiskScore *int                     `json:"risk_score,omitempty"`
+	Signals   []EntityPolicyTestSignal `json:"signals,omitempty"`
+}
+
+type EntityPolicyTestSignal struct {
+	ID       string `json:"id"`
+	Severity string `json:"severity,omitempty"`
+	Title    string `json:"title,omitempty"`
 }
 
 type Artifact struct {
@@ -235,9 +363,10 @@ type ArtifactsIndex struct {
 }
 
 type RequirementsIndex struct {
-	SchemaVersion int                  `json:"schema_version"`
-	Kind          string               `json:"kind"`
-	Rulesets      []RulesetRequirement `json:"rulesets"`
+	SchemaVersion     int                           `json:"schema_version"`
+	Kind              string                        `json:"kind"`
+	Rulesets          []RulesetRequirement          `json:"rulesets"`
+	EntityPolicyPacks []EntityPolicyPackRequirement `json:"entity_policy_packs,omitempty"`
 }
 
 type RuleInputRequirement struct {
@@ -284,6 +413,14 @@ type RuleRequirement struct {
 	Monitoring         RuleRequirementMonitoring `json:"monitoring"`
 }
 
+type EntityPolicyPackRequirement struct {
+	PolicyPackID   string             `json:"policy_pack_id"`
+	Version        string             `json:"version"`
+	Domain         EntityPolicyDomain `json:"domain"`
+	InputSchema    string             `json:"input_schema,omitempty"`
+	ExpressionRefs []string           `json:"expression_refs"`
+}
+
 type Compiled[T any] struct {
 	SourcePath string `json:"source_path"`
 	Hash       string `json:"hash"`
@@ -296,12 +433,13 @@ type DescriptorIndex struct {
 }
 
 type Descriptor struct {
-	SchemaVersion int                    `json:"schema_version"`
-	Kind          string                 `json:"kind"`
-	Version       Version                `json:"version"`
-	Rulesets      []Compiled[RulesetDoc] `json:"rulesets"`
-	Profiles      []Compiled[ProfileDoc] `json:"profiles"`
-	Index         DescriptorIndex        `json:"index"`
+	SchemaVersion     int                             `json:"schema_version"`
+	Kind              string                          `json:"kind"`
+	Version           Version                         `json:"version"`
+	Rulesets          []Compiled[RulesetDoc]          `json:"rulesets"`
+	EntityPolicyPacks []Compiled[EntityPolicyPackDoc] `json:"entity_policy_packs,omitempty"`
+	Profiles          []Compiled[ProfileDoc]          `json:"profiles"`
+	Index             DescriptorIndex                 `json:"index"`
 }
 
 func ParseDescriptor(b []byte) (Descriptor, error) {
