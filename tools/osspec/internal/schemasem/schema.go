@@ -24,6 +24,7 @@ type KindSchema struct {
 
 var KnownSchemas = []KindSchema{
 	{Kind: "opensspm.ruleset", Filename: "opensspm.ruleset.schema.yaml"},
+	{Kind: "opensspm.entity_policy_pack", Filename: "opensspm.entity_policy_pack.schema.yaml"},
 	{Kind: "opensspm.profile", Filename: "opensspm.profile.schema.yaml"},
 	{Kind: "opensspm.test_case", Filename: "opensspm.test_case.schema.yaml"},
 }

@@ -380,6 +380,34 @@ func TestValidateSemantic_CELPlanCheck(t *testing.T) {
 	}
 }
 
+func TestValidateSemantic_EntityPolicyExpressionIDs(t *testing.T) {
+	for _, id := range []string{"bad/rule", "level:high"} {
+		t.Run("reserved separator "+id, func(t *testing.T) {
+			doc := minimalEntityPolicyPackDoc()
+			doc.EntityPolicyPack.Spec.Rules[0].ID = id
+
+			errs := validateEntityPolicyPackDocInTest(doc)
+			if !containsErr(errs, "reserved expression separators") {
+				t.Fatalf("expected reserved separator error, got:\n%s", joinErrs(errs))
+			}
+		})
+	}
+
+	t.Run("duplicate generated level ref", func(t *testing.T) {
+		doc := minimalEntityPolicyPackDoc()
+		doc.EntityPolicyPack.Spec.Rules = nil
+		doc.EntityPolicyPack.Spec.Levels = []types.EntityPolicyLevelRule{
+			{Level: "high", When: "false"},
+			{Level: "high", When: "true"},
+		}
+
+		errs := validateEntityPolicyPackDocInTest(doc)
+		if !containsErr(errs, `duplicates generated expression ref "level:high"`) {
+			t.Fatalf("expected duplicate generated expression ref error, got:\n%s", joinErrs(errs))
+		}
+	})
+}
+
 func minimalRulesetDoc(key string, scope types.Scope) types.RulesetDoc {
 	return types.RulesetDoc{
 		SchemaVersion: 2,
@@ -395,6 +423,31 @@ func minimalRulesetDoc(key string, scope types.Scope) types.RulesetDoc {
 					Severity:     types.SeverityInfo,
 					Monitoring:   types.Monitoring{Status: types.MonitoringStatusManual},
 					RequiredData: []string{},
+				},
+			},
+		},
+	}
+}
+
+func minimalEntityPolicyPackDoc() types.EntityPolicyPackDoc {
+	return types.EntityPolicyPackDoc{
+		SchemaVersion: 2,
+		Kind:          "opensspm.entity_policy_pack",
+		EntityPolicyPack: types.EntityPolicyPack{
+			Metadata: types.EntityPolicyMetadata{
+				ID:      "builtin.test.risk",
+				Version: "1.0.0",
+				Domain:  types.EntityPolicyDomainCredential,
+			},
+			Spec: types.EntityPolicySpec{
+				Inputs: types.EntityPolicyInputs{Schema: "credential_risk_input.v1"},
+				Rules: []types.EntityPolicyRule{
+					{
+						ID:       "always",
+						Severity: "low",
+						When:     "true",
+						Title:    "Always",
+					},
 				},
 			},
 		},
@@ -426,6 +479,17 @@ func validateRulesetDocJSON(t *testing.T, doc string) []error {
 			Path string
 			Doc  types.RulesetDoc
 		}{{Path: "inline.json", Doc: rs}},
+	}
+	return ValidateSemantic(bundle)
+}
+
+func validateEntityPolicyPackDocInTest(doc types.EntityPolicyPackDoc) []error {
+	normalize.EntityPolicyPackDoc(&doc)
+	bundle := &Bundle{
+		EntityPolicyPacks: []struct {
+			Path string
+			Doc  types.EntityPolicyPackDoc
+		}{{Path: "inline.yaml", Doc: doc}},
 	}
 	return ValidateSemantic(bundle)
 }

@@ -174,6 +174,118 @@ type CheckPlanCompare struct {
 	Value any    `json:"value"`
 }
 
+type EntityPolicyPackDoc struct {
+	SchemaVersion    int              `json:"schema_version"`
+	Kind             string           `json:"kind"`
+	EntityPolicyPack EntityPolicyPack `json:"entity_policy_pack"`
+}
+
+type EntityPolicyPack struct {
+	Metadata EntityPolicyMetadata `json:"metadata"`
+	Spec     EntityPolicySpec     `json:"spec"`
+}
+
+type EntityPolicyMetadata struct {
+	ID      string             `json:"id"`
+	Version string             `json:"version"`
+	Domain  EntityPolicyDomain `json:"domain"`
+}
+
+type EntityPolicySpec struct {
+	Inputs      EntityPolicyInputs       `json:"inputs,omitempty"`
+	Constants   map[string][]string      `json:"constants,omitempty"`
+	Suggestions EntityPolicySuggestions  `json:"suggestions,omitempty"`
+	Scoring     EntityPolicyScoring      `json:"scoring,omitempty"`
+	Levels      []EntityPolicyLevelRule  `json:"levels,omitempty"`
+	Rules       []EntityPolicyRule       `json:"rules,omitempty"`
+	Aggregation EntityPolicyAggregation  `json:"aggregation,omitempty"`
+	ScopedRules []EntityPolicyScopedRule `json:"scoped_rules,omitempty"`
+}
+
+type EntityPolicyInputs struct {
+	Schema string `json:"schema,omitempty"`
+}
+
+type EntityPolicySuggestions struct {
+	BusinessCriticality []EntityPolicySuggestionRule `json:"business_criticality,omitempty"`
+	DataClassification  []EntityPolicySuggestionRule `json:"data_classification,omitempty"`
+}
+
+type EntityPolicySuggestionRule struct {
+	ID    string `json:"id"`
+	Level string `json:"level"`
+	When  string `json:"when"`
+}
+
+type EntityPolicyScoring struct {
+	Base  int                       `json:"base,omitempty"`
+	Max   int                       `json:"max,omitempty"`
+	Rules []EntityPolicyScoringRule `json:"rules,omitempty"`
+}
+
+type EntityPolicyScoringRule struct {
+	ID     string             `json:"id"`
+	Points int                `json:"points"`
+	When   string             `json:"when"`
+	Signal EntityPolicySignal `json:"signal,omitempty"`
+}
+
+type EntityPolicySignal struct {
+	Severity string `json:"severity,omitempty"`
+	Title    string `json:"title,omitempty"`
+	Evidence string `json:"evidence,omitempty"`
+}
+
+type EntityPolicyLevelRule struct {
+	Level string `json:"level"`
+	When  string `json:"when"`
+}
+
+type EntityPolicyRule struct {
+	ID         string `json:"id"`
+	Severity   string `json:"severity"`
+	ScoreDelta int    `json:"score_delta,omitempty"`
+	When       string `json:"when"`
+	Title      string `json:"title"`
+	Evidence   string `json:"evidence,omitempty"`
+}
+
+type EntityPolicyAggregation struct {
+	RiskLevel       EntityPolicyAggregationStrategy `json:"risk_level,omitempty"`
+	RiskReasonCount EntityPolicyAggregationStrategy `json:"risk_reason_count,omitempty"`
+}
+
+type EntityPolicyAggregationStrategy struct {
+	Strategy string `json:"strategy,omitempty"`
+	Default  string `json:"default,omitempty"`
+}
+
+type EntityPolicyScopedRule struct {
+	ID          string                        `json:"id"`
+	Scope       EntityPolicyScope             `json:"scope"`
+	Rules       []EntityPolicyRule            `json:"rules,omitempty"`
+	Suggestions EntityPolicyScopedSuggestions `json:"suggestions,omitempty"`
+}
+
+type EntityPolicyScope struct {
+	App EntityPolicyAppScope `json:"app"`
+}
+
+type EntityPolicyAppScope struct {
+	CanonicalKey  string   `json:"canonical_key,omitempty"`
+	PrimaryDomain string   `json:"primary_domain,omitempty"`
+	DomainMatches []string `json:"domain_matches,omitempty"`
+	VendorName    string   `json:"vendor_name,omitempty"`
+	SourceKind    string   `json:"source_kind,omitempty"`
+	SourceName    string   `json:"source_name,omitempty"`
+	Category      string   `json:"category,omitempty"`
+}
+
+type EntityPolicyScopedSuggestions struct {
+	BusinessCriticality string `json:"business_criticality,omitempty"`
+	DataClassification  string `json:"data_classification,omitempty"`
+}
+
 type ProfileDoc struct {
 	SchemaVersion int     `json:"schema_version"`
 	Kind          string  `json:"kind"`
@@ -193,11 +305,27 @@ type ProfileRulesetRef struct {
 }
 
 type TestCaseDoc struct {
-	SchemaVersion int              `json:"schema_version"`
-	Kind          string           `json:"kind"`
-	RuleKey       string           `json:"rule_key"`
-	Description   string           `json:"description,omitempty"`
-	Parameters    map[string]any   `json:"parameters,omitempty"`
-	Inputs        map[string][]any `json:"inputs,omitempty"`
-	Expect        string           `json:"expect"`
+	SchemaVersion int                     `json:"schema_version"`
+	Kind          string                  `json:"kind"`
+	ArtifactKind  string                  `json:"artifact_kind,omitempty"`
+	ArtifactKey   string                  `json:"artifact_key,omitempty"`
+	RuleKey       string                  `json:"rule_key,omitempty"`
+	Description   string                  `json:"description,omitempty"`
+	Parameters    map[string]any          `json:"parameters,omitempty"`
+	Inputs        map[string][]any        `json:"inputs,omitempty"`
+	EntityInput   map[string]any          `json:"entity_input,omitempty"`
+	Expect        string                  `json:"expect,omitempty"`
+	ExpectEntity  *EntityPolicyTestExpect `json:"expect_entity,omitempty"`
+}
+
+type EntityPolicyTestExpect struct {
+	RiskLevel string                   `json:"risk_level,omitempty"`
+	RiskScore *int                     `json:"risk_score,omitempty"`
+	Signals   []EntityPolicyTestSignal `json:"signals,omitempty"`
+}
+
+type EntityPolicyTestSignal struct {
+	ID       string `json:"id"`
+	Severity string `json:"severity,omitempty"`
+	Title    string `json:"title,omitempty"`
 }

@@ -1,0 +1,272 @@
+"$id": "opensspm.entity_policy_pack.schema.yaml"
+"$schema": "http://json-schema.org/draft-07/schema#"
+"additionalProperties": false
+"description": "Entity policy packs evaluate one entity at a time and produce risk levels, scores, suggestions, and signals."
+"definitions":
+  "aggregation":
+    "additionalProperties": false
+    "properties":
+      "risk_level":
+        "$ref": "#/definitions/aggregation_strategy"
+      "risk_reason_count":
+        "$ref": "#/definitions/aggregation_strategy"
+    "type": "object"
+  "aggregation_strategy":
+    "additionalProperties": false
+    "properties":
+      "default":
+        "type": "string"
+      "strategy":
+        "type": "string"
+    "type": "object"
+  "app_scope":
+    "additionalProperties": false
+    "properties":
+      "canonical_key":
+        "type": "string"
+      "category":
+        "type": "string"
+      "domain_matches":
+        "items":
+          "type": "string"
+        "type": "array"
+      "primary_domain":
+        "type": "string"
+      "source_kind":
+        "type": "string"
+      "source_name":
+        "type": "string"
+      "vendor_name":
+        "type": "string"
+    "type": "object"
+  "constants":
+    "additionalProperties":
+      "items":
+        "type": "string"
+      "type": "array"
+    "type": "object"
+  "entity_policy_pack":
+    "additionalProperties": false
+    "properties":
+      "metadata":
+        "$ref": "#/definitions/metadata"
+      "spec":
+        "$ref": "#/definitions/spec"
+    "required":
+      - "metadata"
+      - "spec"
+    "type": "object"
+  "inputs":
+    "additionalProperties": false
+    "properties":
+      "schema":
+        "minLength": 1
+        "type": "string"
+    "type": "object"
+  "level_rule":
+    "additionalProperties": false
+    "properties":
+      "level":
+        "minLength": 1
+        "type": "string"
+      "when":
+        "minLength": 1
+        "type": "string"
+    "required":
+      - "level"
+      - "when"
+    "type": "object"
+  "metadata":
+    "additionalProperties": false
+    "properties":
+      "domain":
+        "enum":
+          - "credential"
+          - "identity"
+          - "saas"
+        "type": "string"
+      "id":
+        "minLength": 1
+        "pattern": "^[^:/]+$"
+        "type": "string"
+      "version":
+        "minLength": 1
+        "type": "string"
+    "required":
+      - "id"
+      - "version"
+      - "domain"
+    "type": "object"
+  "rule":
+    "additionalProperties": false
+    "properties":
+      "evidence":
+        "type": "string"
+      "id":
+        "minLength": 1
+        "pattern": "^[^:/]+$"
+        "type": "string"
+      "score_delta":
+        "type": "integer"
+      "severity":
+        "minLength": 1
+        "type": "string"
+      "title":
+        "minLength": 1
+        "type": "string"
+      "when":
+        "minLength": 1
+        "type": "string"
+    "required":
+      - "id"
+      - "severity"
+      - "when"
+      - "title"
+    "type": "object"
+  "scope":
+    "additionalProperties": false
+    "properties":
+      "app":
+        "$ref": "#/definitions/app_scope"
+    "required":
+      - "app"
+    "type": "object"
+  "scoped_rule":
+    "additionalProperties": false
+    "properties":
+      "id":
+        "minLength": 1
+        "pattern": "^[^:/]+$"
+        "type": "string"
+      "rules":
+        "items":
+          "$ref": "#/definitions/rule"
+        "type": "array"
+      "scope":
+        "$ref": "#/definitions/scope"
+      "suggestions":
+        "$ref": "#/definitions/scoped_suggestions"
+    "required":
+      - "id"
+      - "scope"
+    "type": "object"
+  "scoped_suggestions":
+    "additionalProperties": false
+    "properties":
+      "business_criticality":
+        "type": "string"
+      "data_classification":
+        "type": "string"
+    "type": "object"
+  "scoring":
+    "additionalProperties": false
+    "properties":
+      "base":
+        "type": "integer"
+      "max":
+        "type": "integer"
+      "rules":
+        "items":
+          "$ref": "#/definitions/scoring_rule"
+        "type": "array"
+    "type": "object"
+  "scoring_rule":
+    "additionalProperties": false
+    "properties":
+      "id":
+        "minLength": 1
+        "pattern": "^[^:/]+$"
+        "type": "string"
+      "points":
+        "type": "integer"
+      "signal":
+        "$ref": "#/definitions/signal"
+      "when":
+        "minLength": 1
+        "type": "string"
+    "required":
+      - "id"
+      - "points"
+      - "when"
+    "type": "object"
+  "signal":
+    "additionalProperties": false
+    "properties":
+      "evidence":
+        "type": "string"
+      "severity":
+        "type": "string"
+      "title":
+        "type": "string"
+    "type": "object"
+  "spec":
+    "additionalProperties": false
+    "properties":
+      "aggregation":
+        "$ref": "#/definitions/aggregation"
+      "constants":
+        "$ref": "#/definitions/constants"
+      "inputs":
+        "$ref": "#/definitions/inputs"
+      "levels":
+        "items":
+          "$ref": "#/definitions/level_rule"
+        "type": "array"
+      "rules":
+        "items":
+          "$ref": "#/definitions/rule"
+        "type": "array"
+      "scoped_rules":
+        "items":
+          "$ref": "#/definitions/scoped_rule"
+        "type": "array"
+      "scoring":
+        "$ref": "#/definitions/scoring"
+      "suggestions":
+        "$ref": "#/definitions/suggestions"
+    "type": "object"
+  "suggestion_rule":
+    "additionalProperties": false
+    "properties":
+      "id":
+        "minLength": 1
+        "pattern": "^[^:/]+$"
+        "type": "string"
+      "level":
+        "minLength": 1
+        "type": "string"
+      "when":
+        "minLength": 1
+        "type": "string"
+    "required":
+      - "id"
+      - "level"
+      - "when"
+    "type": "object"
+  "suggestions":
+    "additionalProperties": false
+    "properties":
+      "business_criticality":
+        "items":
+          "$ref": "#/definitions/suggestion_rule"
+        "type": "array"
+      "data_classification":
+        "items":
+          "$ref": "#/definitions/suggestion_rule"
+        "type": "array"
+    "type": "object"
+"properties":
+  "entity_policy_pack":
+    "$ref": "#/definitions/entity_policy_pack"
+  "kind":
+    "const": "opensspm.entity_policy_pack"
+    "type": "string"
+  "schema_version":
+    "const": 2
+    "type": "integer"
+"required":
+  - "schema_version"
+  - "kind"
+  - "entity_policy_pack"
+"title": "Open SSPM Entity Policy Pack (v2)"
+"type": "object"

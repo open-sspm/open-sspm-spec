@@ -1,0 +1,109 @@
+"entity_policy_pack":
+  "metadata":
+    "domain": "saas"
+    "id": "builtin.saas.risk"
+    "version": "1.0.0"
+  "spec":
+    "aggregation":
+      "risk_level": {}
+      "risk_reason_count": {}
+    "constants":
+      "high_business_criticalities":
+        - "high"
+        - "critical"
+      "sensitive_data_classifications":
+        - "confidential"
+        - "restricted"
+    "inputs":
+      "schema": "saas_app_risk_input.v1"
+    "levels":
+      -
+        "level": "critical"
+        "when": "score \u003e= 80"
+      -
+        "level": "high"
+        "when": "score \u003e= 60"
+      -
+        "level": "medium"
+        "when": "score \u003e= 30"
+      -
+        "level": "low"
+        "when": "true"
+    "scoring":
+      "max": 100
+      "rules":
+        -
+          "id": "unmanaged_app"
+          "points": 45
+          "signal":
+            "severity": "high"
+            "title": "App is not managed by a fresh connector binding"
+          "when": "managed_state != \"managed\""
+        -
+          "id": "privileged_scopes"
+          "points": 20
+          "signal":
+            "severity": "high"
+            "title": "App has privileged OAuth scopes"
+          "when": "has_privileged_scope"
+        -
+          "id": "missing_owner"
+          "points": 15
+          "signal":
+            "severity": "high"
+            "title": "App has no accountable owner"
+          "when": "owner_identity_id == 0"
+        -
+          "id": "high_actor_count"
+          "points": 10
+          "signal":
+            "severity": "medium"
+            "title": "App has broad recent usage"
+          "when": "actors_30d \u003e= 50"
+        -
+          "id": "unmanaged_high_business_app"
+          "points": 10
+          "signal":
+            "severity": "high"
+            "title": "Unmanaged app appears business critical"
+          "when": "managed_state != \"managed\" \u0026\u0026 effective_business_criticality in high_business_criticalities"
+        -
+          "id": "unmanaged_sensitive_data_app"
+          "points": 5
+          "signal":
+            "severity": "high"
+            "title": "Unmanaged app may access sensitive data"
+          "when": "managed_state != \"managed\" \u0026\u0026 effective_data_classification in sensitive_data_classifications"
+    "suggestions":
+      "business_criticality":
+        -
+          "id": "high_usage_critical"
+          "level": "critical"
+          "when": "actors_30d \u003e= 200"
+        -
+          "id": "high_usage_or_privileged"
+          "level": "high"
+          "when": "actors_30d \u003e= 50 || has_privileged_scope"
+        -
+          "id": "moderate_usage"
+          "level": "medium"
+          "when": "actors_30d \u003e= 10"
+        -
+          "id": "default_business_low"
+          "level": "low"
+          "when": "true"
+      "data_classification":
+        -
+          "id": "privileged_scopes_restricted"
+          "level": "restricted"
+          "when": "has_privileged_scope"
+        -
+          "id": "confidential_scopes_confidential"
+          "level": "confidential"
+          "when": "has_confidential_scope"
+        -
+          "id": "default_data_internal"
+          "level": "internal"
+          "when": "true"
+"kind": "opensspm.entity_policy_pack"
+"schema_version": 2

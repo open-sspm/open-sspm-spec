@@ -107,11 +107,21 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 				Path string
 				Doc  types.ProfileDoc
 			}{Path: f.RelPath, Doc: doc})
+		case "opensspm.entity_policy_pack":
+			var doc types.EntityPolicyPackDoc
+			if err := yamlstrict.DecodeSingleStrictYAML(f.Bytes, &doc, true); err != nil {
+				return nil, fmt.Errorf("%s: parse entity policy pack: %w", f.RelPath, err)
+			}
+			normalize.EntityPolicyPackDoc(&doc)
+			bundle.EntityPolicyPacks = append(bundle.EntityPolicyPacks, struct {
+				Path string
+				Doc  types.EntityPolicyPackDoc
+			}{Path: f.RelPath, Doc: doc})
 		case "opensspm.test_case":
 			// Test cases are validated by schema but not compiled into the descriptor.
 			continue
 		default:
-			return nil, fmt.Errorf("%s: unsupported kind %q (compliance-only repo)", f.RelPath, hdr.Kind)
+			return nil, fmt.Errorf("%s: unsupported kind %q", f.RelPath, hdr.Kind)
 		}
 	}
 
@@ -130,7 +140,7 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 
 	desc := types.Descriptor{
 		SchemaVersion: 2,
-		Kind:          "opensspm.compliance_descriptor",
+		Kind:          "opensspm.engine_descriptor",
 		Version:       version,
 		Index: types.DescriptorIndex{
 			Requirements: reqIndex,
@@ -145,6 +155,14 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 		}
 		desc.Rulesets = append(desc.Rulesets, types.Compiled[types.RulesetDoc]{SourcePath: rs.Path, Hash: h, Object: rs.Doc})
 		artifactsIndex.Artifacts = append(artifactsIndex.Artifacts, types.Artifact{Kind: rs.Doc.Kind, Key: rs.Doc.Ruleset.Key, SourcePath: rs.Path, Hash: h})
+	}
+	for _, pack := range bundle.EntityPolicyPacks {
+		h, _, err := hash.HashObjectCanonicalYAML(pack.Doc)
+		if err != nil {
+			return nil, fmt.Errorf("%s: hash: %w", pack.Path, err)
+		}
+		desc.EntityPolicyPacks = append(desc.EntityPolicyPacks, types.Compiled[types.EntityPolicyPackDoc]{SourcePath: pack.Path, Hash: h, Object: pack.Doc})
+		artifactsIndex.Artifacts = append(artifactsIndex.Artifacts, types.Artifact{Kind: pack.Doc.Kind, Key: pack.Doc.EntityPolicyPack.Metadata.ID, SourcePath: pack.Path, Hash: h})
 	}
 	for _, p := range bundle.Profiles {
 		h, _, err := hash.HashObjectCanonicalYAML(p.Doc)

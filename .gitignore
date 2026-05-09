@@ -37,3 +37,6 @@ tools/osspec/cmd/osspec-gen-go/osspec-gen-go
 # Playwright CLI local artifacts
 .playwright-cli/
 output/playwright/
+
+# Others
+plans/

@@ -1,5 +1,25 @@
 "artifacts":
   -
+    "hash": "22510e81386abdb982b0d716f3f4e5385a652ebf02378c12c86e9c1082913b72"
+    "key": "builtin.credential.risk"
+    "kind": "opensspm.entity_policy_pack"
+    "source_path": "specs/policies/credential.v2.yaml"
+  -
+    "hash": "752450947eee86da6f90724093edf40fb75aae904125e89efd0e317c774cbe48"
+    "key": "builtin.identity.risk"
+    "kind": "opensspm.entity_policy_pack"
+    "source_path": "specs/policies/identity.v2.yaml"
+  -
+    "hash": "68c4ff2dff67d5490b3aa716d6331a71a593f09c6209fc975ff974484c99a63b"
+    "key": "builtin.saas.app_overrides"
+    "kind": "opensspm.entity_policy_pack"
+    "source_path": "specs/policies/saas_apps.v2.yaml"
+  -
+    "hash": "3cf6cc264105c024483264d17cf9a24577c1d4767179e042b3ebd345d27cd60b"
+    "key": "builtin.saas.risk"
+    "kind": "opensspm.entity_policy_pack"
+    "source_path": "specs/policies/saas.v2.yaml"
+  -
     "hash": "fb00758c21ea49275aa61358e74012d2f68ed930f0dd1dc7643cedd8a6be9ffd"
     "key": "cis.okta.idaas_stig.profile.v2"
     "kind": "opensspm.profile"
