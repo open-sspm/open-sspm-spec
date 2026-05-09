@@ -1,6 +1,7 @@
 package verify
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
@@ -186,5 +187,16 @@ func TestEvaluateEntityPolicyParsesTimestampInputs(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("evaluateEntityPolicyPack() error = nil, want invalid timestamp error")
+	}
+}
+
+func TestNormalizeEntityPolicyIntRejectsUintOverflow(t *testing.T) {
+	if strconv.IntSize < 64 {
+		t.Skip("uint cannot exceed int64 on this platform")
+	}
+
+	_, err := normalizeEntityPolicyInt("actors_30d", uint(^uint(0)))
+	if err == nil {
+		t.Fatal("normalizeEntityPolicyInt() error = nil, want uint overflow error")
 	}
 }

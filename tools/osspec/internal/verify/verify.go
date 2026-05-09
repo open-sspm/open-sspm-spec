@@ -503,6 +503,8 @@ func normalizeEntityPolicySourceKind(value string, domain types.EntityPolicyDoma
 }
 
 func normalizeEntityPolicyInt(key string, value any) (int64, error) {
+	const maxInt64 = uint64(1<<63 - 1)
+
 	switch v := value.(type) {
 	case int:
 		return int64(v), nil
@@ -515,6 +517,9 @@ func normalizeEntityPolicyInt(key string, value any) (int64, error) {
 	case int64:
 		return v, nil
 	case uint:
+		if uint64(v) > maxInt64 {
+			return 0, fmt.Errorf("entity_input.%s must fit in int64, got %d", key, v)
+		}
 		return int64(v), nil
 	case uint8:
 		return int64(v), nil
@@ -523,7 +528,7 @@ func normalizeEntityPolicyInt(key string, value any) (int64, error) {
 	case uint32:
 		return int64(v), nil
 	case uint64:
-		if v > uint64(^uint64(0)>>1) {
+		if v > maxInt64 {
 			return 0, fmt.Errorf("entity_input.%s must fit in int64, got %d", key, v)
 		}
 		return int64(v), nil
