@@ -59,10 +59,16 @@
   -
     "datasets":
       -
+        "dataset": "okta:apps/admin-console-settings"
+        "version": 1
+      -
         "dataset": "okta:authenticators"
         "version": 1
       -
         "dataset": "okta:log-streams"
+        "version": 1
+      -
+        "dataset": "okta:policies/app-signin"
         "version": 1
       -
         "dataset": "okta:policies/password"
@@ -71,8 +77,10 @@
         "dataset": "okta:policies/sign-on"
         "version": 1
     "datasets_referenced":
+      - "okta:apps/admin-console-settings"
       - "okta:authenticators"
       - "okta:log-streams"
+      - "okta:policies/app-signin"
       - "okta:policies/password"
       - "okta:policies/sign-on"
     "engines":
@@ -98,12 +106,17 @@
         "params_referenced": []
         "rule_key": "OKTA-APP-000020"
       -
-        "datasets": []
-        "datasets_referenced": []
+        "datasets":
+          -
+            "dataset": "okta:apps/admin-console-settings"
+            "version": 1
+        "datasets_referenced":
+          - "okta:apps/admin-console-settings"
+        "engine": "cel_plan"
         "inputs": []
-        "is_manual": true
+        "is_manual": false
         "monitoring":
-          "status": "manual"
+          "status": "automated"
         "params_referenced": []
         "rule_key": "OKTA-APP-000025"
       -
@@ -130,21 +143,35 @@
         "params_referenced": []
         "rule_key": "OKTA-APP-000170"
       -
-        "datasets": []
-        "datasets_referenced": []
+        "datasets":
+          -
+            "dataset": "okta:policies/app-signin"
+            "version": 1
+        "datasets_referenced":
+          - "okta:policies/app-signin"
+        "engine": "cel"
+        "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).all(r, field(r, \"requires_phishing_resistant\") == true)"
+        "expression_sha256": "83961eab587bb149c60b1bd41bdaa36313f7f0f91436463f528104e8f5da3bcb"
         "inputs": []
-        "is_manual": true
+        "is_manual": false
         "monitoring":
-          "status": "manual"
+          "status": "automated"
         "params_referenced": []
         "rule_key": "OKTA-APP-000180"
       -
-        "datasets": []
-        "datasets_referenced": []
+        "datasets":
+          -
+            "dataset": "okta:policies/app-signin"
+            "version": 1
+        "datasets_referenced":
+          - "okta:policies/app-signin"
+        "engine": "cel"
+        "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).all(r, field(r, \"requires_phishing_resistant\") == true)"
+        "expression_sha256": "8f4e4ed6bdb269bc80529576f382f8f7caa2e36d02a4dd73751bd57ba33b090e"
         "inputs": []
-        "is_manual": true
+        "is_manual": false
         "monitoring":
-          "status": "manual"
+          "status": "automated"
         "params_referenced": []
         "rule_key": "OKTA-APP-000190"
       -
@@ -157,21 +184,35 @@
         "params_referenced": []
         "rule_key": "OKTA-APP-000200"
       -
-        "datasets": []
-        "datasets_referenced": []
+        "datasets":
+          -
+            "dataset": "okta:policies/app-signin"
+            "version": 1
+        "datasets_referenced":
+          - "okta:policies/app-signin"
+        "engine": "cel"
+        "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).all(r, field(r, \"requires_mfa\") == true)"
+        "expression_sha256": "faf814923ec7e7b73b77753898a87be131142d2224bc728897cd5a2057c80901"
         "inputs": []
-        "is_manual": true
+        "is_manual": false
         "monitoring":
-          "status": "manual"
+          "status": "automated"
         "params_referenced": []
         "rule_key": "OKTA-APP-000560"
       -
-        "datasets": []
-        "datasets_referenced": []
+        "datasets":
+          -
+            "dataset": "okta:policies/app-signin"
+            "version": 1
+        "datasets_referenced":
+          - "okta:policies/app-signin"
+        "engine": "cel"
+        "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).all(r, field(r, \"requires_mfa\") == true)"
+        "expression_sha256": "7e8dc86bdd613acabc3f2a60ba164f40d42f669b992bcb8c007f0e0a556de3f9"
         "inputs": []
-        "is_manual": true
+        "is_manual": false
         "monitoring":
-          "status": "manual"
+          "status": "automated"
         "params_referenced": []
         "rule_key": "OKTA-APP-000570"
       -
@@ -321,12 +362,19 @@
         "params_referenced": []
         "rule_key": "OKTA-APP-001670"
       -
-        "datasets": []
-        "datasets_referenced": []
+        "datasets":
+          -
+            "dataset": "okta:authenticators"
+            "version": 1
+        "datasets_referenced":
+          - "okta:authenticators"
+        "engine": "cel"
+        "expression": "rows(\"okta:authenticators\").filter(r, field(r, \"name\") == \"Okta Verify\").size() \u003e= 1 \u0026\u0026 rows(\"okta:authenticators\").filter(r, field(r, \"name\") == \"Okta Verify\").all(r, field(r, \"okta_verify_compliance_fips\") == \"REQUIRED\")"
+        "expression_sha256": "f69e22efdb3f864dcb4ef4659616b7b4cd09d9b75c87638de0d659cf852ba27f"
         "inputs": []
-        "is_manual": true
+        "is_manual": false
         "monitoring":
-          "status": "manual"
+          "status": "automated"
         "params_referenced": []
         "rule_key": "OKTA-APP-001700"
       -

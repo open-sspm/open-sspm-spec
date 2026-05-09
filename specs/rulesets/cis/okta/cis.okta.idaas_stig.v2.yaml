@@ -11,9 +11,13 @@ ruleset:
       url: https://www.cisecurity.org
 
   data_contracts:
+    - dataset: okta:apps/admin-console-settings
+      version: 1
     - dataset: okta:authenticators
       version: 1
     - dataset: okta:log-streams
+      version: 1
+    - dataset: okta:policies/app-signin
       version: 1
     - dataset: okta:policies/password
       version: 1
@@ -77,6 +81,16 @@ ruleset:
           path: name
           value: Smart Card Authenticator
 
+    okta_verify_authenticator:
+      dataset: okta:authenticators
+      where:
+        - op: eq
+          path: name
+          value: Okta Verify
+
+    admin_console_app_settings:
+      dataset: okta:apps/admin-console-settings
+
   rules:
     # -------------------------
     # CAT II (medium)
@@ -107,8 +121,20 @@ ruleset:
       severity: medium
       summary: Okta Admin Console application session idle timeout is 15 minutes.
       monitoring:
-        status: manual
-      required_data: []
+        status: automated
+      required_data:
+        - okta:apps/admin-console-settings
+      check:
+        type: dataset.field_compare
+        selector: admin_console_app_settings
+        assert:
+          op: eq
+          path: session_idle_timeout_minutes
+          value: 15
+        expect:
+          match: all
+          min_selected: 1
+          on_empty: unknown
 
     - key: OKTA-APP-000090
       title: OKTA-APP-000090
@@ -143,16 +169,28 @@ ruleset:
       severity: medium
       summary: Okta Dashboard authentication policy requires phishing-resistant authenticators.
       monitoring:
-        status: manual
-      required_data: []
+        status: automated
+      required_data:
+        - okta:policies/app-signin
+      check:
+        engine: cel
+        expression: |
+          rows("okta:policies/app-signin").filter(r, "Okta Dashboard" in field(r, "app_labels")).size() >= 1 &&
+          rows("okta:policies/app-signin").filter(r, "Okta Dashboard" in field(r, "app_labels")).all(r, field(r, "requires_phishing_resistant") == true)
 
     - key: OKTA-APP-000190
       title: OKTA-APP-000190
       severity: medium
       summary: Okta Admin Console authentication policy requires phishing-resistant authenticators.
       monitoring:
-        status: manual
-      required_data: []
+        status: automated
+      required_data:
+        - okta:policies/app-signin
+      check:
+        engine: cel
+        expression: |
+          rows("okta:policies/app-signin").filter(r, "Okta Admin Console" in field(r, "app_labels")).size() >= 1 &&
+          rows("okta:policies/app-signin").filter(r, "Okta Admin Console" in field(r, "app_labels")).all(r, field(r, "requires_phishing_resistant") == true)
 
     - key: OKTA-APP-000200
       title: OKTA-APP-000200
@@ -168,16 +206,28 @@ ruleset:
       severity: high
       summary: Okta Admin Console requires multi-factor authentication.
       monitoring:
-        status: manual
-      required_data: []
+        status: automated
+      required_data:
+        - okta:policies/app-signin
+      check:
+        engine: cel
+        expression: |
+          rows("okta:policies/app-signin").filter(r, "Okta Admin Console" in field(r, "app_labels")).size() >= 1 &&
+          rows("okta:policies/app-signin").filter(r, "Okta Admin Console" in field(r, "app_labels")).all(r, field(r, "requires_mfa") == true)
 
     - key: OKTA-APP-000570
       title: OKTA-APP-000570
       severity: high
       summary: Okta Dashboard requires multi-factor authentication.
       monitoring:
-        status: manual
-      required_data: []
+        status: automated
+      required_data:
+        - okta:policies/app-signin
+      check:
+        engine: cel
+        expression: |
+          rows("okta:policies/app-signin").filter(r, "Okta Dashboard" in field(r, "app_labels")).size() >= 1 &&
+          rows("okta:policies/app-signin").filter(r, "Okta Dashboard" in field(r, "app_labels")).all(r, field(r, "requires_mfa") == true)
 
     # Back to CAT II (medium)
     - key: OKTA-APP-000650
@@ -388,8 +438,20 @@ ruleset:
       severity: medium
       summary: Okta Verify is configured with FIPS-compliant device enforcement (org-defined).
       monitoring:
-        status: manual
-      required_data: []
+        status: automated
+      required_data:
+        - okta:authenticators
+      check:
+        type: dataset.field_compare
+        selector: okta_verify_authenticator
+        assert:
+          op: eq
+          path: okta_verify_compliance_fips
+          value: REQUIRED
+        expect:
+          match: all
+          min_selected: 1
+          on_empty: fail
 
     - key: OKTA-APP-001710
       title: OKTA-APP-001710

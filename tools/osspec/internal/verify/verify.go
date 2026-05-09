@@ -290,7 +290,7 @@ func evaluateEntityPolicyLevelRules(env *cel.Env, packID string, rules []types.E
 }
 
 func entityPolicyActivation(input map[string]any, constants map[string][]string, score int, effectiveBusinessCriticality, effectiveDataClassification string) map[string]any {
-	activation := make(map[string]any, len(input)+len(constants)+3)
+	activation := make(map[string]any)
 	for k, v := range input {
 		activation[k] = v
 	}

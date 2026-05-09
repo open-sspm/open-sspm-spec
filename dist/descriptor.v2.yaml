@@ -318,7 +318,7 @@
         "kind": "opensspm.profile"
         "source_path": "specs/profiles/cis.okta.idaas_stig.profile.v2.yaml"
       -
-        "hash": "496a8af5f665ab3d68c4bda975b40299c84ea3a34540c585e72f22a2ec448fc6"
+        "hash": "db164af6acef9b5fcb04f263c4e6469fe7537cb55f85c22e4fdf2d022c00a20b"
         "key": "cis.okta.idaas_stig.v2"
         "kind": "opensspm.ruleset"
         "source_path": "specs/rulesets/cis/okta/cis.okta.idaas_stig.v2.yaml"
@@ -391,10 +391,16 @@
       -
         "datasets":
           -
+            "dataset": "okta:apps/admin-console-settings"
+            "version": 1
+          -
             "dataset": "okta:authenticators"
             "version": 1
           -
             "dataset": "okta:log-streams"
+            "version": 1
+          -
+            "dataset": "okta:policies/app-signin"
             "version": 1
           -
             "dataset": "okta:policies/password"
@@ -403,8 +409,10 @@
             "dataset": "okta:policies/sign-on"
             "version": 1
         "datasets_referenced":
+          - "okta:apps/admin-console-settings"
           - "okta:authenticators"
           - "okta:log-streams"
+          - "okta:policies/app-signin"
           - "okta:policies/password"
           - "okta:policies/sign-on"
         "engines":
@@ -430,12 +438,17 @@
             "params_referenced": []
             "rule_key": "OKTA-APP-000020"
           -
-            "datasets": []
-            "datasets_referenced": []
+            "datasets":
+              -
+                "dataset": "okta:apps/admin-console-settings"
+                "version": 1
+            "datasets_referenced":
+              - "okta:apps/admin-console-settings"
+            "engine": "cel_plan"
             "inputs": []
-            "is_manual": true
+            "is_manual": false
             "monitoring":
-              "status": "manual"
+              "status": "automated"
             "params_referenced": []
             "rule_key": "OKTA-APP-000025"
           -
@@ -462,21 +475,35 @@
             "params_referenced": []
             "rule_key": "OKTA-APP-000170"
           -
-            "datasets": []
-            "datasets_referenced": []
+            "datasets":
+              -
+                "dataset": "okta:policies/app-signin"
+                "version": 1
+            "datasets_referenced":
+              - "okta:policies/app-signin"
+            "engine": "cel"
+            "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).all(r, field(r, \"requires_phishing_resistant\") == true)"
+            "expression_sha256": "83961eab587bb149c60b1bd41bdaa36313f7f0f91436463f528104e8f5da3bcb"
             "inputs": []
-            "is_manual": true
+            "is_manual": false
             "monitoring":
-              "status": "manual"
+              "status": "automated"
             "params_referenced": []
             "rule_key": "OKTA-APP-000180"
           -
-            "datasets": []
-            "datasets_referenced": []
+            "datasets":
+              -
+                "dataset": "okta:policies/app-signin"
+                "version": 1
+            "datasets_referenced":
+              - "okta:policies/app-signin"
+            "engine": "cel"
+            "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).all(r, field(r, \"requires_phishing_resistant\") == true)"
+            "expression_sha256": "8f4e4ed6bdb269bc80529576f382f8f7caa2e36d02a4dd73751bd57ba33b090e"
             "inputs": []
-            "is_manual": true
+            "is_manual": false
             "monitoring":
-              "status": "manual"
+              "status": "automated"
             "params_referenced": []
             "rule_key": "OKTA-APP-000190"
           -
@@ -489,21 +516,35 @@
             "params_referenced": []
             "rule_key": "OKTA-APP-000200"
           -
-            "datasets": []
-            "datasets_referenced": []
+            "datasets":
+              -
+                "dataset": "okta:policies/app-signin"
+                "version": 1
+            "datasets_referenced":
+              - "okta:policies/app-signin"
+            "engine": "cel"
+            "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).all(r, field(r, \"requires_mfa\") == true)"
+            "expression_sha256": "faf814923ec7e7b73b77753898a87be131142d2224bc728897cd5a2057c80901"
             "inputs": []
-            "is_manual": true
+            "is_manual": false
             "monitoring":
-              "status": "manual"
+              "status": "automated"
             "params_referenced": []
             "rule_key": "OKTA-APP-000560"
           -
-            "datasets": []
-            "datasets_referenced": []
+            "datasets":
+              -
+                "dataset": "okta:policies/app-signin"
+                "version": 1
+            "datasets_referenced":
+              - "okta:policies/app-signin"
+            "engine": "cel"
+            "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).all(r, field(r, \"requires_mfa\") == true)"
+            "expression_sha256": "7e8dc86bdd613acabc3f2a60ba164f40d42f669b992bcb8c007f0e0a556de3f9"
             "inputs": []
-            "is_manual": true
+            "is_manual": false
             "monitoring":
-              "status": "manual"
+              "status": "automated"
             "params_referenced": []
             "rule_key": "OKTA-APP-000570"
           -
@@ -653,12 +694,19 @@
             "params_referenced": []
             "rule_key": "OKTA-APP-001670"
           -
-            "datasets": []
-            "datasets_referenced": []
+            "datasets":
+              -
+                "dataset": "okta:authenticators"
+                "version": 1
+            "datasets_referenced":
+              - "okta:authenticators"
+            "engine": "cel"
+            "expression": "rows(\"okta:authenticators\").filter(r, field(r, \"name\") == \"Okta Verify\").size() \u003e= 1 \u0026\u0026 rows(\"okta:authenticators\").filter(r, field(r, \"name\") == \"Okta Verify\").all(r, field(r, \"okta_verify_compliance_fips\") == \"REQUIRED\")"
+            "expression_sha256": "f69e22efdb3f864dcb4ef4659616b7b4cd09d9b75c87638de0d659cf852ba27f"
             "inputs": []
-            "is_manual": true
+            "is_manual": false
             "monitoring":
-              "status": "manual"
+              "status": "automated"
             "params_referenced": []
             "rule_key": "OKTA-APP-001700"
           -
@@ -738,16 +786,22 @@
     "source_path": "specs/profiles/cis.okta.idaas_stig.profile.v2.yaml"
 "rulesets":
   -
-    "hash": "496a8af5f665ab3d68c4bda975b40299c84ea3a34540c585e72f22a2ec448fc6"
+    "hash": "db164af6acef9b5fcb04f263c4e6469fe7537cb55f85c22e4fdf2d022c00a20b"
     "object":
       "kind": "opensspm.ruleset"
       "ruleset":
         "data_contracts":
           -
+            "dataset": "okta:apps/admin-console-settings"
+            "version": 1
+          -
             "dataset": "okta:authenticators"
             "version": 1
           -
             "dataset": "okta:log-streams"
+            "version": 1
+          -
+            "dataset": "okta:policies/app-signin"
             "version": 1
           -
             "dataset": "okta:policies/password"
@@ -780,10 +834,25 @@
             "summary": "Global Session Policy idle timeout is 15 minutes for the Priority 1 rule in Default Policy."
             "title": "OKTA-APP-000020"
           -
+            "check":
+              "engine": "cel_plan"
+              "plan":
+                "assert_expression": "field(r, \"session_idle_timeout_minutes\") == 15"
+                "dataset": "okta:apps/admin-console-settings"
+                "expect":
+                  "match": "all"
+                  "min_selected": 1
+                  "on_empty": "unknown"
+                "on_missing_dataset": "unknown"
+                "on_permission_denied": "unknown"
+                "on_sync_error": "error"
+                "type": "dataset.field_compare"
+                "where_expression": "true"
             "key": "OKTA-APP-000025"
             "monitoring":
-              "status": "manual"
-            "required_data": []
+              "status": "automated"
+            "required_data":
+              - "okta:apps/admin-console-settings"
             "severity": "medium"
             "summary": "Okta Admin Console application session idle timeout is 15 minutes."
             "title": "OKTA-APP-000025"
@@ -819,18 +888,26 @@
             "summary": "Password policies lock out after 3 unsuccessful attempts."
             "title": "OKTA-APP-000170"
           -
+            "check":
+              "engine": "cel"
+              "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).all(r, field(r, \"requires_phishing_resistant\") == true)"
             "key": "OKTA-APP-000180"
             "monitoring":
-              "status": "manual"
-            "required_data": []
+              "status": "automated"
+            "required_data":
+              - "okta:policies/app-signin"
             "severity": "medium"
             "summary": "Okta Dashboard authentication policy requires phishing-resistant authenticators."
             "title": "OKTA-APP-000180"
           -
+            "check":
+              "engine": "cel"
+              "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).all(r, field(r, \"requires_phishing_resistant\") == true)"
             "key": "OKTA-APP-000190"
             "monitoring":
-              "status": "manual"
-            "required_data": []
+              "status": "automated"
+            "required_data":
+              - "okta:policies/app-signin"
             "severity": "medium"
             "summary": "Okta Admin Console authentication policy requires phishing-resistant authenticators."
             "title": "OKTA-APP-000190"
@@ -843,18 +920,26 @@
             "summary": "DoD notice and consent banner is displayed before login."
             "title": "OKTA-APP-000200"
           -
+            "check":
+              "engine": "cel"
+              "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).all(r, field(r, \"requires_mfa\") == true)"
             "key": "OKTA-APP-000560"
             "monitoring":
-              "status": "manual"
-            "required_data": []
+              "status": "automated"
+            "required_data":
+              - "okta:policies/app-signin"
             "severity": "high"
             "summary": "Okta Admin Console requires multi-factor authentication."
             "title": "OKTA-APP-000560"
           -
+            "check":
+              "engine": "cel"
+              "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).all(r, field(r, \"requires_mfa\") == true)"
             "key": "OKTA-APP-000570"
             "monitoring":
-              "status": "manual"
-            "required_data": []
+              "status": "automated"
+            "required_data":
+              - "okta:policies/app-signin"
             "severity": "high"
             "summary": "Okta Dashboard requires multi-factor authentication."
             "title": "OKTA-APP-000570"
@@ -1056,10 +1141,14 @@
             "summary": "Smart Card Authenticator is present and active."
             "title": "OKTA-APP-001670"
           -
+            "check":
+              "engine": "cel"
+              "expression": "rows(\"okta:authenticators\").filter(r, field(r, \"name\") == \"Okta Verify\").size() \u003e= 1 \u0026\u0026 rows(\"okta:authenticators\").filter(r, field(r, \"name\") == \"Okta Verify\").all(r, field(r, \"okta_verify_compliance_fips\") == \"REQUIRED\")"
             "key": "OKTA-APP-001700"
             "monitoring":
-              "status": "manual"
-            "required_data": []
+              "status": "automated"
+            "required_data":
+              - "okta:authenticators"
             "severity": "medium"
             "summary": "Okta Verify is configured with FIPS-compliant device enforcement (org-defined)."
             "title": "OKTA-APP-001700"

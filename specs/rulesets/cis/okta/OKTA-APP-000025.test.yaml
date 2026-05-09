@@ -1,0 +1,12 @@
+"description": "Should pass when Admin Console session idle timeout is 15 minutes"
+"expect": "pass"
+"inputs":
+  "okta:apps/admin-console-settings":
+    -
+      "resource_id": "okta_first_party_app:admin-console"
+      "display": "Admin Console"
+      "session_idle_timeout_minutes": 15
+      "session_max_lifetime_minutes": 720
+"kind": "opensspm.test_case"
+"rule_key": "OKTA-APP-000025"
+"schema_version": 2
