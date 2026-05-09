@@ -35,7 +35,8 @@ function h(tag, attrs, ...children) {
     for (const [k, v] of Object.entries(attrs)) {
       if (v == null || v === false) continue;
       if (k === "class") node.className = v;
-      else if (k === "html") node.innerHTML = v;
+      /* No "html" shortcut: it would bypass escaping. Use node.innerHTML
+         directly at the call site where escapeHtml has been applied. */
       else if (k === "text") node.textContent = String(v);
       else if (k === "dataset") for (const [dk, dv] of Object.entries(v)) node.dataset[dk] = String(dv);
       else if (k.startsWith("on") && typeof v === "function") node.addEventListener(k.slice(2).toLowerCase(), v);
@@ -1235,9 +1236,6 @@ async function load() {
 
     const v = state.descriptor.version || {};
     $("version").textContent = `v${v.spec_version || "?"}${v.schema_version != null ? ` · schema ${v.schema_version}` : ""}`;
-    const repo = $("repo-link");
-    if (repo) repo.href = REPO_URL;
-
     renderTOC();
     render();
   } catch (e) {
