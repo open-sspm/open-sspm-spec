@@ -1,9 +1,30 @@
 package v2
 
-import (
-	"encoding/json"
-	"testing"
-)
+import "testing"
+
+const testRuleRego = `package opensspm.tests
+
+rows := object.get(object.get(input.datasets, "d", {}), "rows", [])
+
+result := {
+	"status": "pass",
+	"selected_count": count(rows),
+	"passed_count": count(rows),
+	"count_value": count(rows),
+	"target_value": input.params.min,
+} if {
+	count(rows) == input.params.min
+}
+
+result := {
+	"status": "fail",
+	"selected_count": count(rows),
+	"passed_count": 0,
+	"count_value": count(rows),
+	"target_value": input.params.min,
+} if {
+	count(rows) != input.params.min
+}`
 
 func TestRulesetAddRuleAppendReplaceAndErrors(t *testing.T) {
 	rs := &Ruleset{Rules: []Rule{{Key: "R1", Title: "old"}}}
@@ -40,19 +61,16 @@ func TestRulesetAddRuleAppendReplaceAndErrors(t *testing.T) {
 	}
 }
 
-func TestEvaluateRuleCELPassFail(t *testing.T) {
+func TestEvaluateRuleRegoPassFail(t *testing.T) {
 	rule := Rule{
-		Key: "R1",
-		Monitoring: Monitoring{
-			Status: MonitoringStatus_AUTOMATED,
-		},
+		Key:        "R1",
+		Monitoring: Monitoring{Status: MonitoringStatus_AUTOMATED},
 		Check: &Check{
-			Engine:     CheckEngine_CEL,
-			Expression: `rows("d").size() == int(param("min"))`,
+			Engine: CheckEngine_REGO,
+			Query:  "data.opensspm.tests.result",
+			Rego:   testRuleRego,
 		},
-		Parameters: &Parameters{
-			Defaults: map[string]any{"min": 2},
-		},
+		Parameters: &Parameters{Defaults: map[string]any{"min": 2}},
 	}
 
 	passRes, err := rule.Evaluate(EvaluateInput{
@@ -63,10 +81,10 @@ func TestEvaluateRuleCELPassFail(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected pass evaluation without error, got %v", err)
 	}
-	if passRes.Status != EvaluateStatus_PASS {
-		t.Fatalf("expected pass status, got %+v", passRes)
+	if passRes.Status != EvaluateStatus_PASS || passRes.TargetValue == nil || *passRes.TargetValue != 2 {
+		t.Fatalf("expected pass status and target, got %+v", passRes)
 	}
-	if passRes.SelectedCount != 1 || passRes.PassedCount != 1 || passRes.CountValue != 1 {
+	if passRes.SelectedCount != 2 || passRes.PassedCount != 2 || passRes.CountValue != 2 {
 		t.Fatalf("unexpected aggregate counters for pass: %+v", passRes)
 	}
 
@@ -81,12 +99,9 @@ func TestEvaluateRuleCELPassFail(t *testing.T) {
 	if failRes.Status != EvaluateStatus_FAIL {
 		t.Fatalf("expected fail status, got %+v", failRes)
 	}
-	if failRes.SelectedCount != 1 || failRes.PassedCount != 0 || failRes.CountValue != 0 {
-		t.Fatalf("unexpected aggregate counters for fail: %+v", failRes)
-	}
 }
 
-func TestEvaluateRuleManualAndDatasetOutcomes(t *testing.T) {
+func TestEvaluateRuleManualAndErrors(t *testing.T) {
 	manual := Rule{
 		Key:        "M1",
 		Monitoring: Monitoring{Status: MonitoringStatus_MANUAL},
@@ -99,53 +114,22 @@ func TestEvaluateRuleManualAndDatasetOutcomes(t *testing.T) {
 		t.Fatalf("unexpected manual result: %+v", manualRes)
 	}
 
-	automated := Rule{
+	missingCheck := Rule{
 		Key:        "A1",
 		Monitoring: Monitoring{Status: MonitoringStatus_AUTOMATED},
-		Check:      &Check{Engine: CheckEngine_CEL, Expression: `rows("d").size() > 0`},
 	}
-
-	missingDatasetRes, err := automated.Evaluate(EvaluateInput{Datasets: map[string]DatasetInput{}})
-	if err != nil {
-		t.Fatalf("missing dataset should not hard-fail: %v", err)
-	}
-	if missingDatasetRes.Status != EvaluateStatus_UNKNOWN || missingDatasetRes.ReasonCode != "dataset_missing_dataset" {
-		t.Fatalf("unexpected missing dataset result: %+v", missingDatasetRes)
-	}
-
-	datasetErrRes, err := automated.Evaluate(EvaluateInput{
-		Datasets: map[string]DatasetInput{
-			"d": {Error: &DatasetInputError{Kind: DatasetErrorKind_PERMISSION_DENIED}},
-		},
-	})
-	if err != nil {
-		t.Fatalf("dataset error should not hard-fail: %v", err)
-	}
-	if datasetErrRes.Status != EvaluateStatus_UNKNOWN || datasetErrRes.ReasonCode != "dataset_permission_denied" {
-		t.Fatalf("unexpected dataset error result: %+v", datasetErrRes)
-	}
-}
-
-func TestEvaluateRuleMissingParamAndBadEngine(t *testing.T) {
-	missingParam := Rule{
-		Key:        "P1",
-		Monitoring: Monitoring{Status: MonitoringStatus_AUTOMATED},
-		Check:      &Check{Engine: CheckEngine_CEL, Expression: `rows("d").size() == int(param("min"))`},
-	}
-	res, err := missingParam.Evaluate(EvaluateInput{
-		Datasets: map[string]DatasetInput{"d": {Rows: []any{map[string]any{"x": 1}}}},
-	})
+	res, err := missingCheck.Evaluate(EvaluateInput{})
 	if err == nil {
-		t.Fatalf("missing param should return error")
+		t.Fatalf("missing check should return error")
 	}
-	if res.Status != EvaluateStatus_UNKNOWN || res.ReasonCode != "missing_param" {
-		t.Fatalf("unexpected missing param result: %+v", res)
+	if res.Status != EvaluateStatus_UNKNOWN || res.ReasonCode != "missing_check" {
+		t.Fatalf("unexpected missing-check result: %+v", res)
 	}
 
 	badEngine := Rule{
 		Key:        "E1",
 		Monitoring: Monitoring{Status: MonitoringStatus_AUTOMATED},
-		Check:      &Check{Engine: CheckEngine("rego"), Expression: `true`},
+		Check:      &Check{Engine: CheckEngine("legacy"), Query: "data.bad.result", Rego: `package bad`},
 	}
 	res, err = badEngine.Evaluate(EvaluateInput{})
 	if err == nil {
@@ -156,137 +140,95 @@ func TestEvaluateRuleMissingParamAndBadEngine(t *testing.T) {
 	}
 }
 
-func TestEvaluateRuleHasDatasetGuardDoesNotRequireDataset(t *testing.T) {
-	rule := Rule{
-		Key:        "H1",
-		Monitoring: Monitoring{Status: MonitoringStatus_AUTOMATED},
-		Check:      &Check{Engine: CheckEngine_CEL, Expression: `!has_dataset("missing")`},
-	}
+func TestEvaluateRuleDatasetErrorVisibleToRego(t *testing.T) {
+	const module = `package opensspm.tests
 
-	res, err := rule.Evaluate(EvaluateInput{Datasets: map[string]DatasetInput{}})
-	if err != nil {
-		t.Fatalf("has_dataset guard should evaluate without error, got %v", err)
-	}
-	if res.Status != EvaluateStatus_PASS {
-		t.Fatalf("expected pass from !has_dataset guard, got %+v", res)
-	}
-}
-
-func TestEvaluateRuleDirectDatasetAccessUsesProvidedDatasets(t *testing.T) {
+result := {"status": "unknown", "reason_code": sprintf("dataset_%s", [kind])} if {
+	err := object.get(object.get(input.datasets, "d", {}), "error", null)
+	err != null
+	kind := object.get(err, "kind", "engine_error")
+}`
 	rule := Rule{
 		Key:        "D1",
 		Monitoring: Monitoring{Status: MonitoringStatus_AUTOMATED},
-		Check:      &Check{Engine: CheckEngine_CEL, Expression: `datasets["d"].size() == 1`},
+		Check:      &Check{Engine: CheckEngine_REGO, Query: "data.opensspm.tests.result", Rego: module},
 	}
 
 	res, err := rule.Evaluate(EvaluateInput{
 		Datasets: map[string]DatasetInput{
-			"d": {Rows: []any{map[string]any{"x": 1}}},
+			"d": {Error: &DatasetInputError{Kind: DatasetErrorKind_PERMISSION_DENIED}},
 		},
 	})
 	if err != nil {
-		t.Fatalf("direct datasets access should evaluate without error, got %v", err)
+		t.Fatalf("dataset error policy should evaluate in Rego: %v", err)
 	}
-	if res.Status != EvaluateStatus_PASS {
-		t.Fatalf("expected pass from direct datasets access, got %+v", res)
+	if res.Status != EvaluateStatus_UNKNOWN || res.ReasonCode != "dataset_permission_denied" {
+		t.Fatalf("unexpected dataset error result: %+v", res)
 	}
 }
 
-func TestEvaluateRuleCELPlanOnEmptyUnknown(t *testing.T) {
+func TestEvaluateRuleRejectsInvalidStatus(t *testing.T) {
+	const module = `package opensspm.tests
+
+result := {"status": "skipped"} if { true }`
 	rule := Rule{
-		Key:        "P1",
+		Key:        "S1",
 		Monitoring: Monitoring{Status: MonitoringStatus_AUTOMATED},
-		Check: &Check{
-			Engine: CheckEngine_CEL_PLAN,
-			Plan: &CheckPlan{
-				Type:             "dataset.field_compare",
-				Dataset:          "d",
-				WhereExpression:  `r["enabled"] == true`,
-				AssertExpression: `r["score"] >= 10`,
-				Expect: &CheckPlanExpect{
-					Match:       "all",
-					MinSelected: 0,
-					OnEmpty:     "unknown",
-				},
-			},
-		},
+		Check:      &Check{Engine: CheckEngine_REGO, Query: "data.opensspm.tests.result", Rego: module},
 	}
 
-	res, err := rule.Evaluate(EvaluateInput{
-		Datasets: map[string]DatasetInput{
-			"d": {Rows: []any{map[string]any{"enabled": false, "score": 100}}},
-		},
-	})
-	if err != nil {
-		t.Fatalf("cel_plan evaluation returned error: %v", err)
+	res, err := rule.Evaluate(EvaluateInput{})
+	if err == nil {
+		t.Fatalf("invalid Rego status should return error")
 	}
-	if res.Status != EvaluateStatus_UNKNOWN || res.ReasonCode != "empty_selection" {
-		t.Fatalf("expected unknown empty-selection result, got %+v", res)
+	if res.Status != EvaluateStatus_UNKNOWN || res.ReasonCode != "invalid_status" {
+		t.Fatalf("unexpected invalid-status result: %+v", res)
 	}
 }
 
-func TestEvaluateRuleCELPlanDatasetPolicyFail(t *testing.T) {
+func TestEvaluateRuleRejectsMultipleQueryResults(t *testing.T) {
+	const module = `package opensspm.tests
+
+results["pass"] := {"status": "pass"} if { true }
+results["fail"] := {"status": "fail"} if { true }`
 	rule := Rule{
-		Key:        "P2",
+		Key:        "M1",
 		Monitoring: Monitoring{Status: MonitoringStatus_AUTOMATED},
-		Check: &Check{
-			Engine: CheckEngine_CEL_PLAN,
-			Plan: &CheckPlan{
-				Type:             "dataset.field_compare",
-				Dataset:          "d",
-				AssertExpression: `r["enabled"] == true`,
-				Expect: &CheckPlanExpect{
-					Match:       "all",
-					MinSelected: 1,
-					OnEmpty:     "fail",
-				},
-				OnMissingDataset: "fail",
-			},
-		},
+		Check:      &Check{Engine: CheckEngine_REGO, Query: "data.opensspm.tests.results[_]", Rego: module},
 	}
 
-	res, err := rule.Evaluate(EvaluateInput{Datasets: map[string]DatasetInput{}})
-	if err != nil {
-		t.Fatalf("dataset policy fail should not return hard error: %v", err)
+	res, err := rule.Evaluate(EvaluateInput{})
+	if err == nil {
+		t.Fatalf("multiple Rego query results should return error")
 	}
-	if res.Status != EvaluateStatus_FAIL || res.ReasonCode != "dataset_missing_dataset" {
-		t.Fatalf("expected fail on missing dataset policy, got %+v", res)
+	if res.Status != EvaluateStatus_UNKNOWN || res.ReasonCode != "rego_error" {
+		t.Fatalf("unexpected multiple-result response: %+v", res)
 	}
 }
 
-func TestEvaluateResultIsAggregateOnly(t *testing.T) {
-	rule := Rule{
-		Key:        "R1",
-		Monitoring: Monitoring{Status: MonitoringStatus_AUTOMATED},
-		Check:      &Check{Engine: CheckEngine_CEL, Expression: `rows("d").size() > 0`},
-	}
-	res, err := rule.Evaluate(EvaluateInput{Datasets: map[string]DatasetInput{"d": {Rows: []any{map[string]any{"marker": "DO_NOT_LEAK"}}}}})
-	if err != nil {
-		t.Fatalf("evaluate returned error: %v", err)
-	}
-	b, err := json.Marshal(res)
-	if err != nil {
-		t.Fatalf("marshal evaluate result: %v", err)
-	}
-	if containsString(string(b), "DO_NOT_LEAK") {
-		t.Fatalf("result leaked row payload: %s", string(b))
-	}
-	if containsString(string(b), "evidence") {
-		t.Fatalf("aggregate-only output should not include evidence fields: %s", string(b))
-	}
-}
+func TestEvaluateEntityPolicyPackRego(t *testing.T) {
+	const module = `package opensspm.entity.test
 
-func containsString(s, sub string) bool {
-	if len(sub) == 0 {
-		return true
+result := {
+	"risk_level": "low",
+	"risk_score": 20,
+	"signals": [{"id": "missing_owner", "severity": "high", "title": "Owner is missing"}],
+} if {
+	input.entity.owner_identity_id == 0
+}`
+	pack := EntityPolicyPack{
+		Metadata: EntityPolicyMetadata{ID: "builtin.test.risk", Domain: EntityPolicyDomain_SAAS},
+		Policy:   RegoPolicy{Engine: CheckEngine_REGO, Package: "opensspm.entity.test", Query: "data.opensspm.entity.test.result", Rego: module},
 	}
-	if len(sub) > len(s) {
-		return false
+
+	res, err := EvaluateEntityPolicyPack(&pack, map[string]any{"owner_identity_id": 0})
+	if err != nil {
+		t.Fatalf("entity policy evaluation returned error: %v", err)
 	}
-	for i := 0; i+len(sub) <= len(s); i++ {
-		if s[i:i+len(sub)] == sub {
-			return true
-		}
+	if res.RiskLevel != "low" || res.RiskScore != 20 {
+		t.Fatalf("unexpected entity policy risk result: %+v", res)
 	}
-	return false
+	if len(res.Signals) != 1 || res.Signals[0].ID != "missing_owner" {
+		t.Fatalf("unexpected entity policy signals: %+v", res.Signals)
+	}
 }

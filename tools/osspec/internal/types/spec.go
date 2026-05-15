@@ -49,6 +49,7 @@ type Ruleset struct {
 	FrameworkMappings []FrameworkMapping   `json:"framework_mappings,omitempty"`
 	Requirements      *RulesetRequirements `json:"requirements,omitempty"`
 	DataContracts     []DatasetContractRef `json:"data_contracts,omitempty"`
+	Policy            *RegoPolicy          `json:"policy,omitempty"`
 	Rules             []Rule               `json:"rules"`
 }
 
@@ -146,32 +147,17 @@ type Lifecycle struct {
 }
 
 type Check struct {
-	Engine     CheckEngine `json:"engine"`
-	Expression string      `json:"expression,omitempty"`
-	Plan       *CheckPlan  `json:"plan,omitempty"`
+	Engine  CheckEngine `json:"engine"`
+	Package string      `json:"package,omitempty"`
+	Query   string      `json:"query"`
+	Rego    string      `json:"rego,omitempty"`
 }
 
-type CheckPlan struct {
-	Type               string            `json:"type"`
-	Dataset            string            `json:"dataset"`
-	WhereExpression    string            `json:"where_expression,omitempty"`
-	AssertExpression   string            `json:"assert_expression,omitempty"`
-	Expect             *CheckPlanExpect  `json:"expect,omitempty"`
-	Compare            *CheckPlanCompare `json:"compare,omitempty"`
-	OnMissingDataset   string            `json:"on_missing_dataset,omitempty"`
-	OnPermissionDenied string            `json:"on_permission_denied,omitempty"`
-	OnSyncError        string            `json:"on_sync_error,omitempty"`
-}
-
-type CheckPlanExpect struct {
-	Match       string `json:"match,omitempty"`
-	MinSelected int    `json:"min_selected,omitempty"`
-	OnEmpty     string `json:"on_empty,omitempty"`
-}
-
-type CheckPlanCompare struct {
-	Op    string `json:"op"`
-	Value any    `json:"value"`
+type RegoPolicy struct {
+	Engine  CheckEngine `json:"engine"`
+	Package string      `json:"package"`
+	Query   string      `json:"query,omitempty"`
+	Rego    string      `json:"rego"`
 }
 
 type EntityPolicyPackDoc struct {
@@ -182,7 +168,8 @@ type EntityPolicyPackDoc struct {
 
 type EntityPolicyPack struct {
 	Metadata EntityPolicyMetadata `json:"metadata"`
-	Spec     EntityPolicySpec     `json:"spec"`
+	Inputs   EntityPolicyInputs   `json:"inputs,omitempty"`
+	Policy   RegoPolicy           `json:"policy"`
 }
 
 type EntityPolicyMetadata struct {
@@ -191,99 +178,8 @@ type EntityPolicyMetadata struct {
 	Domain  EntityPolicyDomain `json:"domain"`
 }
 
-type EntityPolicySpec struct {
-	Inputs      EntityPolicyInputs       `json:"inputs,omitempty"`
-	Constants   map[string][]string      `json:"constants,omitempty"`
-	Suggestions EntityPolicySuggestions  `json:"suggestions,omitempty"`
-	Scoring     EntityPolicyScoring      `json:"scoring,omitempty"`
-	Levels      []EntityPolicyLevelRule  `json:"levels,omitempty"`
-	Rules       []EntityPolicyRule       `json:"rules,omitempty"`
-	Aggregation EntityPolicyAggregation  `json:"aggregation,omitempty"`
-	ScopedRules []EntityPolicyScopedRule `json:"scoped_rules,omitempty"`
-}
-
 type EntityPolicyInputs struct {
 	Schema string `json:"schema,omitempty"`
-}
-
-type EntityPolicySuggestions struct {
-	BusinessCriticality []EntityPolicySuggestionRule `json:"business_criticality,omitempty"`
-	DataClassification  []EntityPolicySuggestionRule `json:"data_classification,omitempty"`
-}
-
-type EntityPolicySuggestionRule struct {
-	ID    string `json:"id"`
-	Level string `json:"level"`
-	When  string `json:"when"`
-}
-
-type EntityPolicyScoring struct {
-	Base  int                       `json:"base,omitempty"`
-	Max   int                       `json:"max,omitempty"`
-	Rules []EntityPolicyScoringRule `json:"rules,omitempty"`
-}
-
-type EntityPolicyScoringRule struct {
-	ID     string             `json:"id"`
-	Points int                `json:"points"`
-	When   string             `json:"when"`
-	Signal EntityPolicySignal `json:"signal,omitempty"`
-}
-
-type EntityPolicySignal struct {
-	Severity string `json:"severity,omitempty"`
-	Title    string `json:"title,omitempty"`
-	Evidence string `json:"evidence,omitempty"`
-}
-
-type EntityPolicyLevelRule struct {
-	Level string `json:"level"`
-	When  string `json:"when"`
-}
-
-type EntityPolicyRule struct {
-	ID         string `json:"id"`
-	Severity   string `json:"severity"`
-	ScoreDelta int    `json:"score_delta,omitempty"`
-	When       string `json:"when"`
-	Title      string `json:"title"`
-	Evidence   string `json:"evidence,omitempty"`
-}
-
-type EntityPolicyAggregation struct {
-	RiskLevel       EntityPolicyAggregationStrategy `json:"risk_level,omitempty"`
-	RiskReasonCount EntityPolicyAggregationStrategy `json:"risk_reason_count,omitempty"`
-}
-
-type EntityPolicyAggregationStrategy struct {
-	Strategy string `json:"strategy,omitempty"`
-	Default  string `json:"default,omitempty"`
-}
-
-type EntityPolicyScopedRule struct {
-	ID          string                        `json:"id"`
-	Scope       EntityPolicyScope             `json:"scope"`
-	Rules       []EntityPolicyRule            `json:"rules,omitempty"`
-	Suggestions EntityPolicyScopedSuggestions `json:"suggestions,omitempty"`
-}
-
-type EntityPolicyScope struct {
-	App EntityPolicyAppScope `json:"app"`
-}
-
-type EntityPolicyAppScope struct {
-	CanonicalKey  string   `json:"canonical_key,omitempty"`
-	PrimaryDomain string   `json:"primary_domain,omitempty"`
-	DomainMatches []string `json:"domain_matches,omitempty"`
-	VendorName    string   `json:"vendor_name,omitempty"`
-	SourceKind    string   `json:"source_kind,omitempty"`
-	SourceName    string   `json:"source_name,omitempty"`
-	Category      string   `json:"category,omitempty"`
-}
-
-type EntityPolicyScopedSuggestions struct {
-	BusinessCriticality string `json:"business_criticality,omitempty"`
-	DataClassification  string `json:"data_classification,omitempty"`
 }
 
 type ProfileDoc struct {

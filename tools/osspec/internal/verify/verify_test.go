@@ -1,36 +1,55 @@
 package verify
 
 import (
-	"strconv"
+	"context"
 	"testing"
 
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
 )
 
-func TestEvaluateRuleCELPlanFieldComparePass(t *testing.T) {
+const testRuleRego = `package opensspm.test
+
+selected := [r |
+  r := input.datasets.d.rows[_]
+  r.enabled == true
+]
+
+passed := [r |
+  r := selected[_]
+  r.score >= input.params.min
+]
+
+result := {"status": "pass", "selected_count": count(selected), "passed_count": count(passed)} if {
+  count(selected) >= 1
+  count(passed) == count(selected)
+}
+
+result := {"status": "fail", "selected_count": count(selected), "passed_count": count(passed)} if {
+  count(selected) < 1
+}
+
+result := {"status": "fail", "selected_count": count(selected), "passed_count": count(passed)} if {
+  count(selected) >= 1
+  count(passed) != count(selected)
+}
+`
+
+func TestEvaluateRuleRegoPassWithFakeData(t *testing.T) {
 	rule := &types.Rule{
 		Key:        "R1",
 		Monitoring: types.Monitoring{Status: types.MonitoringStatusAutomated},
 		Check: &types.Check{
-			Engine: types.CheckEngineCELPlan,
-			Plan: &types.CheckPlan{
-				Type:             "dataset.field_compare",
-				Dataset:          "d",
-				WhereExpression:  `r["enabled"] == true`,
-				AssertExpression: `r["score"] >= int(param("min"))`,
-				Expect: &types.CheckPlanExpect{
-					Match:       "all",
-					MinSelected: 1,
-					OnEmpty:     "fail",
-				},
-			},
+			Engine:  types.CheckEngineRego,
+			Package: "opensspm.test",
+			Query:   "data.opensspm.test.result",
+			Rego:    testRuleRego,
 		},
 		Parameters: &types.Parameters{
 			Defaults: map[string]any{"min": 10},
 		},
 	}
 
-	status, err := evaluateRule(rule, map[string][]any{
+	status, err := evaluateRule(context.Background(), rule, map[string][]any{
 		"d": {
 			map[string]any{"enabled": true, "score": 12},
 			map[string]any{"enabled": false, "score": 5},
@@ -44,92 +63,13 @@ func TestEvaluateRuleCELPlanFieldComparePass(t *testing.T) {
 	}
 }
 
-func TestEvaluateRuleCELPlanCountComparePass(t *testing.T) {
-	rule := &types.Rule{
-		Key:        "R1",
-		Monitoring: types.Monitoring{Status: types.MonitoringStatusAutomated},
-		Check: &types.Check{
-			Engine: types.CheckEngineCELPlan,
-			Plan: &types.CheckPlan{
-				Type:            "dataset.count_compare",
-				Dataset:         "d",
-				WhereExpression: `r["enabled"] == true`,
-				Compare: &types.CheckPlanCompare{
-					Op:    "gte",
-					Value: 2,
-				},
-			},
-		},
-	}
-
-	status, err := evaluateRule(rule, map[string][]any{
-		"d": {
-			map[string]any{"enabled": true},
-			map[string]any{"enabled": true},
-			map[string]any{"enabled": false},
-		},
-	}, nil)
-	if err != nil {
-		t.Fatalf("evaluateRule() returned error: %v", err)
-	}
-	if status != "pass" {
-		t.Fatalf("expected pass, got %q", status)
-	}
-}
-
-func TestEvaluateRuleCELPlanMissingDatasetPolicy(t *testing.T) {
-	baseRule := func(action string) *types.Rule {
-		return &types.Rule{
-			Key:        "R1",
-			Monitoring: types.Monitoring{Status: types.MonitoringStatusAutomated},
-			Check: &types.Check{
-				Engine: types.CheckEngineCELPlan,
-				Plan: &types.CheckPlan{
-					Type:             "dataset.field_compare",
-					Dataset:          "d",
-					AssertExpression: `r["enabled"] == true`,
-					OnMissingDataset: action,
-				},
-			},
-		}
-	}
-
-	status, err := evaluateRule(baseRule(""), nil, nil)
-	if err != nil {
-		t.Fatalf("expected no error for default unknown policy, got %v", err)
-	}
-	if status != "unknown" {
-		t.Fatalf("expected unknown for default policy, got %q", status)
-	}
-
-	status, err = evaluateRule(baseRule("fail"), nil, nil)
-	if err != nil {
-		t.Fatalf("expected no error for fail policy, got %v", err)
-	}
-	if status != "fail" {
-		t.Fatalf("expected fail for fail policy, got %q", status)
-	}
-
-	status, err = evaluateRule(baseRule("error"), nil, nil)
-	if err == nil {
-		t.Fatalf("expected error for error policy")
-	}
-	if status != "unknown" {
-		t.Fatalf("expected unknown status for error policy, got %q", status)
-	}
-}
-
 func TestEvaluateRuleManualAlwaysUnknown(t *testing.T) {
 	rule := &types.Rule{
 		Key:        "M1",
 		Monitoring: types.Monitoring{Status: types.MonitoringStatusManual},
-		Check: &types.Check{
-			Engine:     types.CheckEngineCEL,
-			Expression: `true`,
-		},
 	}
 
-	status, err := evaluateRule(rule, map[string][]any{
+	status, err := evaluateRule(context.Background(), rule, map[string][]any{
 		"d": {map[string]any{"x": 1}},
 	}, nil)
 	if err != nil {
@@ -140,63 +80,60 @@ func TestEvaluateRuleManualAlwaysUnknown(t *testing.T) {
 	}
 }
 
-func TestEvaluateEntityPolicyParsesTimestampInputs(t *testing.T) {
-	pack := &types.EntityPolicyPack{
-		Metadata: types.EntityPolicyMetadata{
-			ID:      "builtin.test.credential",
-			Version: "1.0.0",
-			Domain:  types.EntityPolicyDomainCredential,
-		},
-		Spec: types.EntityPolicySpec{
-			Inputs: types.EntityPolicyInputs{Schema: "credential_risk_input.v1"},
-			Constants: map[string][]string{
-				"active_like_statuses": {"active"},
-			},
-			Rules: []types.EntityPolicyRule{
-				{
-					ID:       "expired_active",
-					Severity: "critical",
-					When:     `expires_at != null && expires_at < evaluated_at && status in active_like_statuses`,
-					Title:    "Credential has expired while still marked active",
-				},
-			},
-			Aggregation: types.EntityPolicyAggregation{
-				RiskLevel: types.EntityPolicyAggregationStrategy{
-					Default: "low",
-				},
-			},
+func TestEvaluateRuleRejectsInvalidRegoStatus(t *testing.T) {
+	rule := &types.Rule{
+		Key:        "R1",
+		Monitoring: types.Monitoring{Status: types.MonitoringStatusAutomated},
+		Check: &types.Check{
+			Engine:  types.CheckEngineRego,
+			Package: "opensspm.test",
+			Query:   "data.opensspm.test.result",
+			Rego: `package opensspm.test
+
+result := {"status": "skipped"} if { true }
+`,
 		},
 	}
 
-	got, err := evaluateEntityPolicyPack(pack, map[string]any{
-		"status":       "ACTIVE",
-		"expires_at":   "2026-05-01T12:00:00Z",
-		"evaluated_at": "2026-05-09T12:00:00Z",
-	})
-	if err != nil {
-		t.Fatalf("evaluateEntityPolicyPack() error = %v", err)
-	}
-	if got.RiskLevel != "critical" || len(got.Signals) != 1 || got.Signals[0].ID != "expired_active" {
-		t.Fatalf("evaluateEntityPolicyPack() = %+v, want expired_active critical signal", got)
-	}
-
-	_, err = evaluateEntityPolicyPack(pack, map[string]any{
-		"status":       "active",
-		"expires_at":   "not-a-timestamp",
-		"evaluated_at": "2026-05-09T12:00:00Z",
-	})
+	status, err := evaluateRule(context.Background(), rule, nil, nil)
 	if err == nil {
-		t.Fatal("evaluateEntityPolicyPack() error = nil, want invalid timestamp error")
+		t.Fatalf("evaluateRule() expected invalid status error")
+	}
+	if status != "unknown" {
+		t.Fatalf("expected unknown status on invalid Rego status, got %q", status)
 	}
 }
 
-func TestNormalizeEntityPolicyIntRejectsUintOverflow(t *testing.T) {
-	if strconv.IntSize < 64 {
-		t.Skip("uint cannot exceed int64 on this platform")
+func TestEvaluateEntityPolicyPackRego(t *testing.T) {
+	pack := &types.EntityPolicyPack{
+		Metadata: types.EntityPolicyMetadata{
+			ID:      "builtin.test",
+			Version: "1.0.0",
+			Domain:  types.EntityPolicyDomainCredential,
+		},
+		Inputs: types.EntityPolicyInputs{Schema: "credential_risk_input.v1"},
+		Policy: types.RegoPolicy{
+			Engine:  types.CheckEngineRego,
+			Package: "opensspm.entity.test",
+			Query:   "data.opensspm.entity.test.result",
+			Rego: `package opensspm.entity.test
+
+result := {
+  "risk_level": "critical",
+  "risk_score": 90,
+  "signals": [{"id": "expired_active", "severity": "critical", "title": "Credential has expired"}],
+} if {
+  input.entity.status == "active"
+}
+`,
+		},
 	}
 
-	_, err := normalizeEntityPolicyInt("actors_30d", uint(^uint(0)))
-	if err == nil {
-		t.Fatal("normalizeEntityPolicyInt() error = nil, want uint overflow error")
+	got, err := evaluateEntityPolicyPack(context.Background(), pack, map[string]any{"status": "active"})
+	if err != nil {
+		t.Fatalf("evaluateEntityPolicyPack() error = %v", err)
+	}
+	if got.RiskLevel != "critical" || got.RiskScore != 90 || len(got.Signals) != 1 || got.Signals[0].ID != "expired_active" {
+		t.Fatalf("evaluateEntityPolicyPack() = %+v, want critical expired_active result", got)
 	}
 }

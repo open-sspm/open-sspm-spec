@@ -56,8 +56,9 @@ type RuleRequirement struct {
 	IsManual           bool                      `json:"is_manual"`
 	Datasets           []DatasetRefSpec          `json:"datasets"`
 	Engine             *CheckEngine              `json:"engine,omitempty"`
-	Expression         string                    `json:"expression,omitempty"`
-	ExpressionSHA256   string                    `json:"expression_sha256,omitempty"`
+	RegoPackage        string                    `json:"rego_package,omitempty"`
+	RegoQuery          string                    `json:"rego_query,omitempty"`
+	RegoSHA256         string                    `json:"rego_sha256,omitempty"`
 	DatasetsReferenced []string                  `json:"datasets_referenced"`
 	ParamsReferenced   []string                  `json:"params_referenced"`
 	Inputs             []RuleInputRequirement    `json:"inputs"`
@@ -65,11 +66,13 @@ type RuleRequirement struct {
 }
 
 type EntityPolicyPackRequirement struct {
-	PolicyPackID   string             `json:"policy_pack_id"`
-	Version        string             `json:"version"`
-	Domain         EntityPolicyDomain `json:"domain"`
-	InputSchema    string             `json:"input_schema,omitempty"`
-	ExpressionRefs []string           `json:"expression_refs"`
+	PolicyPackID string             `json:"policy_pack_id"`
+	Version      string             `json:"version"`
+	Domain       EntityPolicyDomain `json:"domain"`
+	InputSchema  string             `json:"input_schema,omitempty"`
+	RegoPackage  string             `json:"rego_package,omitempty"`
+	RegoQuery    string             `json:"rego_query,omitempty"`
+	RegoSHA256   string             `json:"rego_sha256,omitempty"`
 }
 
 type Compiled[T any] struct {

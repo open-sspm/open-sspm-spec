@@ -14,9 +14,9 @@ const SCHEMA_FILES = {
   "opensspm.entity_policy_pack": "opensspm.entity_policy_pack.schema.yaml",
 };
 const SCHEMA_BLURBS = {
-  "opensspm.ruleset": "A ruleset is a connector-scoped set of rules. Each rule carries a check (CEL or compiled plan), severity, monitoring status, and the dataset(s) it depends on.",
+  "opensspm.ruleset": "A ruleset is a connector-scoped set of rules. Automated checks use Rego modules and queries, plus severity, monitoring status, and the dataset(s) each rule depends on.",
   "opensspm.profile": "A profile bundles versioned rulesets into a baseline (for example, a CIS or DoD STIG benchmark).",
-  "opensspm.test_case": "A test case provides fixture data and an expected verdict against a single rule, used by the compiler to verify check semantics.",
+  "opensspm.test_case": "A test case provides fixture data and an expected verdict against a rule or entity policy pack, used by the verifier to exercise Rego semantics.",
   "opensspm.entity_policy_pack": "An entity policy pack evaluates one entity at a time and produces risk levels, scores, suggestions, and signals.",
 };
 
@@ -449,9 +449,9 @@ function renderOverview() {
   const orient = h("div", { class: "card" },
     section(null, "orientation", "Authoring shapes"),
     h("dl", { class: "dl" },
-      h("dt", {}, "Structured"), h("dd", {}, "DSL with ", h("code", {}, "check.type"), ", ", h("code", {}, "dataset"), ", ", h("code", {}, "where"), ", ", h("code", {}, "assert"), "/", h("code", {}, "compare"), ", ", h("code", {}, "expect"), ". Compiled to a runtime plan."),
-      h("dt", {}, "Raw CEL"), h("dd", {}, h("code", {}, "check.engine: cel"), " with a single boolean ", h("code", {}, "check.expression"), "."),
-      h("dt", {}, "Evaluation"), h("dd", {}, "Datasets are fetched, rows are selected via ", h("code", {}, "where"), ", an empty selection is resolved per ", h("code", {}, "expect.on_empty"), ", and the assertion produces the verdict."),
+      h("dt", {}, "Ruleset policy"), h("dd", {}, "Shared Rego modules can live under ", h("code", {}, "ruleset.policy"), " and be reused by automated rule checks."),
+      h("dt", {}, "Rule checks"), h("dd", {}, h("code", {}, "check.engine: rego"), " with ", h("code", {}, "check.query"), " selecting the result object for the rule."),
+      h("dt", {}, "Evaluation"), h("dd", {}, "Rule Rego receives ", h("code", {}, "input.datasets"), ", ", h("code", {}, "input.params"), " and ", h("code", {}, "input.rule"), " and returns a verdict object."),
     ),
   );
 

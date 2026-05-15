@@ -13,4 +13,3 @@ func TestCompile_RepoExamples(t *testing.T) {
 		t.Fatalf("Compile() error: %v", err)
 	}
 }
-

@@ -1,109 +1,14 @@
 "entity_policy_pack":
+  "inputs":
+    "schema": "saas_app_risk_input.v1"
   "metadata":
     "domain": "saas"
     "id": "builtin.saas.risk"
     "version": "1.0.0"
-  "spec":
-    "aggregation":
-      "risk_level": {}
-      "risk_reason_count": {}
-    "constants":
-      "high_business_criticalities":
-        - "high"
-        - "critical"
-      "sensitive_data_classifications":
-        - "confidential"
-        - "restricted"
-    "inputs":
-      "schema": "saas_app_risk_input.v1"
-    "levels":
-      -
-        "level": "critical"
-        "when": "score \u003e= 80"
-      -
-        "level": "high"
-        "when": "score \u003e= 60"
-      -
-        "level": "medium"
-        "when": "score \u003e= 30"
-      -
-        "level": "low"
-        "when": "true"
-    "scoring":
-      "max": 100
-      "rules":
-        -
-          "id": "unmanaged_app"
-          "points": 45
-          "signal":
-            "severity": "high"
-            "title": "App is not managed by a fresh connector binding"
-          "when": "managed_state != \"managed\""
-        -
-          "id": "privileged_scopes"
-          "points": 20
-          "signal":
-            "severity": "high"
-            "title": "App has privileged OAuth scopes"
-          "when": "has_privileged_scope"
-        -
-          "id": "missing_owner"
-          "points": 15
-          "signal":
-            "severity": "high"
-            "title": "App has no accountable owner"
-          "when": "owner_identity_id == 0"
-        -
-          "id": "high_actor_count"
-          "points": 10
-          "signal":
-            "severity": "medium"
-            "title": "App has broad recent usage"
-          "when": "actors_30d \u003e= 50"
-        -
-          "id": "unmanaged_high_business_app"
-          "points": 10
-          "signal":
-            "severity": "high"
-            "title": "Unmanaged app appears business critical"
-          "when": "managed_state != \"managed\" \u0026\u0026 effective_business_criticality in high_business_criticalities"
-        -
-          "id": "unmanaged_sensitive_data_app"
-          "points": 5
-          "signal":
-            "severity": "high"
-            "title": "Unmanaged app may access sensitive data"
-          "when": "managed_state != \"managed\" \u0026\u0026 effective_data_classification in sensitive_data_classifications"
-    "suggestions":
-      "business_criticality":
-        -
-          "id": "high_usage_critical"
-          "level": "critical"
-          "when": "actors_30d \u003e= 200"
-        -
-          "id": "high_usage_or_privileged"
-          "level": "high"
-          "when": "actors_30d \u003e= 50 || has_privileged_scope"
-        -
-          "id": "moderate_usage"
-          "level": "medium"
-          "when": "actors_30d \u003e= 10"
-        -
-          "id": "default_business_low"
-          "level": "low"
-          "when": "true"
-      "data_classification":
-        -
-          "id": "privileged_scopes_restricted"
-          "level": "restricted"
-          "when": "has_privileged_scope"
-        -
-          "id": "confidential_scopes_confidential"
-          "level": "confidential"
-          "when": "has_confidential_scope"
-        -
-          "id": "default_data_internal"
-          "level": "internal"
-          "when": "true"
+  "policy":
+    "engine": "rego"
+    "package": "opensspm.entity.saas_risk"
+    "query": "data.opensspm.entity.saas_risk.result"
+    "rego": "package opensspm.entity.saas_risk\n\nentity := input.entity\nhigh_business_criticalities := {\"high\", \"critical\"}\nsensitive_data_classifications := {\"confidential\", \"restricted\"}\n\nactors_30d := object.get(entity, \"actors_30d\", 0)\nmanaged_state := lower(sprintf(\"%v\", [object.get(entity, \"managed_state\", \"\")]))\nowner_identity_id := object.get(entity, \"owner_identity_id\", 0)\nconfigured_business := lower(sprintf(\"%v\", [object.get(entity, \"configured_business_criticality\", \"\")]))\nconfigured_data := lower(sprintf(\"%v\", [object.get(entity, \"configured_data_classification\", \"\")]))\n\nhas_privileged_scope if { object.get(entity, \"has_privileged_scope\", false) == true }\nhas_confidential_scope if { object.get(entity, \"has_confidential_scope\", false) == true }\n\nsuggested_business := \"critical\" if { actors_30d \u003e= 200 }\nsuggested_business := \"high\" if {\n  actors_30d \u003c 200\n  actors_30d \u003e= 50\n}\nsuggested_business := \"high\" if {\n  actors_30d \u003c 200\n  has_privileged_scope\n}\nsuggested_business := \"medium\" if {\n  not actors_30d \u003e= 50\n  not has_privileged_scope\n  actors_30d \u003e= 10\n}\nsuggested_business := \"low\" if {\n  not actors_30d \u003e= 10\n  not has_privileged_scope\n}\n\nsuggested_data := \"restricted\" if { has_privileged_scope }\nsuggested_data := \"confidential\" if {\n  not has_privileged_scope\n  has_confidential_scope\n}\nsuggested_data := \"internal\" if {\n  not has_privileged_scope\n  not has_confidential_scope\n}\n\nconfigured_business_valid if { configured_business in {\"low\", \"medium\", \"high\", \"critical\"} }\neffective_business := configured_business if { configured_business_valid }\neffective_business := suggested_business if { not configured_business_valid }\n\nconfigured_data_valid if { configured_data in {\"public\", \"internal\", \"confidential\", \"restricted\"} }\neffective_data := configured_data if { configured_data_valid }\neffective_data := suggested_data if { not configured_data_valid }\n\ndefault unmanaged_app := false\nunmanaged_app if { managed_state != \"managed\" }\n\ndefault privileged_scopes := false\nprivileged_scopes if { has_privileged_scope }\n\ndefault missing_owner := false\nmissing_owner if { owner_identity_id == 0 }\n\ndefault high_actor_count := false\nhigh_actor_count if { actors_30d \u003e= 50 }\n\ndefault unmanaged_high_business_app := false\nunmanaged_high_business_app if {\n  unmanaged_app\n  effective_business in high_business_criticalities\n}\n\ndefault unmanaged_sensitive_data_app := false\nunmanaged_sensitive_data_app if {\n  unmanaged_app\n  effective_data in sensitive_data_classifications\n}\n\nsignal_defs := [\n  {\"id\": \"unmanaged_app\", \"severity\": \"high\", \"title\": \"App is not managed by a fresh connector binding\", \"points\": 45, \"matched\": unmanaged_app},\n  {\"id\": \"privileged_scopes\", \"severity\": \"high\", \"title\": \"App has privileged OAuth scopes\", \"points\": 20, \"matched\": privileged_scopes},\n  {\"id\": \"missing_owner\", \"severity\": \"high\", \"title\": \"App has no accountable owner\", \"points\": 15, \"matched\": missing_owner},\n  {\"id\": \"high_actor_count\", \"severity\": \"medium\", \"title\": \"App has broad recent usage\", \"points\": 10, \"matched\": high_actor_count},\n  {\"id\": \"unmanaged_high_business_app\", \"severity\": \"high\", \"title\": \"Unmanaged app appears business critical\", \"points\": 10, \"matched\": unmanaged_high_business_app},\n  {\"id\": \"unmanaged_sensitive_data_app\", \"severity\": \"high\", \"title\": \"Unmanaged app may access sensitive data\", \"points\": 5, \"matched\": unmanaged_sensitive_data_app},\n]\n\nmatched_defs := [s | s := signal_defs[_]; s.matched]\nsignals := [{\"id\": s.id, \"severity\": s.severity, \"title\": s.title} | s := matched_defs[_]]\nraw_score := sum([s.points | s := matched_defs[_]])\n\nrisk_score := raw_score if { raw_score \u003c= 100 }\nrisk_score := 100 if { raw_score \u003e 100 }\n\nrisk_level := \"critical\" if { risk_score \u003e= 80 }\nrisk_level := \"high\" if {\n  risk_score \u003c 80\n  risk_score \u003e= 60\n}\nrisk_level := \"medium\" if {\n  risk_score \u003c 60\n  risk_score \u003e= 30\n}\nrisk_level := \"low\" if { risk_score \u003c 30 }\n\nresult := {\n  \"risk_level\": risk_level,\n  \"risk_score\": risk_score,\n  \"signals\": signals,\n}"
 "kind": "opensspm.entity_policy_pack"
 "schema_version": 2

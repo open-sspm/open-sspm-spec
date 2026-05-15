@@ -56,6 +56,7 @@ func RulesetDoc(doc *types.RulesetDoc) {
 	normalizeFrameworkMappings(doc.Ruleset.FrameworkMappings)
 	normalizeDataContracts(doc.Ruleset.DataContracts)
 	normalizeRulesetRequirements(doc.Ruleset.Requirements)
+	normalizeRegoPolicy(doc.Ruleset.Policy)
 
 	doc.Ruleset.Tags = Strings(doc.Ruleset.Tags)
 	doc.Ruleset.References = References(doc.Ruleset.References)
@@ -104,32 +105,8 @@ func EntityPolicyPackDoc(doc *types.EntityPolicyPackDoc) {
 	pack.Metadata.ID = strings.TrimSpace(pack.Metadata.ID)
 	pack.Metadata.Version = strings.TrimSpace(pack.Metadata.Version)
 	pack.Metadata.Domain = types.EntityPolicyDomain(strings.ToLower(strings.TrimSpace(string(pack.Metadata.Domain))))
-	pack.Spec.Inputs.Schema = strings.TrimSpace(pack.Spec.Inputs.Schema)
-	for i := range pack.Spec.Rules {
-		normalizeEntityPolicyRule(&pack.Spec.Rules[i])
-	}
-	for i := range pack.Spec.Scoring.Rules {
-		pack.Spec.Scoring.Rules[i].ID = strings.TrimSpace(pack.Spec.Scoring.Rules[i].ID)
-		pack.Spec.Scoring.Rules[i].When = strings.TrimSpace(pack.Spec.Scoring.Rules[i].When)
-		pack.Spec.Scoring.Rules[i].Signal.Severity = strings.ToLower(strings.TrimSpace(pack.Spec.Scoring.Rules[i].Signal.Severity))
-		pack.Spec.Scoring.Rules[i].Signal.Title = strings.TrimSpace(pack.Spec.Scoring.Rules[i].Signal.Title)
-		pack.Spec.Scoring.Rules[i].Signal.Evidence = strings.TrimSpace(pack.Spec.Scoring.Rules[i].Signal.Evidence)
-	}
-	for i := range pack.Spec.Levels {
-		pack.Spec.Levels[i].Level = strings.ToLower(strings.TrimSpace(pack.Spec.Levels[i].Level))
-		pack.Spec.Levels[i].When = strings.TrimSpace(pack.Spec.Levels[i].When)
-	}
-	normalizeEntityPolicySuggestions(&pack.Spec.Suggestions)
-	normalizeEntityPolicyAggregation(&pack.Spec.Aggregation)
-	for i := range pack.Spec.ScopedRules {
-		pack.Spec.ScopedRules[i].ID = strings.TrimSpace(pack.Spec.ScopedRules[i].ID)
-		normalizeEntityPolicyAppScope(&pack.Spec.ScopedRules[i].Scope.App)
-		pack.Spec.ScopedRules[i].Suggestions.BusinessCriticality = strings.ToLower(strings.TrimSpace(pack.Spec.ScopedRules[i].Suggestions.BusinessCriticality))
-		pack.Spec.ScopedRules[i].Suggestions.DataClassification = strings.ToLower(strings.TrimSpace(pack.Spec.ScopedRules[i].Suggestions.DataClassification))
-		for j := range pack.Spec.ScopedRules[i].Rules {
-			normalizeEntityPolicyRule(&pack.Spec.ScopedRules[i].Rules[j])
-		}
-	}
+	pack.Inputs.Schema = strings.TrimSpace(pack.Inputs.Schema)
+	normalizeRegoPolicy(&pack.Policy)
 }
 
 func FrameworkMappings(v []types.FrameworkMapping) []types.FrameworkMapping {
@@ -150,46 +127,6 @@ func FrameworkMappings(v []types.FrameworkMapping) []types.FrameworkMapping {
 		return strings.Compare(a.Notes, b.Notes)
 	})
 	return out
-}
-
-func normalizeEntityPolicyRule(rule *types.EntityPolicyRule) {
-	rule.ID = strings.TrimSpace(rule.ID)
-	rule.Severity = strings.ToLower(strings.TrimSpace(rule.Severity))
-	rule.When = strings.TrimSpace(rule.When)
-	rule.Title = strings.TrimSpace(rule.Title)
-	rule.Evidence = strings.TrimSpace(rule.Evidence)
-}
-
-func normalizeEntityPolicySuggestions(suggestions *types.EntityPolicySuggestions) {
-	for i := range suggestions.BusinessCriticality {
-		suggestions.BusinessCriticality[i].ID = strings.TrimSpace(suggestions.BusinessCriticality[i].ID)
-		suggestions.BusinessCriticality[i].Level = strings.ToLower(strings.TrimSpace(suggestions.BusinessCriticality[i].Level))
-		suggestions.BusinessCriticality[i].When = strings.TrimSpace(suggestions.BusinessCriticality[i].When)
-	}
-	for i := range suggestions.DataClassification {
-		suggestions.DataClassification[i].ID = strings.TrimSpace(suggestions.DataClassification[i].ID)
-		suggestions.DataClassification[i].Level = strings.ToLower(strings.TrimSpace(suggestions.DataClassification[i].Level))
-		suggestions.DataClassification[i].When = strings.TrimSpace(suggestions.DataClassification[i].When)
-	}
-}
-
-func normalizeEntityPolicyAggregation(aggregation *types.EntityPolicyAggregation) {
-	aggregation.RiskLevel.Strategy = strings.ToLower(strings.TrimSpace(aggregation.RiskLevel.Strategy))
-	aggregation.RiskLevel.Default = strings.ToLower(strings.TrimSpace(aggregation.RiskLevel.Default))
-	aggregation.RiskReasonCount.Strategy = strings.ToLower(strings.TrimSpace(aggregation.RiskReasonCount.Strategy))
-	aggregation.RiskReasonCount.Default = strings.TrimSpace(aggregation.RiskReasonCount.Default)
-}
-
-func normalizeEntityPolicyAppScope(scope *types.EntityPolicyAppScope) {
-	scope.CanonicalKey = strings.ToLower(strings.TrimSpace(scope.CanonicalKey))
-	scope.PrimaryDomain = strings.ToLower(strings.TrimSpace(scope.PrimaryDomain))
-	scope.VendorName = strings.ToLower(strings.TrimSpace(scope.VendorName))
-	scope.SourceKind = strings.ToLower(strings.TrimSpace(scope.SourceKind))
-	scope.SourceName = strings.TrimSpace(scope.SourceName)
-	scope.Category = strings.ToLower(strings.TrimSpace(scope.Category))
-	for i := range scope.DomainMatches {
-		scope.DomainMatches[i] = strings.ToLower(strings.TrimSpace(scope.DomainMatches[i]))
-	}
 }
 
 func DataContracts(v []types.DatasetContractRef) []types.DatasetContractRef {
@@ -252,22 +189,17 @@ func normalizeRuleCheck(c *types.Check) {
 		return
 	}
 	c.Engine = types.CheckEngine(strings.ToLower(strings.TrimSpace(string(c.Engine))))
-	c.Expression = strings.TrimSpace(c.Expression)
-	if c.Plan == nil {
+	c.Package = strings.TrimSpace(c.Package)
+	c.Query = strings.TrimSpace(c.Query)
+	c.Rego = strings.TrimSpace(c.Rego)
+}
+
+func normalizeRegoPolicy(p *types.RegoPolicy) {
+	if p == nil {
 		return
 	}
-	c.Plan.Type = strings.TrimSpace(c.Plan.Type)
-	c.Plan.Dataset = strings.TrimSpace(c.Plan.Dataset)
-	c.Plan.WhereExpression = strings.TrimSpace(c.Plan.WhereExpression)
-	c.Plan.AssertExpression = strings.TrimSpace(c.Plan.AssertExpression)
-	c.Plan.OnMissingDataset = strings.ToLower(strings.TrimSpace(c.Plan.OnMissingDataset))
-	c.Plan.OnPermissionDenied = strings.ToLower(strings.TrimSpace(c.Plan.OnPermissionDenied))
-	c.Plan.OnSyncError = strings.ToLower(strings.TrimSpace(c.Plan.OnSyncError))
-	if c.Plan.Expect != nil {
-		c.Plan.Expect.Match = strings.ToLower(strings.TrimSpace(c.Plan.Expect.Match))
-		c.Plan.Expect.OnEmpty = strings.ToLower(strings.TrimSpace(c.Plan.Expect.OnEmpty))
-	}
-	if c.Plan.Compare != nil {
-		c.Plan.Compare.Op = strings.ToLower(strings.TrimSpace(c.Plan.Compare.Op))
-	}
+	p.Engine = types.CheckEngine(strings.ToLower(strings.TrimSpace(string(p.Engine))))
+	p.Package = strings.TrimSpace(p.Package)
+	p.Query = strings.TrimSpace(p.Query)
+	p.Rego = strings.TrimSpace(p.Rego)
 }
