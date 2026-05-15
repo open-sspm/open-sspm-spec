@@ -35,6 +35,7 @@ func TestGenerateSpecTypes_RegoSurfaceAndHelpers(t *testing.T) {
 		"func (r *Rule) Evaluate(input EvaluateInput) (EvaluateResult, error)",
 		"func EvaluateEntityPolicyPack(pack *EntityPolicyPack, entityInput map[string]any) (EntityPolicyEvaluateResult, error)",
 		"func evaluateRego(moduleName, module, query string, input any) (map[string]any, error)",
+		"rego.StrictBuiltinErrors(true)",
 	}
 	for _, want := range required {
 		if !strings.Contains(code, want) {

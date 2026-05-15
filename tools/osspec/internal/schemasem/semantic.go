@@ -218,7 +218,9 @@ func validateCheck(path string, r *types.Rule, c *types.Check) []error {
 		return nil
 	}
 	var errs []error
-	if c.Engine != types.CheckEngineRego {
+	if strings.TrimSpace(string(c.Engine)) == "" {
+		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.engine is required", path, r.Key))
+	} else if c.Engine != types.CheckEngineRego {
 		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: unsupported check.engine %q", path, r.Key, c.Engine))
 	}
 	if strings.TrimSpace(c.Package) == "" {

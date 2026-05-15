@@ -51,8 +51,18 @@ func TestValidateSemantic_ValidRegoRule(t *testing.T) {
 
 func TestValidateSemantic_RegoOnlyAndRequiredDataContracts(t *testing.T) {
 	doc := validRulesetDoc()
-	doc.Ruleset.Rules[0].Check.Engine = "legacy"
+	doc.Ruleset.Rules[0].Check.Engine = ""
 	errs := ValidateSemantic(bundleWithRuleset(doc))
+	if !containsErr(errs, "check.engine is required") {
+		t.Fatalf("expected required engine error, got:\n%s", joinErrs(errs))
+	}
+	if containsErr(errs, `unsupported check.engine ""`) {
+		t.Fatalf("expected no unsupported empty engine error, got:\n%s", joinErrs(errs))
+	}
+
+	doc = validRulesetDoc()
+	doc.Ruleset.Rules[0].Check.Engine = "legacy"
+	errs = ValidateSemantic(bundleWithRuleset(doc))
 	if !containsErr(errs, `unsupported check.engine "legacy"`) {
 		t.Fatalf("expected unsupported engine error, got:\n%s", joinErrs(errs))
 	}

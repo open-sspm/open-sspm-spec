@@ -6,6 +6,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+	"math/big"
 	"strconv"
 	"strings"
 
@@ -564,6 +566,7 @@ func evaluateRego(moduleName, module, query string, input any) (map[string]any, 
 		rego.Module(moduleName, module),
 		rego.Input(input),
 		rego.Strict(true),
+		rego.StrictBuiltinErrors(true),
 	).Eval(context.Background())
 	if err != nil {
 		return nil, err
@@ -582,7 +585,8 @@ func evaluateRego(moduleName, module, query string, input any) (map[string]any, 
 }
 
 func evaluateResultFromMap(result map[string]any) (EvaluateResult, error) {
-	status, err := evaluateStatusFromAny(result["status"])
+	statusValue, ok := result["status"]
+	status, err := evaluateStatusFromAny(statusValue, ok)
 	if err != nil {
 		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "invalid_status"}, err
 	}
@@ -599,7 +603,10 @@ func evaluateResultFromMap(result map[string]any) (EvaluateResult, error) {
 	return out, nil
 }
 
-func evaluateStatusFromAny(value any) (EvaluateStatus, error) {
+func evaluateStatusFromAny(value any, ok bool) (EvaluateStatus, error) {
+	if !ok || value == nil {
+		return EvaluateStatus_UNKNOWN, fmt.Errorf("rego result.status is required")
+	}
 	status := EvaluateStatus(strings.TrimSpace(fmt.Sprint(value)))
 	switch status {
 	case EvaluateStatus_PASS, EvaluateStatus_FAIL, EvaluateStatus_UNKNOWN:
@@ -639,10 +646,9 @@ func intFromAny(value any) (int, bool) {
 	case int:
 		return v, true
 	case int64:
-		return int(v), true
+		return intFromInt64(v)
 	case float64:
-		i := int(v)
-		return i, float64(i) == v
+		return intFromFloat64(v)
 	case json.Number:
 		return intFromString(v.String())
 	case string:
@@ -657,13 +663,38 @@ func intFromString(value string) (int, bool) {
 	if value == "" {
 		return 0, false
 	}
-	if i, err := strconv.ParseInt(value, 10, 64); err == nil {
-		return int(i), true
+	if i, err := strconv.ParseInt(value, 10, strconv.IntSize); err == nil {
+		return intFromInt64(i)
 	}
-	f, err := strconv.ParseFloat(value, 64)
-	if err != nil {
+	if strings.Contains(value, "/") {
 		return 0, false
 	}
-	i := int(f)
-	return i, float64(i) == f
+	rat, ok := new(big.Rat).SetString(value)
+	if !ok || !rat.IsInt() {
+		return 0, false
+	}
+	if rat.Cmp(big.NewRat(int64(math.MinInt), 1)) < 0 || rat.Cmp(big.NewRat(int64(math.MaxInt), 1)) > 0 {
+		return 0, false
+	}
+	return intFromInt64(rat.Num().Int64())
+}
+
+func intFromInt64(value int64) (int, bool) {
+	if value < int64(math.MinInt) || value > int64(math.MaxInt) {
+		return 0, false
+	}
+	return int(value), true
+}
+
+func intFromFloat64(value float64) (int, bool) {
+	if math.IsNaN(value) || math.IsInf(value, 0) || math.Trunc(value) != value {
+		return 0, false
+	}
+	if value < float64(math.MinInt) || value > float64(math.MaxInt) {
+		return 0, false
+	}
+	if strconv.IntSize == 64 && value == float64(math.MaxInt) {
+		return 0, false
+	}
+	return int(value), true
 }

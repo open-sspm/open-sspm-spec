@@ -29,6 +29,7 @@ func ValidateModule(ctx context.Context, moduleName, module, query string) error
 		rego.Query(query),
 		rego.Module(moduleName, module),
 		rego.Strict(true),
+		rego.StrictBuiltinErrors(true),
 	).PrepareForEval(ctx)
 	if err != nil {
 		return err
@@ -46,6 +47,7 @@ func ValidateModuleOnly(ctx context.Context, moduleName, module string) error {
 		rego.Query("true"),
 		rego.Module(moduleName, module),
 		rego.Strict(true),
+		rego.StrictBuiltinErrors(true),
 	).PrepareForEval(ctx)
 	if err != nil {
 		return err
@@ -54,6 +56,10 @@ func ValidateModuleOnly(ctx context.Context, moduleName, module string) error {
 }
 
 func Evaluate(ctx context.Context, moduleName, module, query string, input any) (EvaluationResult, error) {
+	module = strings.TrimSpace(module)
+	if module == "" {
+		return nil, fmt.Errorf("rego module is required")
+	}
 	query = strings.TrimSpace(query)
 	if query == "" {
 		return nil, fmt.Errorf("rego query is required")
@@ -64,6 +70,7 @@ func Evaluate(ctx context.Context, moduleName, module, query string, input any) 
 		rego.Module(moduleName, module),
 		rego.Input(input),
 		rego.Strict(true),
+		rego.StrictBuiltinErrors(true),
 	).Eval(ctx)
 	if err != nil {
 		return nil, err

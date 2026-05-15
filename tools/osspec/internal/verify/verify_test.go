@@ -104,6 +104,18 @@ result := {"status": "skipped"} if { true }
 	}
 }
 
+func TestIntFromStringRejectsOutOfRange(t *testing.T) {
+	if got, ok := intFromString("9223372036854775808"); ok {
+		t.Fatalf("intFromString() accepted value above int64 range: %d", got)
+	}
+	if got, ok := intFromString("-9223372036854775809"); ok {
+		t.Fatalf("intFromString() accepted value below int64 range: %d", got)
+	}
+	if got, ok := intFromString("2/1"); ok {
+		t.Fatalf("intFromString() accepted non-JSON fraction syntax: %d", got)
+	}
+}
+
 func TestEvaluateEntityPolicyPackRego(t *testing.T) {
 	pack := &types.EntityPolicyPack{
 		Metadata: types.EntityPolicyMetadata{
@@ -135,5 +147,42 @@ result := {
 	}
 	if got.RiskLevel != "critical" || got.RiskScore != 90 || len(got.Signals) != 1 || got.Signals[0].ID != "expired_active" {
 		t.Fatalf("evaluateEntityPolicyPack() = %+v, want critical expired_active result", got)
+	}
+}
+
+func TestEvaluateEntityPolicyPackReturnsBuiltinErrors(t *testing.T) {
+	pack := &types.EntityPolicyPack{
+		Metadata: types.EntityPolicyMetadata{
+			ID:      "builtin.test",
+			Version: "1.0.0",
+			Domain:  types.EntityPolicyDomainCredential,
+		},
+		Policy: types.RegoPolicy{
+			Engine:  types.CheckEngineRego,
+			Package: "opensspm.entity.test",
+			Query:   "data.opensspm.entity.test.result",
+			Rego: `package opensspm.entity.test
+
+expired if {
+  time.parse_rfc3339_ns(input.entity.expires_at) < time.parse_rfc3339_ns(input.entity.evaluated_at)
+}
+
+result := {"risk_level": "critical"} if {
+  expired
+}
+
+result := {"risk_level": "low"} if {
+  not expired
+}
+`,
+		},
+	}
+
+	_, err := evaluateEntityPolicyPack(context.Background(), pack, map[string]any{
+		"expires_at":   "not-a-timestamp",
+		"evaluated_at": "2026-05-15T12:00:00Z",
+	})
+	if err == nil {
+		t.Fatalf("evaluateEntityPolicyPack() expected malformed timestamp builtin error")
 	}
 }

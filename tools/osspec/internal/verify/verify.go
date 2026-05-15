@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+	"math/big"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -218,10 +220,9 @@ func intFromAny(value any) (int, bool) {
 	case int:
 		return v, true
 	case int64:
-		return int(v), true
+		return intFromInt64(v)
 	case float64:
-		i := int(v)
-		return i, float64(i) == v
+		return intFromFloat64(v)
 	case json.Number:
 		return intFromString(v.String())
 	case string:
@@ -236,15 +237,40 @@ func intFromString(value string) (int, bool) {
 	if value == "" {
 		return 0, false
 	}
-	if i, err := strconv.ParseInt(value, 10, 64); err == nil {
-		return int(i), true
+	if i, err := strconv.ParseInt(value, 10, strconv.IntSize); err == nil {
+		return intFromInt64(i)
 	}
-	f, err := strconv.ParseFloat(value, 64)
-	if err != nil {
+	if strings.Contains(value, "/") {
 		return 0, false
 	}
-	i := int(f)
-	return i, float64(i) == f
+	rat, ok := new(big.Rat).SetString(value)
+	if !ok || !rat.IsInt() {
+		return 0, false
+	}
+	if rat.Cmp(big.NewRat(int64(math.MinInt), 1)) < 0 || rat.Cmp(big.NewRat(int64(math.MaxInt), 1)) > 0 {
+		return 0, false
+	}
+	return intFromInt64(rat.Num().Int64())
+}
+
+func intFromInt64(value int64) (int, bool) {
+	if value < int64(math.MinInt) || value > int64(math.MaxInt) {
+		return 0, false
+	}
+	return int(value), true
+}
+
+func intFromFloat64(value float64) (int, bool) {
+	if math.IsNaN(value) || math.IsInf(value, 0) || math.Trunc(value) != value {
+		return 0, false
+	}
+	if value < float64(math.MinInt) || value > float64(math.MaxInt) {
+		return 0, false
+	}
+	if strconv.IntSize == 64 && value == float64(math.MaxInt) {
+		return 0, false
+	}
+	return int(value), true
 }
 
 func compareEntityPolicyResult(expect *types.EntityPolicyTestExpect, got entityPolicyResult) error {

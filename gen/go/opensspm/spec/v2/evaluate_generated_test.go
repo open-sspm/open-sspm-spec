@@ -101,6 +101,18 @@ func TestEvaluateRuleRegoPassFail(t *testing.T) {
 	}
 }
 
+func TestIntFromStringRejectsOutOfRange(t *testing.T) {
+	if got, ok := intFromString("9223372036854775808"); ok {
+		t.Fatalf("intFromString() accepted value above int64 range: %d", got)
+	}
+	if got, ok := intFromString("-9223372036854775809"); ok {
+		t.Fatalf("intFromString() accepted value below int64 range: %d", got)
+	}
+	if got, ok := intFromString("2/1"); ok {
+		t.Fatalf("intFromString() accepted non-JSON fraction syntax: %d", got)
+	}
+}
+
 func TestEvaluateRuleManualAndErrors(t *testing.T) {
 	manual := Rule{
 		Key:        "M1",
@@ -186,6 +198,28 @@ result := {"status": "skipped"} if { true }`
 	}
 }
 
+func TestEvaluateRuleRejectsMissingStatus(t *testing.T) {
+	const module = `package opensspm.tests
+
+result := {"reason_code": "missing_status"} if { true }`
+	rule := Rule{
+		Key:        "S2",
+		Monitoring: Monitoring{Status: MonitoringStatus_AUTOMATED},
+		Check:      &Check{Engine: CheckEngine_REGO, Query: "data.opensspm.tests.result", Rego: module},
+	}
+
+	res, err := rule.Evaluate(EvaluateInput{})
+	if err == nil {
+		t.Fatalf("missing Rego status should return error")
+	}
+	if err.Error() != "rego result.status is required" {
+		t.Fatalf("unexpected missing-status error: %v", err)
+	}
+	if res.Status != EvaluateStatus_UNKNOWN || res.ReasonCode != "invalid_status" {
+		t.Fatalf("unexpected missing-status result: %+v", res)
+	}
+}
+
 func TestEvaluateRuleRejectsMultipleQueryResults(t *testing.T) {
 	const module = `package opensspm.tests
 
@@ -230,5 +264,33 @@ result := {
 	}
 	if len(res.Signals) != 1 || res.Signals[0].ID != "missing_owner" {
 		t.Fatalf("unexpected entity policy signals: %+v", res.Signals)
+	}
+}
+
+func TestEvaluateEntityPolicyPackReturnsBuiltinErrors(t *testing.T) {
+	const module = `package opensspm.entity.test
+
+expired if {
+  time.parse_rfc3339_ns(input.entity.expires_at) < time.parse_rfc3339_ns(input.entity.evaluated_at)
+}
+
+result := {"risk_level": "critical"} if {
+  expired
+}
+
+result := {"risk_level": "low"} if {
+  not expired
+}`
+	pack := EntityPolicyPack{
+		Metadata: EntityPolicyMetadata{ID: "builtin.test.risk", Domain: EntityPolicyDomain_CREDENTIAL},
+		Policy:   RegoPolicy{Engine: CheckEngine_REGO, Package: "opensspm.entity.test", Query: "data.opensspm.entity.test.result", Rego: module},
+	}
+
+	_, err := EvaluateEntityPolicyPack(&pack, map[string]any{
+		"expires_at":   "not-a-timestamp",
+		"evaluated_at": "2026-05-15T12:00:00Z",
+	})
+	if err == nil {
+		t.Fatalf("malformed timestamp should return Rego builtin error")
 	}
 }
