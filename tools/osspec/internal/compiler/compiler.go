@@ -88,6 +88,9 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 				return nil, fmt.Errorf("%s: parse ruleset: %w", f.RelPath, err)
 			}
 			normalize.RulesetDoc(&doc)
+			if err := resolveRulesetRegoReferences(repoRootAbs, f, &doc); err != nil {
+				return nil, err
+			}
 			applyRulesetPolicyDefaults(&doc)
 			bundle.Rulesets = append(bundle.Rulesets, struct {
 				Path string
@@ -109,6 +112,9 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 				return nil, fmt.Errorf("%s: parse entity policy pack: %w", f.RelPath, err)
 			}
 			normalize.EntityPolicyPackDoc(&doc)
+			if err := resolveEntityPolicyPackRegoReferences(repoRootAbs, f, &doc); err != nil {
+				return nil, err
+			}
 			bundle.EntityPolicyPacks = append(bundle.EntityPolicyPacks, struct {
 				Path string
 				Doc  types.EntityPolicyPackDoc

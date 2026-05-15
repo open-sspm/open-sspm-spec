@@ -231,6 +231,9 @@ func renderGoLiteral(v reflect.Value, includeType bool) (string, error) {
 			if !f.IsExported() {
 				continue
 			}
+			if f.Name == "RegoPath" && v.Field(i).Kind() == reflect.String && v.Field(i).String() == "" {
+				continue
+			}
 			if b.Len() > 1 && b.String()[b.Len()-1] != '{' {
 				b.WriteString(", ")
 			}

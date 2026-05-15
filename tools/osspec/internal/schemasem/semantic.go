@@ -230,7 +230,7 @@ func validateCheck(path string, r *types.Rule, c *types.Check) []error {
 		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.query is required", path, r.Key))
 	}
 	if strings.TrimSpace(c.Rego) == "" {
-		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.rego is required, either inline or via ruleset.policy", path, r.Key))
+		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.rego is required, either inline, via check.rego_path, or via ruleset.policy", path, r.Key))
 	}
 	if len(errs) == 0 {
 		if err := regoengine.ValidateModule(context.Background(), path+":"+r.Key+".rego", c.Rego, c.Query); err != nil {
@@ -255,7 +255,7 @@ func validateRegoPolicy(path, field string, policy *types.RegoPolicy, requireQue
 		errs = append(errs, fmt.Errorf("semantic: %s: %s.query is required", path, field))
 	}
 	if strings.TrimSpace(policy.Rego) == "" {
-		errs = append(errs, fmt.Errorf("semantic: %s: %s.rego is required", path, field))
+		errs = append(errs, fmt.Errorf("semantic: %s: %s.rego is required, either inline or via rego_path", path, field))
 	}
 	if len(errs) == 0 {
 		if strings.TrimSpace(policy.Query) == "" {

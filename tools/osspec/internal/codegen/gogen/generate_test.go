@@ -17,10 +17,11 @@ func TestGenerateSpecTypes_RegoSurfaceAndHelpers(t *testing.T) {
 
 	required := []string{
 		"type Check struct",
-		"Engine  CheckEngine",
-		"Package string",
-		"Query   string",
-		"Rego    string",
+		"Engine   CheckEngine",
+		"Package  string",
+		"Query    string",
+		"Rego     string",
+		"RegoPath string",
 		"type RegoPolicy struct",
 		"type RulesetRequirement struct",
 		"RegoSHA256",
