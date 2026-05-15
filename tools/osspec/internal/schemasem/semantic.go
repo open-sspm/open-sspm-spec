@@ -229,11 +229,15 @@ func validateCheck(path string, r *types.Rule, c *types.Check) []error {
 	if strings.TrimSpace(c.Query) == "" {
 		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.query is required", path, r.Key))
 	}
-	if strings.TrimSpace(c.Rego) == "" {
-		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.rego is required, either inline, via check.rego_path, or via ruleset.policy", path, r.Key))
+	rego := strings.TrimSpace(c.Rego)
+	if rego == "" {
+		if strings.TrimSpace(c.RegoPath) == "" {
+			errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.rego is required, either inline, via check.rego_path, or via ruleset.policy", path, r.Key))
+		}
+		return errs
 	}
 	if len(errs) == 0 {
-		if err := regoengine.ValidateModule(context.Background(), path+":"+r.Key+".rego", c.Rego, c.Query); err != nil {
+		if err := regoengine.ValidateModule(context.Background(), path+":"+r.Key+".rego", rego, c.Query); err != nil {
 			errs = append(errs, fmt.Errorf("semantic: %s: rule %q: invalid Rego: %v", path, r.Key, err))
 		}
 	}
@@ -254,17 +258,21 @@ func validateRegoPolicy(path, field string, policy *types.RegoPolicy, requireQue
 	if requireQuery && strings.TrimSpace(policy.Query) == "" {
 		errs = append(errs, fmt.Errorf("semantic: %s: %s.query is required", path, field))
 	}
-	if strings.TrimSpace(policy.Rego) == "" {
-		errs = append(errs, fmt.Errorf("semantic: %s: %s.rego is required, either inline or via rego_path", path, field))
+	rego := strings.TrimSpace(policy.Rego)
+	if rego == "" {
+		if strings.TrimSpace(policy.RegoPath) == "" {
+			errs = append(errs, fmt.Errorf("semantic: %s: %s.rego is required, either inline or via rego_path", path, field))
+		}
+		return errs
 	}
 	if len(errs) == 0 {
 		if strings.TrimSpace(policy.Query) == "" {
-			if err := regoengine.ValidateModuleOnly(context.Background(), path+":"+field+".rego", policy.Rego); err != nil {
+			if err := regoengine.ValidateModuleOnly(context.Background(), path+":"+field+".rego", rego); err != nil {
 				errs = append(errs, fmt.Errorf("semantic: %s: %s invalid Rego: %v", path, field, err))
 			}
 			return errs
 		}
-		if err := regoengine.ValidateModule(context.Background(), path+":"+field+".rego", policy.Rego, policy.Query); err != nil {
+		if err := regoengine.ValidateModule(context.Background(), path+":"+field+".rego", rego, policy.Query); err != nil {
 			errs = append(errs, fmt.Errorf("semantic: %s: %s invalid Rego: %v", path, field, err))
 		}
 	}

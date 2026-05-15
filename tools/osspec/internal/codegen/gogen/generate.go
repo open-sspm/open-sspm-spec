@@ -231,7 +231,7 @@ func renderGoLiteral(v reflect.Value, includeType bool) (string, error) {
 			if !f.IsExported() {
 				continue
 			}
-			if f.Name == "RegoPath" && v.Field(i).Kind() == reflect.String && v.Field(i).String() == "" {
+			if shouldOmitEmptyStringField(f, v.Field(i)) {
 				continue
 			}
 			if b.Len() > 1 && b.String()[b.Len()-1] != '{' {
@@ -370,6 +370,18 @@ func needsExplicitTypeLiteral(t reflect.Type) bool {
 	default:
 		return false
 	}
+}
+
+func shouldOmitEmptyStringField(f reflect.StructField, v reflect.Value) bool {
+	if v.Kind() != reflect.String || v.String() != "" {
+		return false
+	}
+	for _, opt := range strings.Split(f.Tag.Get("json"), ",")[1:] {
+		if opt == "omitempty" {
+			return true
+		}
+	}
+	return false
 }
 
 func mapKeySortValue(v reflect.Value) string {

@@ -87,6 +87,20 @@ results["R1"] := if {
 	}
 }
 
+func TestValidateSemantic_CheckAcceptsUnresolvedRegoPath(t *testing.T) {
+	doc := validRulesetDoc()
+	doc.Ruleset.Rules[0].Check.Rego = ""
+	doc.Ruleset.Rules[0].Check.RegoPath = "rule.rego"
+
+	errs := ValidateSemantic(bundleWithRuleset(doc))
+	if containsErr(errs, "check.rego is required") {
+		t.Fatalf("expected check.rego_path to satisfy Rego content requirement, got:\n%s", joinErrs(errs))
+	}
+	if len(errs) != 0 {
+		t.Fatalf("expected no semantic errors, got:\n%s", joinErrs(errs))
+	}
+}
+
 func TestValidateSemantic_InvalidQuerylessRulesetPolicyRego(t *testing.T) {
 	doc := validRulesetDoc()
 	doc.Ruleset.Policy = &types.RegoPolicy{
@@ -100,6 +114,23 @@ helper := if {
 	errs := ValidateSemantic(bundleWithRuleset(doc))
 	if !containsErr(errs, "ruleset.policy invalid Rego") {
 		t.Fatalf("expected invalid ruleset policy Rego error, got:\n%s", joinErrs(errs))
+	}
+}
+
+func TestValidateSemantic_PolicyAcceptsUnresolvedRegoPath(t *testing.T) {
+	doc := validRulesetDoc()
+	doc.Ruleset.Policy = &types.RegoPolicy{
+		Engine:   types.CheckEngineRego,
+		Package:  "opensspm.policy",
+		RegoPath: "policy.rego",
+	}
+
+	errs := ValidateSemantic(bundleWithRuleset(doc))
+	if containsErr(errs, "ruleset.policy.rego is required") {
+		t.Fatalf("expected policy.rego_path to satisfy Rego content requirement, got:\n%s", joinErrs(errs))
+	}
+	if len(errs) != 0 {
+		t.Fatalf("expected no semantic errors, got:\n%s", joinErrs(errs))
 	}
 }
 

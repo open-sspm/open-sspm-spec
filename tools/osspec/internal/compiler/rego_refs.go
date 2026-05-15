@@ -114,12 +114,12 @@ func readRegoFile(repoRootAbs, sourceAbs, ref string) ([]byte, string, error) {
 		return nil, "", fmt.Errorf("path escapes repo root after resolving symlinks: %q", ref)
 	}
 
-	b, err := os.ReadFile(targetAbs)
+	b, err := os.ReadFile(resolvedAbs)
 	if err != nil {
-		return nil, "", fmt.Errorf("read %s: %w", repoRel(repoRootAbs, targetAbs), err)
+		return nil, "", fmt.Errorf("read %s: %w", repoRel(repoRootAbs, resolvedAbs), err)
 	}
 	if !utf8.Valid(b) {
-		return nil, "", fmt.Errorf("file must be UTF-8: %s", repoRel(repoRootAbs, targetAbs))
+		return nil, "", fmt.Errorf("file must be UTF-8: %s", repoRel(repoRootAbs, resolvedAbs))
 	}
 	return b, repoRel(repoRootAbs, targetAbs), nil
 }
