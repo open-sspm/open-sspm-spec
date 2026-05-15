@@ -1,49 +1,14 @@
 "entity_policy_pack":
+  "inputs":
+    "schema": "identity_risk_input.v1"
   "metadata":
     "domain": "identity"
     "id": "builtin.identity.risk"
     "version": "1.0.0"
-  "spec":
-    "aggregation":
-      "risk_level":
-        "default": "low"
-        "strategy": "max_severity"
-      "risk_reason_count":
-        "strategy": "count_matching_rules"
-    "inputs":
-      "schema": "identity_risk_input.v1"
-    "rules":
-      -
-        "id": "linked_critical_credential"
-        "severity": "critical"
-        "title": "Linked credential is critical"
-        "when": "has_critical_credential"
-      -
-        "id": "missing_accountable_owner"
-        "severity": "high"
-        "title": "No accountable owner"
-        "when": "owner_presence == \"unknown\""
-      -
-        "id": "linked_high_risk_credential"
-        "severity": "high"
-        "title": "Linked credential is high risk"
-        "when": "has_high_risk_credential \u0026\u0026 !has_critical_credential"
-      -
-        "id": "linked_expired_credential"
-        "severity": "high"
-        "title": "Linked credential is expired"
-        "when": "has_expired_credential"
-      -
-        "id": "unreviewed_risky_principal"
-        "severity": "high"
-        "title": "Unreviewed principal has risky evidence"
-        "when": "governance_state == \"unreviewed\" \u0026\u0026 (has_high_risk_credential || has_expired_credential || has_expiring_credential || has_unused_credential || has_stale_evidence)"
-      -
-        "id": "stale_or_unused_evidence"
-        "severity": "medium"
-        "title": "Principal has stale or aging evidence"
-        "when": "has_expiring_credential || has_unused_credential || has_stale_evidence"
-    "scoring": {}
-    "suggestions": {}
+  "policy":
+    "engine": "rego"
+    "package": "opensspm.entity.identity_risk"
+    "query": "data.opensspm.entity.identity_risk.result"
+    "rego": "package opensspm.entity.identity_risk\n\nentity := input.entity\n\ndefault linked_critical_credential := false\nlinked_critical_credential if { object.get(entity, \"has_critical_credential\", false) == true }\n\ndefault missing_accountable_owner := false\nmissing_accountable_owner if { lower(sprintf(\"%v\", [object.get(entity, \"owner_presence\", \"\")])) == \"unknown\" }\n\ndefault linked_high_risk_credential := false\nlinked_high_risk_credential if {\n  object.get(entity, \"has_high_risk_credential\", false) == true\n  object.get(entity, \"has_critical_credential\", false) != true\n}\n\ndefault linked_expired_credential := false\nlinked_expired_credential if { object.get(entity, \"has_expired_credential\", false) == true }\n\nrisky_evidence if {\n  object.get(entity, \"has_high_risk_credential\", false) == true\n}\nrisky_evidence if {\n  object.get(entity, \"has_expired_credential\", false) == true\n}\nrisky_evidence if {\n  object.get(entity, \"has_expiring_credential\", false) == true\n}\nrisky_evidence if {\n  object.get(entity, \"has_unused_credential\", false) == true\n}\nrisky_evidence if {\n  object.get(entity, \"has_stale_evidence\", false) == true\n}\n\ndefault unreviewed_risky_principal := false\nunreviewed_risky_principal if {\n  lower(sprintf(\"%v\", [object.get(entity, \"governance_state\", \"\")])) == \"unreviewed\"\n  risky_evidence\n}\n\ndefault stale_or_unused_evidence := false\nstale_or_unused_evidence if { object.get(entity, \"has_expiring_credential\", false) == true }\nstale_or_unused_evidence if { object.get(entity, \"has_unused_credential\", false) == true }\nstale_or_unused_evidence if { object.get(entity, \"has_stale_evidence\", false) == true }\n\nsignal_defs := [\n  {\"id\": \"linked_critical_credential\", \"severity\": \"critical\", \"title\": \"Linked credential is critical\", \"matched\": linked_critical_credential},\n  {\"id\": \"missing_accountable_owner\", \"severity\": \"high\", \"title\": \"No accountable owner\", \"matched\": missing_accountable_owner},\n  {\"id\": \"linked_high_risk_credential\", \"severity\": \"high\", \"title\": \"Linked credential is high risk\", \"matched\": linked_high_risk_credential},\n  {\"id\": \"linked_expired_credential\", \"severity\": \"high\", \"title\": \"Linked credential is expired\", \"matched\": linked_expired_credential},\n  {\"id\": \"unreviewed_risky_principal\", \"severity\": \"high\", \"title\": \"Unreviewed principal has risky evidence\", \"matched\": unreviewed_risky_principal},\n  {\"id\": \"stale_or_unused_evidence\", \"severity\": \"medium\", \"title\": \"Principal has stale or aging evidence\", \"matched\": stale_or_unused_evidence},\n]\n\nsignals := [{\"id\": s.id, \"severity\": s.severity, \"title\": s.title} |\n  s := signal_defs[_]\n  s.matched\n]\n\nhas_severity(level) if {\n  signals[_].severity == level\n}\n\nrisk_level := \"critical\" if { has_severity(\"critical\") }\nrisk_level := \"high\" if {\n  not has_severity(\"critical\")\n  has_severity(\"high\")\n}\nrisk_level := \"medium\" if {\n  not has_severity(\"critical\")\n  not has_severity(\"high\")\n  has_severity(\"medium\")\n}\nrisk_level := \"low\" if {\n  not has_severity(\"critical\")\n  not has_severity(\"high\")\n  not has_severity(\"medium\")\n}\n\nresult := {\n  \"risk_level\": risk_level,\n  \"signals\": signals,\n}"
 "kind": "opensspm.entity_policy_pack"
 "schema_version": 2

@@ -3,18 +3,15 @@
 package v2
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"regexp"
-	"slices"
-	"sort"
+	"math"
+	"math/big"
 	"strconv"
 	"strings"
-	"sync"
 
-	"github.com/google/cel-go/cel"
-	"github.com/google/cel-go/common/types"
-	"github.com/google/cel-go/common/types/ref"
+	"github.com/open-policy-agent/opa/v1/rego"
 )
 
 {{ .EnumBlock }}
@@ -68,6 +65,7 @@ type Ruleset struct {
 	FrameworkMappings []FrameworkMapping   `json:"framework_mappings,omitempty"`
 	Requirements      *RulesetRequirements `json:"requirements,omitempty"`
 	DataContracts     []DatasetContractRef `json:"data_contracts,omitempty"`
+	Policy            *RegoPolicy          `json:"policy,omitempty"`
 	Rules             []Rule               `json:"rules"`
 }
 
@@ -165,144 +163,39 @@ type Lifecycle struct {
 }
 
 type Check struct {
-	Engine     CheckEngine `json:"engine"`
-	Expression string      `json:"expression,omitempty"`
-	Plan       *CheckPlan  `json:"plan,omitempty"`
+	Engine  CheckEngine `json:"engine"`
+	Package string      `json:"package,omitempty"`
+	Query   string      `json:"query"`
+	Rego    string      `json:"rego,omitempty"`
 }
 
-type CheckPlan struct {
-	Type               string            `json:"type"`
-	Dataset            string            `json:"dataset"`
-	WhereExpression    string            `json:"where_expression,omitempty"`
-	AssertExpression   string            `json:"assert_expression,omitempty"`
-	Expect             *CheckPlanExpect  `json:"expect,omitempty"`
-	Compare            *CheckPlanCompare `json:"compare,omitempty"`
-	OnMissingDataset   string            `json:"on_missing_dataset,omitempty"`
-	OnPermissionDenied string            `json:"on_permission_denied,omitempty"`
-	OnSyncError        string            `json:"on_sync_error,omitempty"`
-}
-
-type CheckPlanExpect struct {
-	Match       string `json:"match,omitempty"`
-	MinSelected int    `json:"min_selected,omitempty"`
-	OnEmpty     string `json:"on_empty,omitempty"`
-}
-
-type CheckPlanCompare struct {
-	Op    string `json:"op"`
-	Value any    `json:"value"`
+type RegoPolicy struct {
+	Engine  CheckEngine `json:"engine"`
+	Package string      `json:"package"`
+	Query   string      `json:"query,omitempty"`
+	Rego    string      `json:"rego"`
 }
 
 type EntityPolicyPackDoc struct {
-	SchemaVersion    int              `json:"schema_version" yaml:"schema_version"`
-	Kind             string           `json:"kind" yaml:"kind"`
-	EntityPolicyPack EntityPolicyPack `json:"entity_policy_pack" yaml:"entity_policy_pack"`
+	SchemaVersion    int              `json:"schema_version"`
+	Kind             string           `json:"kind"`
+	EntityPolicyPack EntityPolicyPack `json:"entity_policy_pack"`
 }
 
 type EntityPolicyPack struct {
-	Metadata EntityPolicyMetadata `json:"metadata" yaml:"metadata"`
-	Spec     EntityPolicySpec     `json:"spec" yaml:"spec"`
+	Metadata EntityPolicyMetadata `json:"metadata"`
+	Inputs   EntityPolicyInputs   `json:"inputs,omitempty"`
+	Policy   RegoPolicy           `json:"policy"`
 }
 
 type EntityPolicyMetadata struct {
-	ID      string             `json:"id" yaml:"id"`
-	Version string             `json:"version" yaml:"version"`
-	Domain  EntityPolicyDomain `json:"domain" yaml:"domain"`
-}
-
-type EntityPolicySpec struct {
-	Inputs      EntityPolicyInputs            `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-	Constants   map[string][]string           `json:"constants,omitempty" yaml:"constants,omitempty"`
-	Suggestions EntityPolicySuggestions       `json:"suggestions,omitempty" yaml:"suggestions,omitempty"`
-	Scoring     EntityPolicyScoring           `json:"scoring,omitempty" yaml:"scoring,omitempty"`
-	Levels      []EntityPolicyLevelRule       `json:"levels,omitempty" yaml:"levels,omitempty"`
-	Rules       []EntityPolicyRule            `json:"rules,omitempty" yaml:"rules,omitempty"`
-	Aggregation EntityPolicyAggregation       `json:"aggregation,omitempty" yaml:"aggregation,omitempty"`
-	ScopedRules []EntityPolicyScopedRule      `json:"scoped_rules,omitempty" yaml:"scoped_rules,omitempty"`
+	ID      string             `json:"id"`
+	Version string             `json:"version"`
+	Domain  EntityPolicyDomain `json:"domain"`
 }
 
 type EntityPolicyInputs struct {
-	Schema string `json:"schema,omitempty" yaml:"schema,omitempty"`
-}
-
-type EntityPolicySuggestions struct {
-	BusinessCriticality []EntityPolicySuggestionRule `json:"business_criticality,omitempty" yaml:"business_criticality,omitempty"`
-	DataClassification  []EntityPolicySuggestionRule `json:"data_classification,omitempty" yaml:"data_classification,omitempty"`
-}
-
-type EntityPolicySuggestionRule struct {
-	ID    string `json:"id" yaml:"id"`
-	Level string `json:"level" yaml:"level"`
-	When  string `json:"when" yaml:"when"`
-}
-
-type EntityPolicyScoring struct {
-	Base  int                       `json:"base,omitempty" yaml:"base,omitempty"`
-	Max   int                       `json:"max,omitempty" yaml:"max,omitempty"`
-	Rules []EntityPolicyScoringRule `json:"rules,omitempty" yaml:"rules,omitempty"`
-}
-
-type EntityPolicyScoringRule struct {
-	ID     string             `json:"id" yaml:"id"`
-	Points int                `json:"points" yaml:"points"`
-	When   string             `json:"when" yaml:"when"`
-	Signal EntityPolicySignal `json:"signal,omitempty" yaml:"signal,omitempty"`
-}
-
-type EntityPolicySignal struct {
-	Severity string `json:"severity,omitempty" yaml:"severity,omitempty"`
-	Title    string `json:"title,omitempty" yaml:"title,omitempty"`
-	Evidence string `json:"evidence,omitempty" yaml:"evidence,omitempty"`
-}
-
-type EntityPolicyLevelRule struct {
-	Level string `json:"level" yaml:"level"`
-	When  string `json:"when" yaml:"when"`
-}
-
-type EntityPolicyRule struct {
-	ID         string `json:"id" yaml:"id"`
-	Severity   string `json:"severity" yaml:"severity"`
-	ScoreDelta int    `json:"score_delta,omitempty" yaml:"score_delta,omitempty"`
-	When       string `json:"when" yaml:"when"`
-	Title      string `json:"title" yaml:"title"`
-	Evidence   string `json:"evidence,omitempty" yaml:"evidence,omitempty"`
-}
-
-type EntityPolicyAggregation struct {
-	RiskLevel       EntityPolicyAggregationStrategy `json:"risk_level,omitempty" yaml:"risk_level,omitempty"`
-	RiskReasonCount EntityPolicyAggregationStrategy `json:"risk_reason_count,omitempty" yaml:"risk_reason_count,omitempty"`
-}
-
-type EntityPolicyAggregationStrategy struct {
-	Strategy string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
-	Default  string `json:"default,omitempty" yaml:"default,omitempty"`
-}
-
-type EntityPolicyScopedRule struct {
-	ID          string                        `json:"id" yaml:"id"`
-	Scope       EntityPolicyScope            `json:"scope" yaml:"scope"`
-	Rules       []EntityPolicyRule           `json:"rules,omitempty" yaml:"rules,omitempty"`
-	Suggestions EntityPolicyScopedSuggestions `json:"suggestions,omitempty" yaml:"suggestions,omitempty"`
-}
-
-type EntityPolicyScope struct {
-	App EntityPolicyAppScope `json:"app" yaml:"app"`
-}
-
-type EntityPolicyAppScope struct {
-	CanonicalKey  string   `json:"canonical_key,omitempty" yaml:"canonical_key,omitempty"`
-	PrimaryDomain string   `json:"primary_domain,omitempty" yaml:"primary_domain,omitempty"`
-	DomainMatches []string `json:"domain_matches,omitempty" yaml:"domain_matches,omitempty"`
-	VendorName    string   `json:"vendor_name,omitempty" yaml:"vendor_name,omitempty"`
-	SourceKind    string   `json:"source_kind,omitempty" yaml:"source_kind,omitempty"`
-	SourceName    string   `json:"source_name,omitempty" yaml:"source_name,omitempty"`
-	Category      string   `json:"category,omitempty" yaml:"category,omitempty"`
-}
-
-type EntityPolicyScopedSuggestions struct {
-	BusinessCriticality string `json:"business_criticality,omitempty" yaml:"business_criticality,omitempty"`
-	DataClassification  string `json:"data_classification,omitempty" yaml:"data_classification,omitempty"`
+	Schema string `json:"schema,omitempty"`
 }
 
 type ProfileDoc struct {
@@ -405,8 +298,9 @@ type RuleRequirement struct {
 	IsManual           bool                      `json:"is_manual"`
 	Datasets           []DatasetRefSpec          `json:"datasets"`
 	Engine             *CheckEngine              `json:"engine,omitempty"`
-	Expression         string                    `json:"expression,omitempty"`
-	ExpressionSHA256   string                    `json:"expression_sha256,omitempty"`
+	RegoPackage        string                    `json:"rego_package,omitempty"`
+	RegoQuery          string                    `json:"rego_query,omitempty"`
+	RegoSHA256         string                    `json:"rego_sha256,omitempty"`
 	DatasetsReferenced []string                  `json:"datasets_referenced"`
 	ParamsReferenced   []string                  `json:"params_referenced"`
 	Inputs             []RuleInputRequirement    `json:"inputs"`
@@ -414,11 +308,13 @@ type RuleRequirement struct {
 }
 
 type EntityPolicyPackRequirement struct {
-	PolicyPackID   string             `json:"policy_pack_id"`
-	Version        string             `json:"version"`
-	Domain         EntityPolicyDomain `json:"domain"`
-	InputSchema    string             `json:"input_schema,omitempty"`
-	ExpressionRefs []string           `json:"expression_refs"`
+	PolicyPackID string             `json:"policy_pack_id"`
+	Version      string             `json:"version"`
+	Domain       EntityPolicyDomain `json:"domain"`
+	InputSchema  string             `json:"input_schema,omitempty"`
+	RegoPackage  string             `json:"rego_package,omitempty"`
+	RegoQuery    string             `json:"rego_query,omitempty"`
+	RegoSHA256   string             `json:"rego_sha256,omitempty"`
 }
 
 type Compiled[T any] struct {
@@ -440,66 +336,6 @@ type Descriptor struct {
 	EntityPolicyPacks []Compiled[EntityPolicyPackDoc] `json:"entity_policy_packs,omitempty"`
 	Profiles          []Compiled[ProfileDoc]          `json:"profiles"`
 	Index             DescriptorIndex                 `json:"index"`
-}
-
-func ParseDescriptor(b []byte) (Descriptor, error) {
-	var d Descriptor
-	return d, json.Unmarshal(b, &d)
-}
-
-func FindRulesetRequirement(idx *RequirementsIndex, key string) (*RulesetRequirement, bool) {
-	if idx == nil {
-		return nil, false
-	}
-	for i := range idx.Rulesets {
-		if idx.Rulesets[i].RulesetKey == key {
-			return &idx.Rulesets[i], true
-		}
-	}
-	return nil, false
-}
-
-func (d *Descriptor) RulesetRequirementByKey(key string) (*RulesetRequirement, bool) {
-	if d == nil {
-		return nil, false
-	}
-	return FindRulesetRequirement(&d.Index.Requirements, key)
-}
-
-func (r *RulesetRequirement) RuleByKey(ruleKey string) (*RuleRequirement, bool) {
-	if r == nil {
-		return nil, false
-	}
-	for i := range r.Rules {
-		if r.Rules[i].RuleKey == ruleKey {
-			return &r.Rules[i], true
-		}
-	}
-	return nil, false
-}
-
-func (r *RulesetRequirement) InputByName(name string) (*RulesetInputRequirement, bool) {
-	if r == nil {
-		return nil, false
-	}
-	for i := range r.Inputs {
-		if r.Inputs[i].Name == name {
-			return &r.Inputs[i], true
-		}
-	}
-	return nil, false
-}
-
-func (r *RuleRequirement) InputByName(name string) (*RuleInputRequirement, bool) {
-	if r == nil {
-		return nil, false
-	}
-	for i := range r.Inputs {
-		if r.Inputs[i].Name == name {
-			return &r.Inputs[i], true
-		}
-	}
-	return nil, false
 }
 
 type EvaluateStatus string
@@ -532,6 +368,12 @@ type EvaluateResult struct {
 	PassedCount   int            `json:"passed_count,omitempty"`
 	CountValue    int            `json:"count_value,omitempty"`
 	TargetValue   *int           `json:"target_value,omitempty"`
+}
+
+type EntityPolicyEvaluateResult struct {
+	RiskLevel string                   `json:"risk_level,omitempty"`
+	RiskScore int                      `json:"risk_score,omitempty"`
+	Signals   []EntityPolicyTestSignal `json:"signals,omitempty"`
 }
 
 func (rs *Ruleset) AddRule(rule Rule) (bool, error) {
@@ -573,20 +415,16 @@ func EvaluateRule(rule *Rule, input EvaluateInput) (EvaluateResult, error) {
 	if rule == nil {
 		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "nil_rule"}, fmt.Errorf("rule is nil")
 	}
-	if input.Datasets == nil {
-		input.Datasets = map[string]DatasetInput{}
-	}
-	if input.Params == nil {
-		input.Params = map[string]any{}
-	}
-
 	if rule.Monitoring.Status == MonitoringStatus_MANUAL || rule.Monitoring.Status == MonitoringStatus_UNSUPPORTED {
 		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "manual_rule"}, nil
 	}
-
 	if rule.Check == nil {
 		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "missing_check"}, fmt.Errorf("rule.check is required")
 	}
+	if rule.Check.Engine != CheckEngine_REGO {
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "unsupported_engine"}, fmt.Errorf("unsupported check.engine %q", rule.Check.Engine)
+	}
+
 	params := make(map[string]any)
 	if rule.Parameters != nil {
 		for k, v := range rule.Parameters.Defaults {
@@ -597,619 +435,192 @@ func EvaluateRule(rule *Rule, input EvaluateInput) (EvaluateResult, error) {
 		params[k] = v
 	}
 
-	engine := strings.TrimSpace(string(rule.Check.Engine))
-	switch engine {
-	case string(CheckEngine_CEL):
-		expression := strings.TrimSpace(rule.Check.Expression)
-		if expression == "" {
-			return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "missing_expression"}, fmt.Errorf("check.expression is required")
-		}
-
-		refs := extractExpressionReferences(expression)
-		datasets, early, ok := resolveExpressionDatasets(refs.RequiredDatasets, input.Datasets)
-		if !ok {
-			return early, nil
-		}
-		for _, name := range refs.Params {
-			if _, exists := params[name]; !exists {
-				return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "missing_param"}, fmt.Errorf("param %q not found", name)
-			}
-		}
-
-		pass, err := evaluateCELExpression(expression, datasets, params)
-		if err != nil {
-			return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "cel_error"}, err
-		}
-
-		result := EvaluateResult{Status: EvaluateStatus_FAIL, SelectedCount: 1, PassedCount: 0, CountValue: 0}
-		if pass {
-			result.Status = EvaluateStatus_PASS
-			result.PassedCount = 1
-			result.CountValue = 1
-		}
-		return result, nil
-	case string(CheckEngine_CEL_PLAN):
-		result, err := evaluateCELPlan(rule.Check.Plan, input.Datasets, params)
-		if err != nil {
-			return result, err
-		}
-		return result, nil
-	default:
-		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "unsupported_engine"}, fmt.Errorf("unsupported check.engine %q", rule.Check.Engine)
+	result, err := evaluateRego(rule.Key+".rego", rule.Check.Rego, rule.Check.Query, map[string]any{
+		"datasets": wrapDatasetInput(input.Datasets),
+		"params":   params,
+		"rule": map[string]any{
+			"key":           rule.Key,
+			"required_data": rule.RequiredData,
+		},
+	})
+	if err != nil {
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "rego_error"}, err
 	}
+	out, err := evaluateResultFromMap(result)
+	if err != nil {
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "invalid_status"}, err
+	}
+	return out, nil
 }
 
 func (r *Rule) Evaluate(input EvaluateInput) (EvaluateResult, error) {
 	return EvaluateRule(r, input)
 }
 
-func evaluateCELPlan(plan *CheckPlan, datasets map[string]DatasetInput, params map[string]any) (EvaluateResult, error) {
-	if plan == nil {
-		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "missing_plan"}, fmt.Errorf("check.plan is required for check.engine=cel_plan")
+func EvaluateEntityPolicyPack(pack *EntityPolicyPack, entityInput map[string]any) (EntityPolicyEvaluateResult, error) {
+	if pack == nil {
+		return EntityPolicyEvaluateResult{}, fmt.Errorf("entity policy pack is nil")
 	}
-	dataset := strings.TrimSpace(plan.Dataset)
-	if dataset == "" {
-		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "missing_plan_dataset"}, fmt.Errorf("check.plan.dataset is required")
-	}
-
-	entry, ok := datasets[dataset]
-	if !ok {
-		return datasetResultByPolicy(DatasetErrorKind_MISSING_DATASET, plan.OnMissingDataset)
-	}
-	if entry.Error != nil {
-		action := policyForDatasetError(plan, entry.Error.Kind)
-		return datasetResultByPolicy(entry.Error.Kind, action)
-	}
-
-	selected := entry.Rows
-	whereExpr := strings.TrimSpace(plan.WhereExpression)
-	if whereExpr != "" && whereExpr != "true" {
-		filtered := make([]any, 0, len(entry.Rows))
-		for _, row := range entry.Rows {
-			match, err := evaluateCELPredicate(whereExpr, row, params)
-			if err != nil {
-				return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "cel_error"}, err
-			}
-			if match {
-				filtered = append(filtered, row)
-			}
-		}
-		selected = filtered
-	}
-
-	switch strings.TrimSpace(plan.Type) {
-	case "dataset.field_compare":
-		return evaluateFieldComparePlan(plan, selected, params)
-	case "dataset.count_compare":
-		return evaluateCountComparePlan(plan, selected)
-	default:
-		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "unsupported_plan_type"}, fmt.Errorf("unsupported check.plan.type %q", plan.Type)
-	}
-}
-
-func evaluateFieldComparePlan(plan *CheckPlan, selected []any, params map[string]any) (EvaluateResult, error) {
-	assertExpr := strings.TrimSpace(plan.AssertExpression)
-	if assertExpr == "" {
-		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "missing_plan_assert"}, fmt.Errorf("check.plan.assert_expression is required")
-	}
-
-	match := "all"
-	minSelected := 1
-	onEmpty := "fail"
-	if plan.Expect != nil {
-		if v := strings.ToLower(strings.TrimSpace(plan.Expect.Match)); v != "" {
-			match = v
-		}
-		minSelected = plan.Expect.MinSelected
-		if v := strings.ToLower(strings.TrimSpace(plan.Expect.OnEmpty)); v != "" {
-			onEmpty = v
-		}
-	}
-	if minSelected < 0 {
-		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "invalid_plan_expect"}, fmt.Errorf("check.plan.expect.min_selected must be >= 0")
-	}
-	if onEmpty != "fail" && onEmpty != "unknown" {
-		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "invalid_plan_expect"}, fmt.Errorf("check.plan.expect.on_empty must be fail|unknown")
-	}
-	if match != "all" && match != "any" {
-		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "invalid_plan_expect"}, fmt.Errorf("check.plan.expect.match must be all|any")
-	}
-
-	selectedCount := len(selected)
-	if selectedCount == 0 {
-		if onEmpty == "unknown" {
-			return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "empty_selection"}, nil
-		}
-		return EvaluateResult{Status: EvaluateStatus_FAIL, ReasonCode: "empty_selection", SelectedCount: 0, PassedCount: 0, CountValue: 0}, nil
-	}
-	if selectedCount < minSelected {
-		target := minSelected
-		return EvaluateResult{
-			Status:        EvaluateStatus_FAIL,
-			ReasonCode:    "min_selected_not_met",
-			SelectedCount: selectedCount,
-			PassedCount:   0,
-			CountValue:    selectedCount,
-			TargetValue:   &target,
-		}, nil
-	}
-
-	passed := 0
-	for _, row := range selected {
-		ok, err := evaluateCELPredicate(assertExpr, row, params)
-		if err != nil {
-			return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "cel_error"}, err
-		}
-		if ok {
-			passed++
-		}
-	}
-
-	pass := false
-	if match == "all" {
-		pass = passed == selectedCount
-	} else {
-		pass = passed > 0
-	}
-
-	result := EvaluateResult{
-		Status:        EvaluateStatus_FAIL,
-		SelectedCount: selectedCount,
-		PassedCount:   passed,
-		CountValue:    passed,
-	}
-	if pass {
-		result.Status = EvaluateStatus_PASS
-	}
-	return result, nil
-}
-
-func evaluateCountComparePlan(plan *CheckPlan, selected []any) (EvaluateResult, error) {
-	if plan.Compare == nil {
-		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "missing_plan_compare"}, fmt.Errorf("check.plan.compare is required")
-	}
-	target, ok := intValue(plan.Compare.Value)
-	if !ok {
-		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "invalid_plan_compare"}, fmt.Errorf("check.plan.compare.value must be an integer")
-	}
-
-	count := len(selected)
-	op := strings.ToLower(strings.TrimSpace(plan.Compare.Op))
-	pass, err := compareInts(op, count, target)
+	result, err := evaluateRego(pack.Metadata.ID+".rego", pack.Policy.Rego, pack.Policy.Query, map[string]any{
+		"entity": entityInput,
+		"policy": map[string]any{
+			"id":     pack.Metadata.ID,
+			"domain": pack.Metadata.Domain,
+		},
+	})
 	if err != nil {
-		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "invalid_plan_compare"}, err
+		return EntityPolicyEvaluateResult{}, err
 	}
+	return entityPolicyEvaluateResultFromMap(result)
+}
 
-	result := EvaluateResult{
-		Status:        EvaluateStatus_FAIL,
-		SelectedCount: count,
-		PassedCount:   0,
-		CountValue:    count,
-		TargetValue:   &target,
+func wrapDatasetInput(input map[string]DatasetInput) map[string]any {
+	out := make(map[string]any, len(input))
+	for dataset, entry := range input {
+		item := map[string]any{"rows": entry.Rows}
+		if entry.Error != nil {
+			item["error"] = map[string]any{"kind": entry.Error.Kind, "message": entry.Error.Message}
+		}
+		out[dataset] = item
 	}
-	if pass {
-		result.Status = EvaluateStatus_PASS
-		result.PassedCount = 1
+	return out
+}
+
+func evaluateRego(moduleName, module, query string, input any) (map[string]any, error) {
+	rs, err := rego.New(
+		rego.Query(query),
+		rego.Module(moduleName, module),
+		rego.Input(input),
+		rego.Strict(true),
+		rego.StrictBuiltinErrors(true),
+	).Eval(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	if len(rs) == 0 || len(rs[0].Expressions) == 0 {
+		return nil, fmt.Errorf("rego query %q is undefined", query)
+	}
+	if len(rs) != 1 || len(rs[0].Expressions) != 1 {
+		return nil, fmt.Errorf("rego query %q must return exactly one object result, got %d results", query, len(rs))
+	}
+	result, ok := rs[0].Expressions[0].Value.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("rego query %q must return object, got %T", query, rs[0].Expressions[0].Value)
 	}
 	return result, nil
 }
 
-func compareInts(op string, left, right int) (bool, error) {
-	switch op {
-	case "eq":
-		return left == right, nil
-	case "neq":
-		return left != right, nil
-	case "gt":
-		return left > right, nil
-	case "gte":
-		return left >= right, nil
-	case "lt":
-		return left < right, nil
-	case "lte":
-		return left <= right, nil
+func evaluateResultFromMap(result map[string]any) (EvaluateResult, error) {
+	statusValue, ok := result["status"]
+	status, err := evaluateStatusFromAny(statusValue, ok)
+	if err != nil {
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "invalid_status"}, err
+	}
+	out := EvaluateResult{
+		Status:     status,
+		ReasonCode: strings.TrimSpace(fmt.Sprint(result["reason_code"])),
+	}
+	out.SelectedCount, _ = intFromAny(result["selected_count"])
+	out.PassedCount, _ = intFromAny(result["passed_count"])
+	out.CountValue, _ = intFromAny(result["count_value"])
+	if target, ok := intFromAny(result["target_value"]); ok {
+		out.TargetValue = &target
+	}
+	return out, nil
+}
+
+func evaluateStatusFromAny(value any, ok bool) (EvaluateStatus, error) {
+	if !ok || value == nil {
+		return EvaluateStatus_UNKNOWN, fmt.Errorf("rego result.status is required")
+	}
+	status := EvaluateStatus(strings.TrimSpace(fmt.Sprint(value)))
+	switch status {
+	case EvaluateStatus_PASS, EvaluateStatus_FAIL, EvaluateStatus_UNKNOWN:
+		return status, nil
+	case "":
+		return EvaluateStatus_UNKNOWN, fmt.Errorf("rego result.status is required")
 	default:
-		return false, fmt.Errorf("unsupported compare op %q", op)
+		return EvaluateStatus_UNKNOWN, fmt.Errorf("rego result.status %q is invalid", status)
 	}
 }
 
-func intValue(v any) (int, bool) {
-	switch t := v.(type) {
-	case int:
-		return t, true
-	case int8:
-		return int(t), true
-	case int16:
-		return int(t), true
-	case int32:
-		return int(t), true
-	case int64:
-		return int(t), true
-	case uint:
-		return int(t), true
-	case uint8:
-		return int(t), true
-	case uint16:
-		return int(t), true
-	case uint32:
-		return int(t), true
-	case uint64:
-		return int(t), true
-	case float32:
-		i := int(t)
-		return i, float32(i) == t
-	case float64:
-		i := int(t)
-		return i, float64(i) == t
-	case json.Number:
-		i, err := t.Int64()
-		if err != nil {
-			return 0, false
+func entityPolicyEvaluateResultFromMap(result map[string]any) (EntityPolicyEvaluateResult, error) {
+	out := EntityPolicyEvaluateResult{
+		RiskLevel: strings.TrimSpace(fmt.Sprint(result["risk_level"])),
+	}
+	out.RiskScore, _ = intFromAny(result["risk_score"])
+	signals, ok := result["signals"].([]any)
+	if !ok {
+		return out, nil
+	}
+	for _, raw := range signals {
+		signal, ok := raw.(map[string]any)
+		if !ok {
+			return EntityPolicyEvaluateResult{}, fmt.Errorf("entity policy signal must be object, got %T", raw)
 		}
-		return int(i), true
+		out.Signals = append(out.Signals, EntityPolicyTestSignal{
+			ID:       strings.TrimSpace(fmt.Sprint(signal["id"])),
+			Severity: strings.TrimSpace(fmt.Sprint(signal["severity"])),
+			Title:    strings.TrimSpace(fmt.Sprint(signal["title"])),
+		})
+	}
+	return out, nil
+}
+
+func intFromAny(value any) (int, bool) {
+	switch v := value.(type) {
+	case int:
+		return v, true
+	case int64:
+		return intFromInt64(v)
+	case float64:
+		return intFromFloat64(v)
+	case json.Number:
+		return intFromString(v.String())
+	case string:
+		return intFromString(v)
 	default:
 		return 0, false
 	}
 }
 
-func policyForDatasetError(plan *CheckPlan, kind DatasetErrorKind) string {
-	if plan == nil {
-		return "unknown"
+func intFromString(value string) (int, bool) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return 0, false
 	}
-	switch kind {
-	case DatasetErrorKind_PERMISSION_DENIED:
-		return strings.ToLower(strings.TrimSpace(plan.OnPermissionDenied))
-	case DatasetErrorKind_SYNC_FAILED, DatasetErrorKind_ENGINE_ERROR:
-		return strings.ToLower(strings.TrimSpace(plan.OnSyncError))
-	default:
-		return strings.ToLower(strings.TrimSpace(plan.OnMissingDataset))
+	if i, err := strconv.ParseInt(value, 10, strconv.IntSize); err == nil {
+		return intFromInt64(i)
 	}
+	if strings.Contains(value, "/") {
+		return 0, false
+	}
+	rat, ok := new(big.Rat).SetString(value)
+	if !ok || !rat.IsInt() {
+		return 0, false
+	}
+	if rat.Cmp(big.NewRat(int64(math.MinInt), 1)) < 0 || rat.Cmp(big.NewRat(int64(math.MaxInt), 1)) > 0 {
+		return 0, false
+	}
+	return intFromInt64(rat.Num().Int64())
 }
 
-func datasetResultByPolicy(kind DatasetErrorKind, action string) (EvaluateResult, error) {
-	action = strings.ToLower(strings.TrimSpace(action))
-	if action == "" {
-		action = "unknown"
+func intFromInt64(value int64) (int, bool) {
+	if value < int64(math.MinInt) || value > int64(math.MaxInt) {
+		return 0, false
 	}
-	reason := "dataset_" + string(kind)
-	switch action {
-	case "fail":
-		return EvaluateResult{Status: EvaluateStatus_FAIL, ReasonCode: reason}, nil
-	case "error":
-		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: reason}, fmt.Errorf("dataset error: %s", kind)
-	default:
-		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: reason}, nil
-	}
+	return int(value), true
 }
 
-type expressionReferences struct {
-	Datasets         []string
-	RequiredDatasets []string
-	Params           []string
-}
-
-var (
-	rowsCallRe       = regexp.MustCompile(`\brows\(\s*"([^"]+)"\s*\)`)
-	hasDatasetCallRe = regexp.MustCompile(`\bhas_dataset\(\s*"([^"]+)"\s*\)`)
-	paramCallRe      = regexp.MustCompile(`\bparam\(\s*"([^"]+)"\s*\)`)
-)
-
-func extractExpressionReferences(expression string) expressionReferences {
-	requiredDatasets := literalArgs(expression, rowsCallRe)
-	datasets := append([]string{}, requiredDatasets...)
-	datasets = append(datasets, literalArgs(expression, hasDatasetCallRe)...)
-	params := literalArgs(expression, paramCallRe)
-	return expressionReferences{
-		Datasets:         normalizeStringSet(datasets),
-		RequiredDatasets: normalizeStringSet(requiredDatasets),
-		Params:           normalizeStringSet(params),
+func intFromFloat64(value float64) (int, bool) {
+	if math.IsNaN(value) || math.IsInf(value, 0) || math.Trunc(value) != value {
+		return 0, false
 	}
-}
-
-func resolveExpressionDatasets(required []string, input map[string]DatasetInput) (map[string][]any, EvaluateResult, bool) {
-	out := make(map[string][]any, len(input))
-	for dataset, entry := range input {
-		if entry.Error != nil {
-			continue
-		}
-		out[dataset] = entry.Rows
+	if value < float64(math.MinInt) || value > float64(math.MaxInt) {
+		return 0, false
 	}
-
-	for _, dataset := range required {
-		entry, ok := input[dataset]
-		if !ok {
-			return nil, EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "dataset_missing_dataset"}, false
-		}
-		if entry.Error != nil {
-			return nil, EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "dataset_" + string(entry.Error.Kind)}, false
-		}
-		out[dataset] = entry.Rows
+	if strconv.IntSize == 64 && value == float64(math.MaxInt) {
+		return 0, false
 	}
-	return out, EvaluateResult{}, true
-}
-
-type compiledExpression struct {
-	program cel.Program
-}
-
-type compiledPredicate struct {
-	program cel.Program
-	params  []string
-}
-
-var compiledExpressionCache sync.Map
-var compiledPredicateCache sync.Map
-
-func evaluateCELExpression(expression string, datasets map[string][]any, params map[string]any) (bool, error) {
-	compiled, err := compileExpression(expression)
-	if err != nil {
-		return false, err
-	}
-
-	datasetsDyn := map[string]any{}
-	for name, rows := range datasets {
-		datasetsDyn[name] = rows
-	}
-	paramsDyn := map[string]any{}
-	for name, value := range params {
-		paramsDyn[name] = value
-	}
-
-	out, _, err := compiled.program.Eval(map[string]any{
-		"datasets": datasetsDyn,
-		"params":   paramsDyn,
-	})
-	if err != nil {
-		return false, fmt.Errorf("evaluate CEL expression: %w", err)
-	}
-	value, ok := out.Value().(bool)
-	if !ok {
-		return false, fmt.Errorf("CEL expression must return bool, got %T", out.Value())
-	}
-	return value, nil
-}
-
-func evaluateCELPredicate(expression string, row any, params map[string]any) (bool, error) {
-	compiled, err := compilePredicateExpression(expression)
-	if err != nil {
-		return false, err
-	}
-
-	paramsDyn := map[string]any{}
-	for name, value := range params {
-		paramsDyn[name] = value
-	}
-	for _, param := range compiled.params {
-		if _, ok := paramsDyn[param]; !ok {
-			return false, fmt.Errorf("param %q not found", param)
-		}
-	}
-
-	out, _, err := compiled.program.Eval(map[string]any{
-		"r":      row,
-		"params": paramsDyn,
-	})
-	if err != nil {
-		return false, fmt.Errorf("evaluate CEL predicate: %w", err)
-	}
-	value, ok := out.Value().(bool)
-	if !ok {
-		return false, fmt.Errorf("CEL predicate must return bool, got %T", out.Value())
-	}
-	return value, nil
-}
-
-func compileExpression(expression string) (compiledExpression, error) {
-	expr := strings.TrimSpace(expression)
-	if expr == "" {
-		return compiledExpression{}, fmt.Errorf("CEL expression is required")
-	}
-	if cached, ok := compiledExpressionCache.Load(expr); ok {
-		return cached.(compiledExpression), nil
-	}
-
-	env, err := cel.NewEnv(
-		cel.Variable("datasets", cel.MapType(cel.StringType, cel.DynType)),
-		cel.Variable("params", cel.MapType(cel.StringType, cel.DynType)),
-		fieldCELFunction(),
-	)
-	if err != nil {
-		return compiledExpression{}, fmt.Errorf("create CEL environment: %w", err)
-	}
-
-	transformed := transformHelperCalls(expr)
-	ast, iss := env.Compile(transformed)
-	if iss != nil && iss.Err() != nil {
-		return compiledExpression{}, fmt.Errorf("compile CEL expression: %w", iss.Err())
-	}
-	if ast == nil {
-		return compiledExpression{}, fmt.Errorf("compile CEL expression: empty AST")
-	}
-	if !ast.OutputType().IsEquivalentType(cel.BoolType) {
-		return compiledExpression{}, fmt.Errorf("CEL expression must return bool, got %s", ast.OutputType())
-	}
-
-	program, err := env.Program(ast)
-	if err != nil {
-		return compiledExpression{}, fmt.Errorf("build CEL program: %w", err)
-	}
-	compiled := compiledExpression{program: program}
-	compiledExpressionCache.Store(expr, compiled)
-	return compiled, nil
-}
-
-func compilePredicateExpression(expression string) (compiledPredicate, error) {
-	expr := strings.TrimSpace(expression)
-	if expr == "" {
-		return compiledPredicate{}, fmt.Errorf("CEL predicate is required")
-	}
-	if cached, ok := compiledPredicateCache.Load(expr); ok {
-		return cached.(compiledPredicate), nil
-	}
-
-	env, err := cel.NewEnv(
-		cel.Variable("r", cel.DynType),
-		cel.Variable("params", cel.MapType(cel.StringType, cel.DynType)),
-		fieldCELFunction(),
-	)
-	if err != nil {
-		return compiledPredicate{}, fmt.Errorf("create CEL predicate environment: %w", err)
-	}
-
-	transformed := replaceLiteralCalls(expr, paramCallRe, func(name string) string {
-		return fmt.Sprintf(`params[%s]`, strconv.Quote(name))
-	})
-	ast, iss := env.Compile(transformed)
-	if iss != nil && iss.Err() != nil {
-		return compiledPredicate{}, fmt.Errorf("compile CEL predicate: %w", iss.Err())
-	}
-	if ast == nil {
-		return compiledPredicate{}, fmt.Errorf("compile CEL predicate: empty AST")
-	}
-	if !ast.OutputType().IsEquivalentType(cel.BoolType) {
-		return compiledPredicate{}, fmt.Errorf("CEL predicate must return bool, got %s", ast.OutputType())
-	}
-
-	program, err := env.Program(ast)
-	if err != nil {
-		return compiledPredicate{}, fmt.Errorf("build CEL predicate program: %w", err)
-	}
-	compiled := compiledPredicate{
-		program: program,
-		params:  normalizeStringSet(literalArgs(expr, paramCallRe)),
-	}
-	compiledPredicateCache.Store(expr, compiled)
-	return compiled, nil
-}
-
-func transformHelperCalls(expression string) string {
-	out := expression
-	out = replaceLiteralCalls(out, rowsCallRe, func(name string) string {
-		return fmt.Sprintf(`datasets[%s]`, strconv.Quote(name))
-	})
-	out = replaceLiteralCalls(out, hasDatasetCallRe, func(name string) string {
-		return fmt.Sprintf(`(%s in datasets)`, strconv.Quote(name))
-	})
-	out = replaceLiteralCalls(out, paramCallRe, func(name string) string {
-		return fmt.Sprintf(`params[%s]`, strconv.Quote(name))
-	})
-	return out
-}
-
-func literalArgs(expression string, re *regexp.Regexp) []string {
-	matches := re.FindAllStringSubmatch(expression, -1)
-	if len(matches) == 0 {
-		return nil
-	}
-	out := make([]string, 0, len(matches))
-	for _, match := range matches {
-		if len(match) < 2 {
-			continue
-		}
-		name := strings.TrimSpace(match[1])
-		if name == "" {
-			continue
-		}
-		out = append(out, name)
-	}
-	return out
-}
-
-func replaceLiteralCalls(expression string, re *regexp.Regexp, fn func(name string) string) string {
-	return re.ReplaceAllStringFunc(expression, func(match string) string {
-		sub := re.FindStringSubmatch(match)
-		if len(sub) < 2 {
-			return match
-		}
-		name := strings.TrimSpace(sub[1])
-		if name == "" {
-			return match
-		}
-		return fn(name)
-	})
-}
-
-func normalizeStringSet(values []string) []string {
-	if len(values) == 0 {
-		return []string{}
-	}
-	set := map[string]struct{}{}
-	for _, value := range values {
-		value = strings.TrimSpace(value)
-		if value == "" {
-			continue
-		}
-		set[value] = struct{}{}
-	}
-	if len(set) == 0 {
-		return []string{}
-	}
-	out := make([]string, 0, len(set))
-	for value := range set {
-		out = append(out, value)
-	}
-	sort.Strings(out)
-	return out
-}
-
-func fieldCELFunction() cel.EnvOption {
-	return cel.Function("field",
-		cel.Overload("field_dyn_string",
-			[]*cel.Type{cel.DynType, cel.StringType},
-			cel.DynType,
-			cel.BinaryBinding(func(lhs, rhs ref.Val) ref.Val {
-				path, ok := rhs.Value().(string)
-				if !ok {
-					return types.NullValue
-				}
-				return fieldNavigate(lhs, path)
-			}),
-		),
-	)
-}
-
-func fieldNavigate(val ref.Val, path string) ref.Val {
-	path = strings.TrimSpace(path)
-	if path == "" {
-		return val
-	}
-
-	parts := strings.Split(path, ".")
-	current := val
-	for _, part := range parts {
-		if part == "" {
-			return types.NullValue
-		}
-		m, ok := current.Value().(map[string]any)
-		if !ok {
-			mRef, ok2 := current.Value().(map[ref.Val]ref.Val)
-			if !ok2 {
-				return types.NullValue
-			}
-			next, found := mRef[types.String(part)]
-			if !found {
-				return types.NullValue
-			}
-			current = next
-			continue
-		}
-		next, found := m[part]
-		if !found {
-			return types.NullValue
-		}
-		current = types.DefaultTypeAdapter.NativeToValue(next)
-	}
-	return current
-}
-
-func (r *RulesetRequirement) RuleKeys() []string {
-	if r == nil {
-		return nil
-	}
-	keys := make([]string, 0, len(r.Rules))
-	for _, rule := range r.Rules {
-		keys = append(keys, rule.RuleKey)
-	}
-	slices.Sort(keys)
-	return keys
+	return int(value), true
 }

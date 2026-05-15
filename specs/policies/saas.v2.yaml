@@ -5,86 +5,118 @@ entity_policy_pack:
     id: builtin.saas.risk
     version: 1.0.0
     domain: saas
-  spec:
-    inputs:
-      schema: saas_app_risk_input.v1
-    constants:
-      high_business_criticalities:
-        - high
-        - critical
-      sensitive_data_classifications:
-        - confidential
-        - restricted
-    suggestions:
-      business_criticality:
-        - id: high_usage_critical
-          level: critical
-          when: actors_30d >= 200
-        - id: high_usage_or_privileged
-          level: high
-          when: actors_30d >= 50 || has_privileged_scope
-        - id: moderate_usage
-          level: medium
-          when: actors_30d >= 10
-        - id: default_business_low
-          level: low
-          when: "true"
-      data_classification:
-        - id: privileged_scopes_restricted
-          level: restricted
-          when: has_privileged_scope
-        - id: confidential_scopes_confidential
-          level: confidential
-          when: has_confidential_scope
-        - id: default_data_internal
-          level: internal
-          when: "true"
-    scoring:
-      base: 0
-      max: 100
-      rules:
-        - id: unmanaged_app
-          points: 45
-          when: managed_state != "managed"
-          signal:
-            severity: high
-            title: App is not managed by a fresh connector binding
-        - id: privileged_scopes
-          points: 20
-          when: has_privileged_scope
-          signal:
-            severity: high
-            title: App has privileged OAuth scopes
-        - id: missing_owner
-          points: 15
-          when: owner_identity_id == 0
-          signal:
-            severity: high
-            title: App has no accountable owner
-        - id: high_actor_count
-          points: 10
-          when: actors_30d >= 50
-          signal:
-            severity: medium
-            title: App has broad recent usage
-        - id: unmanaged_high_business_app
-          points: 10
-          when: managed_state != "managed" && effective_business_criticality in high_business_criticalities
-          signal:
-            severity: high
-            title: Unmanaged app appears business critical
-        - id: unmanaged_sensitive_data_app
-          points: 5
-          when: managed_state != "managed" && effective_data_classification in sensitive_data_classifications
-          signal:
-            severity: high
-            title: Unmanaged app may access sensitive data
-    levels:
-      - level: critical
-        when: score >= 80
-      - level: high
-        when: score >= 60
-      - level: medium
-        when: score >= 30
-      - level: low
-        when: "true"
+  inputs:
+    schema: saas_app_risk_input.v1
+  policy:
+    engine: rego
+    package: opensspm.entity.saas_risk
+    query: data.opensspm.entity.saas_risk.result
+    rego: |
+      package opensspm.entity.saas_risk
+
+      entity := input.entity
+      high_business_criticalities := {"high", "critical"}
+      sensitive_data_classifications := {"confidential", "restricted"}
+
+      actors_30d := object.get(entity, "actors_30d", 0)
+      managed_state := lower(sprintf("%v", [object.get(entity, "managed_state", "")]))
+      owner_identity_id := object.get(entity, "owner_identity_id", 0)
+      configured_business := lower(sprintf("%v", [object.get(entity, "configured_business_criticality", "")]))
+      configured_data := lower(sprintf("%v", [object.get(entity, "configured_data_classification", "")]))
+
+      has_privileged_scope if { object.get(entity, "has_privileged_scope", false) == true }
+      has_confidential_scope if { object.get(entity, "has_confidential_scope", false) == true }
+
+      suggested_business := "critical" if { actors_30d >= 200 }
+      suggested_business := "high" if {
+        actors_30d < 200
+        actors_30d >= 50
+      }
+      suggested_business := "high" if {
+        actors_30d < 200
+        has_privileged_scope
+      }
+      suggested_business := "medium" if {
+        not actors_30d >= 50
+        not has_privileged_scope
+        actors_30d >= 10
+      }
+      suggested_business := "low" if {
+        not actors_30d >= 10
+        not has_privileged_scope
+      }
+
+      suggested_data := "restricted" if { has_privileged_scope }
+      suggested_data := "confidential" if {
+        not has_privileged_scope
+        has_confidential_scope
+      }
+      suggested_data := "internal" if {
+        not has_privileged_scope
+        not has_confidential_scope
+      }
+
+      configured_business_valid if { configured_business in {"low", "medium", "high", "critical"} }
+      effective_business := configured_business if { configured_business_valid }
+      effective_business := suggested_business if { not configured_business_valid }
+
+      configured_data_valid if { configured_data in {"public", "internal", "confidential", "restricted"} }
+      effective_data := configured_data if { configured_data_valid }
+      effective_data := suggested_data if { not configured_data_valid }
+
+      default unmanaged_app := false
+      unmanaged_app if { managed_state != "managed" }
+
+      default privileged_scopes := false
+      privileged_scopes if { has_privileged_scope }
+
+      default missing_owner := false
+      missing_owner if { owner_identity_id == 0 }
+
+      default high_actor_count := false
+      high_actor_count if { actors_30d >= 50 }
+
+      default unmanaged_high_business_app := false
+      unmanaged_high_business_app if {
+        unmanaged_app
+        effective_business in high_business_criticalities
+      }
+
+      default unmanaged_sensitive_data_app := false
+      unmanaged_sensitive_data_app if {
+        unmanaged_app
+        effective_data in sensitive_data_classifications
+      }
+
+      signal_defs := [
+        {"id": "unmanaged_app", "severity": "high", "title": "App is not managed by a fresh connector binding", "points": 45, "matched": unmanaged_app},
+        {"id": "privileged_scopes", "severity": "high", "title": "App has privileged OAuth scopes", "points": 20, "matched": privileged_scopes},
+        {"id": "missing_owner", "severity": "high", "title": "App has no accountable owner", "points": 15, "matched": missing_owner},
+        {"id": "high_actor_count", "severity": "medium", "title": "App has broad recent usage", "points": 10, "matched": high_actor_count},
+        {"id": "unmanaged_high_business_app", "severity": "high", "title": "Unmanaged app appears business critical", "points": 10, "matched": unmanaged_high_business_app},
+        {"id": "unmanaged_sensitive_data_app", "severity": "high", "title": "Unmanaged app may access sensitive data", "points": 5, "matched": unmanaged_sensitive_data_app},
+      ]
+
+      matched_defs := [s | s := signal_defs[_]; s.matched]
+      signals := [{"id": s.id, "severity": s.severity, "title": s.title} | s := matched_defs[_]]
+      raw_score := sum([s.points | s := matched_defs[_]])
+
+      risk_score := raw_score if { raw_score <= 100 }
+      risk_score := 100 if { raw_score > 100 }
+
+      risk_level := "critical" if { risk_score >= 80 }
+      risk_level := "high" if {
+        risk_score < 80
+        risk_score >= 60
+      }
+      risk_level := "medium" if {
+        risk_score < 60
+        risk_score >= 30
+      }
+      risk_level := "low" if { risk_score < 30 }
+
+      result := {
+        "risk_level": risk_level,
+        "risk_score": risk_score,
+        "signals": signals,
+      }

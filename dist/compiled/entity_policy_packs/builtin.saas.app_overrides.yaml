@@ -1,45 +1,14 @@
 "entity_policy_pack":
+  "inputs":
+    "schema": "saas_app_risk_input.v1"
   "metadata":
     "domain": "saas"
     "id": "builtin.saas.app_overrides"
     "version": "1.0.0"
-  "spec":
-    "aggregation":
-      "risk_level": {}
-      "risk_reason_count": {}
-    "inputs": {}
-    "scoped_rules":
-      -
-        "id": "github_domain_policy"
-        "rules":
-          -
-            "id": "github_missing_owner"
-            "score_delta": 20
-            "severity": "critical"
-            "title": "GitHub app has no accountable owner"
-            "when": "owner_identity_id == 0"
-        "scope":
-          "app":
-            "domain_matches":
-              - "github.com"
-              - "*.github.com"
-        "suggestions":
-          "business_criticality": "high"
-      -
-        "id": "github_vendor_policy"
-        "rules":
-          -
-            "id": "github_missing_owner"
-            "score_delta": 20
-            "severity": "critical"
-            "title": "GitHub app has no accountable owner"
-            "when": "owner_identity_id == 0"
-        "scope":
-          "app":
-            "vendor_name": "github"
-        "suggestions":
-          "business_criticality": "high"
-    "scoring": {}
-    "suggestions": {}
+  "policy":
+    "engine": "rego"
+    "package": "opensspm.entity.saas_app_overrides"
+    "query": "data.opensspm.entity.saas_app_overrides.result"
+    "rego": "package opensspm.entity.saas_app_overrides\n\nentity := input.entity\nprimary_domain := lower(sprintf(\"%v\", [object.get(entity, \"primary_domain\", \"\")]))\nvendor_name := lower(sprintf(\"%v\", [object.get(entity, \"vendor_name\", \"\")]))\nowner_identity_id := object.get(entity, \"owner_identity_id\", 0)\n\ngithub_domain if { primary_domain == \"github.com\" }\ngithub_domain if { endswith(primary_domain, \".github.com\") }\ngithub_vendor if { vendor_name == \"github\" }\ngithub_scoped if { github_domain }\ngithub_scoped if { github_vendor }\n\ndefault github_missing_owner := false\ngithub_missing_owner if {\n  github_scoped\n  owner_identity_id == 0\n}\n\nsignals := [{\"id\": \"github_missing_owner\", \"severity\": \"critical\", \"title\": \"GitHub app has no accountable owner\"}] if {\n  github_missing_owner\n}\nsignals := [] if {\n  not github_missing_owner\n}\n\nrisk_score := 20 if { github_missing_owner }\nrisk_score := 0 if { not github_missing_owner }\n\nresult := {\n  \"risk_level\": \"low\",\n  \"risk_score\": risk_score,\n  \"signals\": signals,\n}"
 "kind": "opensspm.entity_policy_pack"
 "schema_version": 2

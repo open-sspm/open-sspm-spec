@@ -3,6 +3,7 @@ package compiler
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -10,10 +11,13 @@ import (
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
 )
 
-func TestBuildRequirements_CapturesRulesetAndRuleDetails(t *testing.T) {
-	r1Expr := `rows("okta:log-streams").exists(r, r["enabled"] == param("enabled")) && rows("okta:log-streams").size() >= int(param("min"))`
-	r3Expr := `rows("okta:log-streams").exists(r, r["enabled"] == param("enabled"))`
-	engineCEL := types.CheckEngineCEL
+func TestBuildRequirements_CapturesRegoRulesetAndRuleDetails(t *testing.T) {
+	regoModule := `package opensspm.example
+
+results["R1"] := {"status": "pass"} if { true }
+results["R3"] := {"status": "pass"} if { true }
+`
+	engineRego := types.CheckEngineRego
 
 	b := &schemasem.Bundle{
 		Rulesets: []struct {
@@ -21,7 +25,7 @@ func TestBuildRequirements_CapturesRulesetAndRuleDetails(t *testing.T) {
 			Doc  types.RulesetDoc
 		}{
 			{
-				Path: "specs/rulesets/example.json",
+				Path: "specs/rulesets/example.yaml",
 				Doc: types.RulesetDoc{
 					SchemaVersion: 2,
 					Kind:          "opensspm.ruleset",
@@ -42,8 +46,10 @@ func TestBuildRequirements_CapturesRulesetAndRuleDetails(t *testing.T) {
 								RequiredData: []string{"okta:log-streams"},
 								Parameters:   &types.Parameters{Defaults: map[string]any{"min": 1, "enabled": true}},
 								Check: &types.Check{
-									Engine:     types.CheckEngineCEL,
-									Expression: r1Expr,
+									Engine:  types.CheckEngineRego,
+									Package: "opensspm.example",
+									Query:   `data.opensspm.example.results["R1"]`,
+									Rego:    regoModule,
 								},
 							},
 							{
@@ -66,8 +72,10 @@ func TestBuildRequirements_CapturesRulesetAndRuleDetails(t *testing.T) {
 									},
 								},
 								Check: &types.Check{
-									Engine:     types.CheckEngineCEL,
-									Expression: r3Expr,
+									Engine:  types.CheckEngineRego,
+									Package: "opensspm.example",
+									Query:   `data.opensspm.example.results["R3"]`,
+									Rego:    regoModule,
 								},
 							},
 						},
@@ -87,19 +95,19 @@ func TestBuildRequirements_CapturesRulesetAndRuleDetails(t *testing.T) {
 				Status:             "active",
 				Scope:              types.Scope{Kind: types.ScopeKindGlobal},
 				Datasets:           []types.DatasetRefSpec{{Dataset: "okta:log-streams", Version: 2}},
-				Engines:            []types.CheckEngine{types.CheckEngineCEL},
+				Engines:            []types.CheckEngine{types.CheckEngineRego},
 				DatasetsReferenced: []string{"okta:log-streams"},
-				ParamsReferenced:   []string{"enabled", "min"},
+				ParamsReferenced:   []string{},
 				Inputs: []types.RulesetInputRequirement{
 					{
 						Name:     "enabled",
 						Type:     "boolean",
-						Sources:  []string{"defaults", "schema", "expression_param"},
+						Sources:  []string{"defaults", "schema"},
 						RuleKeys: []string{"R1", "R3"},
 					},
 					{
 						Name:     "min",
-						Sources:  []string{"defaults", "expression_param"},
+						Sources:  []string{"defaults"},
 						RuleKeys: []string{"R1"},
 					},
 					{
@@ -114,24 +122,15 @@ func TestBuildRequirements_CapturesRulesetAndRuleDetails(t *testing.T) {
 						RuleKey:            "R1",
 						IsManual:           false,
 						Datasets:           []types.DatasetRefSpec{{Dataset: "okta:log-streams", Version: 2}},
-						Engine:             &engineCEL,
-						Expression:         r1Expr,
-						ExpressionSHA256:   hashExpr(r1Expr),
+						Engine:             &engineRego,
+						RegoPackage:        "opensspm.example",
+						RegoQuery:          `data.opensspm.example.results["R1"]`,
+						RegoSHA256:         hashRego(regoModule),
 						DatasetsReferenced: []string{"okta:log-streams"},
-						ParamsReferenced:   []string{"enabled", "min"},
+						ParamsReferenced:   []string{},
 						Inputs: []types.RuleInputRequirement{
-							{
-								Name:       "enabled",
-								Default:    true,
-								HasDefault: true,
-								Sources:    []string{"defaults", "expression_param"},
-							},
-							{
-								Name:       "min",
-								Default:    1,
-								HasDefault: true,
-								Sources:    []string{"defaults", "expression_param"},
-							},
+							{Name: "enabled", Default: true, HasDefault: true, Sources: []string{"defaults"}},
+							{Name: "min", Default: 1, HasDefault: true, Sources: []string{"defaults"}},
 						},
 						Monitoring: types.RuleRequirementMonitoring{Status: types.MonitoringStatusAutomated},
 					},
@@ -140,8 +139,6 @@ func TestBuildRequirements_CapturesRulesetAndRuleDetails(t *testing.T) {
 						IsManual:           true,
 						Datasets:           []types.DatasetRefSpec{},
 						Engine:             nil,
-						Expression:         "",
-						ExpressionSHA256:   "",
 						DatasetsReferenced: []string{},
 						ParamsReferenced:   []string{},
 						Inputs:             []types.RuleInputRequirement{},
@@ -150,27 +147,16 @@ func TestBuildRequirements_CapturesRulesetAndRuleDetails(t *testing.T) {
 					{
 						RuleKey:            "R3",
 						IsManual:           false,
-						Datasets:           []types.DatasetRefSpec{{Dataset: "okta:log-streams", Version: 2}},
-						Engine:             &engineCEL,
-						Expression:         r3Expr,
-						ExpressionSHA256:   hashExpr(r3Expr),
-						DatasetsReferenced: []string{"okta:log-streams"},
-						ParamsReferenced:   []string{"enabled"},
+						Datasets:           []types.DatasetRefSpec{},
+						Engine:             &engineRego,
+						RegoPackage:        "opensspm.example",
+						RegoQuery:          `data.opensspm.example.results["R3"]`,
+						RegoSHA256:         hashRego(regoModule),
+						DatasetsReferenced: []string{},
+						ParamsReferenced:   []string{},
 						Inputs: []types.RuleInputRequirement{
-							{
-								Name:       "enabled",
-								Type:       "boolean",
-								Default:    false,
-								HasDefault: true,
-								Sources:    []string{"defaults", "schema", "expression_param"},
-							},
-							{
-								Name:       "threshold",
-								Type:       "integer",
-								Default:    5,
-								HasDefault: true,
-								Sources:    []string{"defaults", "schema"},
-							},
+							{Name: "enabled", Type: "boolean", Default: false, HasDefault: true, Sources: []string{"defaults", "schema"}},
+							{Name: "threshold", Type: "integer", Default: 5, HasDefault: true, Sources: []string{"defaults", "schema"}},
 						},
 						Monitoring: types.RuleRequirementMonitoring{Status: types.MonitoringStatusAutomated},
 					},
@@ -178,13 +164,12 @@ func TestBuildRequirements_CapturesRulesetAndRuleDetails(t *testing.T) {
 			},
 		},
 	}
-
 	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatalf("buildRequirements mismatch (-want +got):\n%s", diff)
+		t.Fatalf("buildRequirements() mismatch (-want +got):\n%s", diff)
 	}
 }
 
-func hashExpr(expr string) string {
-	sum := sha256.Sum256([]byte(expr))
+func hashRego(module string) string {
+	sum := sha256.Sum256([]byte(strings.TrimSpace(module)))
 	return hex.EncodeToString(sum[:])
 }

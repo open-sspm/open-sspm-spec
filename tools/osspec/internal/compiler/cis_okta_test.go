@@ -35,8 +35,8 @@ func TestCompile_CISOktaRulesetIndexed(t *testing.T) {
 	if len(rr.Datasets) != 6 {
 		t.Fatalf("expected 6 datasets, got %+v", rr.Datasets)
 	}
-	if len(rr.Engines) != 2 || rr.Engines[0] != types.CheckEngineCEL || rr.Engines[1] != types.CheckEngineCELPlan {
-		t.Fatalf("expected engines=[cel, cel_plan], got %+v", rr.Engines)
+	if len(rr.Engines) != 1 || rr.Engines[0] != types.CheckEngineRego {
+		t.Fatalf("expected engines=[rego], got %+v", rr.Engines)
 	}
 
 	if len(rr.Rules) != 24 {
@@ -48,30 +48,30 @@ func TestCompile_CISOktaRulesetIndexed(t *testing.T) {
 		engine   *types.CheckEngine
 		datasets int
 	}{
-		"OKTA-APP-000020": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCEL), datasets: 1},
-		"OKTA-APP-000025": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
+		"OKTA-APP-000020": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
+		"OKTA-APP-000025": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
 		"OKTA-APP-000090": {manual: true, status: types.MonitoringStatusManual, engine: nil, datasets: 0},
-		"OKTA-APP-000170": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
-		"OKTA-APP-000180": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCEL), datasets: 1},
-		"OKTA-APP-000190": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCEL), datasets: 1},
+		"OKTA-APP-000170": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
+		"OKTA-APP-000180": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
+		"OKTA-APP-000190": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
 		"OKTA-APP-000200": {manual: true, status: types.MonitoringStatusManual, engine: nil, datasets: 0},
-		"OKTA-APP-000560": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCEL), datasets: 1},
-		"OKTA-APP-000570": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCEL), datasets: 1},
-		"OKTA-APP-000650": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
-		"OKTA-APP-000670": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
-		"OKTA-APP-000680": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
-		"OKTA-APP-000690": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
-		"OKTA-APP-000700": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
-		"OKTA-APP-000740": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
-		"OKTA-APP-000745": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
-		"OKTA-APP-001430": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCEL), datasets: 1},
-		"OKTA-APP-001665": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCEL), datasets: 1},
-		"OKTA-APP-001670": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCEL), datasets: 1},
-		"OKTA-APP-001700": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCEL), datasets: 1},
-		"OKTA-APP-001710": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCEL), datasets: 1},
+		"OKTA-APP-000560": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
+		"OKTA-APP-000570": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
+		"OKTA-APP-000650": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
+		"OKTA-APP-000670": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
+		"OKTA-APP-000680": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
+		"OKTA-APP-000690": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
+		"OKTA-APP-000700": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
+		"OKTA-APP-000740": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
+		"OKTA-APP-000745": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
+		"OKTA-APP-001430": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
+		"OKTA-APP-001665": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
+		"OKTA-APP-001670": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
+		"OKTA-APP-001700": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
+		"OKTA-APP-001710": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
 		"OKTA-APP-001920": {manual: true, status: types.MonitoringStatusManual, engine: nil, datasets: 0},
-		"OKTA-APP-002980": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
-		"OKTA-APP-003010": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineCELPlan), datasets: 1},
+		"OKTA-APP-002980": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
+		"OKTA-APP-003010": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
 	}
 
 	for _, r := range rr.Rules {

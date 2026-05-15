@@ -19,4 +19,3 @@ func (s *Scope) UnmarshalJSON(b []byte) error {
 	}
 	return nil
 }
-

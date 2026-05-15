@@ -8,7 +8,10 @@ import (
 )
 
 func TestHashObjectJCS_NormalizedRulesetStableAcrossOrdering(t *testing.T) {
-	expr := `rows("okta:log-streams").exists(r, r["enabled"] == true)`
+	regoModule := `package opensspm.test
+
+results["A"] := {"status": "pass"} if { true }
+`
 
 	doc1 := types.RulesetDoc{
 		SchemaVersion: 2,
@@ -45,7 +48,12 @@ func TestHashObjectJCS_NormalizedRulesetStableAcrossOrdering(t *testing.T) {
 					Severity:     types.SeverityLow,
 					Monitoring:   types.Monitoring{Status: types.MonitoringStatusAutomated},
 					RequiredData: []string{"okta:log-streams"},
-					Check:        &types.Check{Engine: types.CheckEngineCEL, Expression: expr},
+					Check: &types.Check{
+						Engine:  types.CheckEngineRego,
+						Package: "opensspm.test",
+						Query:   `data.opensspm.test.results["A"]`,
+						Rego:    regoModule,
+					},
 				},
 			},
 		},
@@ -80,7 +88,12 @@ func TestHashObjectJCS_NormalizedRulesetStableAcrossOrdering(t *testing.T) {
 					Severity:     types.SeverityLow,
 					Monitoring:   types.Monitoring{Status: types.MonitoringStatusAutomated},
 					RequiredData: []string{"okta:log-streams"},
-					Check:        &types.Check{Engine: types.CheckEngineCEL, Expression: expr},
+					Check: &types.Check{
+						Engine:  types.CheckEngineRego,
+						Package: "opensspm.test",
+						Query:   `data.opensspm.test.results["A"]`,
+						Rego:    regoModule,
+					},
 				},
 				{
 					Key:          "B",
@@ -110,7 +123,10 @@ func TestHashObjectJCS_NormalizedRulesetStableAcrossOrdering(t *testing.T) {
 }
 
 func TestHashObjectJCS_NormalizedRulesetStableAcrossRequiredDataOrdering(t *testing.T) {
-	expr := `rows("core:a").size() > 0 && rows("core:b").size() > 0`
+	regoModule := `package opensspm.test
+
+results["R1"] := {"status": "pass"} if { true }
+`
 
 	doc1 := types.RulesetDoc{
 		SchemaVersion: 2,
@@ -129,7 +145,12 @@ func TestHashObjectJCS_NormalizedRulesetStableAcrossRequiredDataOrdering(t *test
 				Severity:     types.SeverityLow,
 				Monitoring:   types.Monitoring{Status: types.MonitoringStatusAutomated},
 				RequiredData: []string{"core:b", "core:a"},
-				Check:        &types.Check{Engine: types.CheckEngineCEL, Expression: expr},
+				Check: &types.Check{
+					Engine:  types.CheckEngineRego,
+					Package: "opensspm.test",
+					Query:   `data.opensspm.test.results["R1"]`,
+					Rego:    regoModule,
+				},
 			}},
 		},
 	}
@@ -150,7 +171,12 @@ func TestHashObjectJCS_NormalizedRulesetStableAcrossRequiredDataOrdering(t *test
 				Severity:     types.SeverityLow,
 				Monitoring:   types.Monitoring{Status: types.MonitoringStatusAutomated},
 				RequiredData: []string{"core:a", "core:b"},
-				Check:        &types.Check{Engine: types.CheckEngineCEL, Expression: expr},
+				Check: &types.Check{
+					Engine:  types.CheckEngineRego,
+					Package: "opensspm.test",
+					Query:   `data.opensspm.test.results["R1"]`,
+					Rego:    regoModule,
+				},
 			}},
 		},
 	}

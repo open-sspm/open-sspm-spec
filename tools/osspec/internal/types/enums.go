@@ -37,8 +37,7 @@ const (
 type CheckEngine string
 
 const (
-	CheckEngineCEL     CheckEngine = "cel"
-	CheckEngineCELPlan CheckEngine = "cel_plan"
+	CheckEngineRego CheckEngine = "rego"
 )
 
 type ReferenceType string
@@ -92,7 +91,7 @@ func EnumValues() map[string][]string {
 		"MonitoringStatus":      enumStrings([]MonitoringStatus{MonitoringStatusAutomated, MonitoringStatusPartial, MonitoringStatusManual, MonitoringStatusUnsupported}),
 		"Severity":              enumStrings([]Severity{SeverityCritical, SeverityHigh, SeverityMedium, SeverityLow, SeverityInfo}),
 		"EntityPolicyDomain":    enumStrings([]EntityPolicyDomain{EntityPolicyDomainCredential, EntityPolicyDomainSaaS, EntityPolicyDomainIdentity}),
-		"CheckEngine":           enumStrings([]CheckEngine{CheckEngineCEL, CheckEngineCELPlan}),
+		"CheckEngine":           enumStrings([]CheckEngine{CheckEngineRego}),
 		"ReferenceType":         enumStrings([]ReferenceType{ReferenceTypeDocumentation, ReferenceTypeStandard, ReferenceTypeBlog, ReferenceTypeTicket, ReferenceTypeOther}),
 		"FrameworkCoverageKind": enumStrings([]FrameworkCoverageKind{FrameworkCoverageDirect, FrameworkCoveragePartial, FrameworkCoverageSupporting}),
 		"RemediationEffort":     enumStrings([]RemediationEffort{RemediationEffortLow, RemediationEffortMedium, RemediationEffortHigh}),

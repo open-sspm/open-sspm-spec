@@ -9,7 +9,7 @@ import (
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
 )
 
-func TestGenerateSpecTypes_CELSurfaceAndHelpers(t *testing.T) {
+func TestGenerateSpecTypes_RegoSurfaceAndHelpers(t *testing.T) {
 	code, err := generateSpecTypes(types.EnumValues())
 	if err != nil {
 		t.Fatalf("generateSpecTypes() error: %v", err)
@@ -17,16 +17,13 @@ func TestGenerateSpecTypes_CELSurfaceAndHelpers(t *testing.T) {
 
 	required := []string{
 		"type Check struct",
-		"Engine     CheckEngine",
-		"Expression string",
-		"type CheckPlan struct",
-		"type CheckPlanExpect struct",
-		"type CheckPlanCompare struct",
+		"Engine  CheckEngine",
+		"Package string",
+		"Query   string",
+		"Rego    string",
+		"type RegoPolicy struct",
 		"type RulesetRequirement struct",
-		"[]CheckEngine",
-		"DatasetsReferenced",
-		"ParamsReferenced",
-		"ExpressionSHA256",
+		"RegoSHA256",
 		"type EvaluateStatus string",
 		"type DatasetInputError struct",
 		"type DatasetInput struct",
@@ -36,9 +33,9 @@ func TestGenerateSpecTypes_CELSurfaceAndHelpers(t *testing.T) {
 		"func (rs *Ruleset) RuleByKey(ruleKey string) (*Rule, bool)",
 		"func EvaluateRule(rule *Rule, input EvaluateInput) (EvaluateResult, error)",
 		"func (r *Rule) Evaluate(input EvaluateInput) (EvaluateResult, error)",
-		"func evaluateCELExpression(expression string, datasets map[string][]any, params map[string]any) (bool, error)",
-		"func evaluateCELPlan(plan *CheckPlan, datasets map[string]DatasetInput, params map[string]any) (EvaluateResult, error)",
-		"func evaluateCELPredicate(expression string, row any, params map[string]any) (bool, error)",
+		"func EvaluateEntityPolicyPack(pack *EntityPolicyPack, entityInput map[string]any) (EntityPolicyEvaluateResult, error)",
+		"func evaluateRego(moduleName, module, query string, input any) (map[string]any, error)",
+		"rego.StrictBuiltinErrors(true)",
 	}
 	for _, want := range required {
 		if !strings.Contains(code, want) {
@@ -47,13 +44,10 @@ func TestGenerateSpecTypes_CELSurfaceAndHelpers(t *testing.T) {
 	}
 
 	forbidden := []string{
-		"type Predicate struct",
-		"type Compare struct",
-		"type JoinSide struct",
-		"type RowEvidence struct",
-		"type PredicateEvidence struct",
-		"check_types",
-		"value_params",
+		"Check" + "Plan",
+		"Expression " + "string",
+		"evaluate" + string([]byte{'C', 'E', 'L'}),
+		"github.com/google/" + "c" + "el-go",
 	}
 	for _, bad := range forbidden {
 		if strings.Contains(code, bad) {

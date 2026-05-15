@@ -10,11 +10,9 @@ Source-of-truth repository for Open SSPM **compliance specifications**.
 
 Open SSPM is an open, versioned spec (YAML authoring + JSON Schema semantics) for posture/compliance rulesets and profiles (benchmarks) that tools can evaluate.
 
-Checks can be authored either as:
-- structured DSL (`check.type`, `dataset`, `where`, `assert`/`compare`, `expect`), or
-- raw CEL (`check.engine: cel`, `check.expression`).
-
-The compiler normalizes structured checks to runtime-ready compiled checks.
+Executable checks are authored in Rego (`check.engine: rego`). A ruleset can
+provide a shared Rego module under `ruleset.policy`, and each automated rule
+selects its result with `check.query`.
 
 ## What this repo contains
 
@@ -80,28 +78,35 @@ GitHub Pages:
   - canonicalize YAML via the repository canonical emitter
   - SHA-256 hex digest over canonical YAML bytes
 
-## Check evaluation modes
+## Check evaluation mode
 
-- `engine: cel`: single boolean CEL expression.
-- `engine: cel_plan`: runtime row-selection plan used for structured checks that need tri-state semantics (notably `expect.on_empty: unknown`).
+- `engine: rego`: an OPA/Rego module plus query. The query must return an
+  object with at least `status` for rule checks. Entity policy packs use Rego
+  too, returning `risk_level`, `risk_score`, and `signals` as needed.
 
-`cel_plan` evaluation runs in phases:
-1. dataset fetch (with `on_missing_dataset` / `on_permission_denied` / `on_sync_error` policies)
-2. row selection via `where_expression`
-3. empty-selection handling via `expect.on_empty`
-4. assertion/count evaluation (`all`/`any`/`min_selected` or count compare)
+Rule checks receive input shaped as:
+
+```json
+{
+  "datasets": {
+    "dataset:key": {
+      "rows": []
+    }
+  },
+  "params": {},
+  "rule": {
+    "key": "RULE-ID",
+    "required_data": ["dataset:key"]
+  }
+}
+```
+
+Entity policy packs receive `input.entity` and `input.policy`.
 
 ## `required_data` policy
 
-`rule.required_data` declares the dataset keys a rule depends on. `osspec validate` enforces that it includes datasets referenced by compiled checks:
-- CEL checks: helper references such as `rows("...")` and `has_dataset("...")`
-- CEL plan checks: `check.plan.dataset`
-
-## CEL helper semantics (raw CEL checks)
-
-- `rows("dataset")` reads rows for a dataset and is treated as a required dataset reference.
-- `has_dataset("dataset")` is an existence check helper and does not, by itself, force runtime failure when the dataset is absent.
-- Direct map access like `datasets["dataset"]` is supported at runtime, but dependency extraction for validation/indexing is helper-call based.
+`rule.required_data` declares the dataset keys a rule depends on. `osspec validate`
+enforces that each declared dataset is present in the ruleset `data_contracts`.
 
 ## Third-party standards (CIS)
 

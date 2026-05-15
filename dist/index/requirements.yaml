@@ -1,58 +1,35 @@
 "entity_policy_packs":
   -
     "domain": "credential"
-    "expression_refs":
-      - "expired_active"
-      - "expired_inactive"
-      - "expiring_within_30_days"
-      - "expiring_within_7_days"
-      - "high_privilege_missing_provenance"
-      - "missing_creator"
-      - "unused_over_90_days"
     "input_schema": "credential_risk_input.v1"
     "policy_pack_id": "builtin.credential.risk"
+    "rego_package": "opensspm.entity.credential_risk"
+    "rego_query": "data.opensspm.entity.credential_risk.result"
+    "rego_sha256": "d458ca674d25ba54f8ceb90d83b62d8c320d4aec9b26b95dd74f374ea66e334f"
     "version": "1.0.0"
   -
     "domain": "identity"
-    "expression_refs":
-      - "linked_critical_credential"
-      - "linked_expired_credential"
-      - "linked_high_risk_credential"
-      - "missing_accountable_owner"
-      - "stale_or_unused_evidence"
-      - "unreviewed_risky_principal"
     "input_schema": "identity_risk_input.v1"
     "policy_pack_id": "builtin.identity.risk"
+    "rego_package": "opensspm.entity.identity_risk"
+    "rego_query": "data.opensspm.entity.identity_risk.result"
+    "rego_sha256": "ee4b2ea1b5c16538e62b05389f2591384c798dc932c261c68de4154d02456c25"
     "version": "1.0.0"
   -
     "domain": "saas"
-    "expression_refs":
-      - "github_domain_policy/github_missing_owner"
-      - "github_vendor_policy/github_missing_owner"
+    "input_schema": "saas_app_risk_input.v1"
     "policy_pack_id": "builtin.saas.app_overrides"
+    "rego_package": "opensspm.entity.saas_app_overrides"
+    "rego_query": "data.opensspm.entity.saas_app_overrides.result"
+    "rego_sha256": "c3f673f54476aff6b33b627c09468fd396ed3c65c83686509192d7204fa9b538"
     "version": "1.0.0"
   -
     "domain": "saas"
-    "expression_refs":
-      - "confidential_scopes_confidential"
-      - "default_business_low"
-      - "default_data_internal"
-      - "high_actor_count"
-      - "high_usage_critical"
-      - "high_usage_or_privileged"
-      - "level:critical"
-      - "level:high"
-      - "level:low"
-      - "level:medium"
-      - "missing_owner"
-      - "moderate_usage"
-      - "privileged_scopes"
-      - "privileged_scopes_restricted"
-      - "unmanaged_app"
-      - "unmanaged_high_business_app"
-      - "unmanaged_sensitive_data_app"
     "input_schema": "saas_app_risk_input.v1"
     "policy_pack_id": "builtin.saas.risk"
+    "rego_package": "opensspm.entity.saas_risk"
+    "rego_query": "data.opensspm.entity.saas_risk.result"
+    "rego_sha256": "13bd00c5137e9f3569d2468052e4de4bc7a1aac5d57bc43bd02bc36e74a8fe0f"
     "version": "1.0.0"
 "kind": "opensspm.requirements_index"
 "rulesets":
@@ -84,8 +61,7 @@
       - "okta:policies/password"
       - "okta:policies/sign-on"
     "engines":
-      - "cel"
-      - "cel_plan"
+      - "rego"
     "inputs": []
     "params_referenced": []
     "rules":
@@ -96,14 +72,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/sign-on"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/sign-on\").filter(r, field(r, \"policy.name\") == \"Default Policy\" \u0026\u0026 field(r, \"priority\") == 1 \u0026\u0026 field(r, \"name\") != \"Default Rule\").size() \u003e= 1 \u0026\u0026 rows(\"okta:policies/sign-on\").filter(r, field(r, \"policy.name\") == \"Default Policy\" \u0026\u0026 field(r, \"priority\") == 1 \u0026\u0026 field(r, \"name\") != \"Default Rule\").all(r, field(r, \"actions.signon.session.maxSessionIdleMinutes\") == 15)"
-        "expression_sha256": "e87085878de92f232cb67e85cf174189a97fc0c358acb8aaaed6f4f977f0fade"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000020\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-000020"
       -
         "datasets":
@@ -112,12 +89,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:apps/admin-console-settings"
-        "engine": "cel_plan"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000025\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-000025"
       -
         "datasets": []
@@ -135,12 +115,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel_plan"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000170\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-000170"
       -
         "datasets":
@@ -149,14 +132,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/app-signin"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).all(r, field(r, \"requires_phishing_resistant\") == true)"
-        "expression_sha256": "83961eab587bb149c60b1bd41bdaa36313f7f0f91436463f528104e8f5da3bcb"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000180\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-000180"
       -
         "datasets":
@@ -165,14 +149,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/app-signin"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).all(r, field(r, \"requires_phishing_resistant\") == true)"
-        "expression_sha256": "8f4e4ed6bdb269bc80529576f382f8f7caa2e36d02a4dd73751bd57ba33b090e"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000190\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-000190"
       -
         "datasets": []
@@ -190,14 +175,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/app-signin"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Admin Console\" in field(r, \"app_labels\")).all(r, field(r, \"requires_mfa\") == true)"
-        "expression_sha256": "faf814923ec7e7b73b77753898a87be131142d2224bc728897cd5a2057c80901"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000560\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-000560"
       -
         "datasets":
@@ -206,14 +192,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/app-signin"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).size() \u003e= 1 \u0026\u0026\nrows(\"okta:policies/app-signin\").filter(r, \"Okta Dashboard\" in field(r, \"app_labels\")).all(r, field(r, \"requires_mfa\") == true)"
-        "expression_sha256": "7e8dc86bdd613acabc3f2a60ba164f40d42f669b992bcb8c007f0e0a556de3f9"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000570\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-000570"
       -
         "datasets":
@@ -222,12 +209,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel_plan"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000650\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-000650"
       -
         "datasets":
@@ -236,12 +226,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel_plan"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000670\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-000670"
       -
         "datasets":
@@ -250,12 +243,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel_plan"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000680\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-000680"
       -
         "datasets":
@@ -264,12 +260,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel_plan"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000690\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-000690"
       -
         "datasets":
@@ -278,12 +277,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel_plan"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000700\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-000700"
       -
         "datasets":
@@ -292,12 +294,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel_plan"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000740\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-000740"
       -
         "datasets":
@@ -306,12 +311,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel_plan"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000745\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-000745"
       -
         "datasets":
@@ -320,14 +328,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:log-streams"
-        "engine": "cel"
-        "expression": "rows(\"okta:log-streams\").filter(r, field(r, \"status\") == \"ACTIVE\").size() \u003e= 1"
-        "expression_sha256": "496843a5d14d123b887afe7c25fff22e2d128654f2b5c2783f1a3b131281e8bf"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-001430\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-001430"
       -
         "datasets":
@@ -336,14 +345,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/sign-on"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/sign-on\").filter(r, field(r, \"policy.name\") == \"Default Policy\" \u0026\u0026 field(r, \"priority\") == 1 \u0026\u0026 field(r, \"name\") != \"Default Rule\").size() \u003e= 1 \u0026\u0026 rows(\"okta:policies/sign-on\").filter(r, field(r, \"policy.name\") == \"Default Policy\" \u0026\u0026 field(r, \"priority\") == 1 \u0026\u0026 field(r, \"name\") != \"Default Rule\").all(r, field(r, \"actions.signon.session.maxSessionLifetimeMinutes\") == 1080)"
-        "expression_sha256": "c8a8258b0b5cc72709cf40e19ae32055f2d8cdbe82fbd11970c88b45c4ac7422"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-001665\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-001665"
       -
         "datasets":
@@ -352,14 +362,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:authenticators"
-        "engine": "cel"
-        "expression": "rows(\"okta:authenticators\").filter(r, field(r, \"name\") == \"Smart Card Authenticator\").size() \u003e= 1 \u0026\u0026 rows(\"okta:authenticators\").filter(r, field(r, \"name\") == \"Smart Card Authenticator\").all(r, field(r, \"status\") == \"ACTIVE\")"
-        "expression_sha256": "4a189457a86f0758da0d832239cc2ff82f2ef52d9123aad37c6749ced1fc4bdd"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-001670\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-001670"
       -
         "datasets":
@@ -368,14 +379,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:authenticators"
-        "engine": "cel"
-        "expression": "rows(\"okta:authenticators\").filter(r, field(r, \"name\") == \"Okta Verify\").size() \u003e= 1 \u0026\u0026 rows(\"okta:authenticators\").filter(r, field(r, \"name\") == \"Okta Verify\").all(r, field(r, \"okta_verify_compliance_fips\") == \"REQUIRED\")"
-        "expression_sha256": "f69e22efdb3f864dcb4ef4659616b7b4cd09d9b75c87638de0d659cf852ba27f"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-001700\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-001700"
       -
         "datasets":
@@ -384,14 +396,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/sign-on"
-        "engine": "cel"
-        "expression": "rows(\"okta:policies/sign-on\").filter(r, field(r, \"policy.name\") == \"Default Policy\" \u0026\u0026 field(r, \"priority\") == 1 \u0026\u0026 field(r, \"name\") != \"Default Rule\").size() \u003e= 1 \u0026\u0026 rows(\"okta:policies/sign-on\").filter(r, field(r, \"policy.name\") == \"Default Policy\" \u0026\u0026 field(r, \"priority\") == 1 \u0026\u0026 field(r, \"name\") != \"Default Rule\").all(r, field(r, \"actions.signon.session.usePersistentCookie\") == false)"
-        "expression_sha256": "69d46b0566eaeab52ec44a448b7d17f45f2a1b00874ec98e306a0846d3ad3d19"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-001710\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-001710"
       -
         "datasets": []
@@ -409,12 +422,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel_plan"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-002980\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-002980"
       -
         "datasets":
@@ -423,12 +439,15 @@
             "version": 1
         "datasets_referenced":
           - "okta:policies/password"
-        "engine": "cel_plan"
+        "engine": "rego"
         "inputs": []
         "is_manual": false
         "monitoring":
           "status": "automated"
         "params_referenced": []
+        "rego_package": "opensspm.rules.cis.okta.idaas_stig"
+        "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-003010\"]"
+        "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
         "rule_key": "OKTA-APP-003010"
     "ruleset_key": "cis.okta.idaas_stig.v2"
     "scope":

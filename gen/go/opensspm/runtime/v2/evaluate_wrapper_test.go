@@ -20,8 +20,13 @@ func TestEvaluateRuleWrapperParity(t *testing.T) {
 			Status: specv2.MonitoringStatus_AUTOMATED,
 		},
 		Check: &specv2.Check{
-			Engine:     specv2.CheckEngine_CEL,
-			Expression: `rows("d").size() == 1`,
+			Engine: specv2.CheckEngine_REGO,
+			Query:  "data.opensspm.tests.result",
+			Rego: `package opensspm.tests
+
+result := {"status": "pass"} if {
+	count(object.get(object.get(input.datasets, "d", {}), "rows", [])) == 1
+}`,
 		},
 	}
 	input := EvaluateInput{

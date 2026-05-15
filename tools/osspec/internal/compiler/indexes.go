@@ -7,16 +7,14 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/celengine"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/normalize"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/schemasem"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
 )
 
 const (
-	inputSourceDefaults        = "defaults"
-	inputSourceSchema          = "schema"
-	inputSourceExpressionParam = "expression_param"
+	inputSourceDefaults = "defaults"
+	inputSourceSchema   = "schema"
 )
 
 type rulesetInputAccumulator struct {
@@ -47,10 +45,10 @@ func buildRequirements(b *schemasem.Bundle) types.RequirementsIndex {
 		for i := range rs.Doc.Ruleset.Rules {
 			r := &rs.Doc.Ruleset.Rules[i]
 
-			refs := celengine.References{Datasets: []string{}, RequiredDatasets: []string{}, Params: []string{}}
 			var enginePtr *types.CheckEngine
-			expression := ""
-			expressionSHA256 := ""
+			regoPackage := ""
+			regoQuery := ""
+			regoSHA256 := ""
 			if r.Check != nil {
 				engine := types.CheckEngine(strings.TrimSpace(string(r.Check.Engine)))
 				if engine != "" {
@@ -58,40 +56,27 @@ func buildRequirements(b *schemasem.Bundle) types.RequirementsIndex {
 					enginePtr = &engineCopy
 					engines[engine] = struct{}{}
 				}
-				expression = strings.TrimSpace(r.Check.Expression)
-				if expression != "" {
-					refs = celengine.ExtractReferences(expression)
-					sum := sha256.Sum256([]byte(expression))
-					expressionSHA256 = hex.EncodeToString(sum[:])
-				}
-				if r.Check.Plan != nil {
-					dataset := strings.TrimSpace(r.Check.Plan.Dataset)
-					if dataset != "" {
-						refs.Datasets = append(refs.Datasets, dataset)
-						refs.RequiredDatasets = append(refs.RequiredDatasets, dataset)
-					}
-					refs.Params = append(refs.Params, celengine.ExtractParamReferences(r.Check.Plan.WhereExpression)...)
-					refs.Params = append(refs.Params, celengine.ExtractParamReferences(r.Check.Plan.AssertExpression)...)
+				regoPackage = strings.TrimSpace(r.Check.Package)
+				regoQuery = strings.TrimSpace(r.Check.Query)
+				rego := strings.TrimSpace(r.Check.Rego)
+				if rego != "" {
+					sum := sha256.Sum256([]byte(rego))
+					regoSHA256 = hex.EncodeToString(sum[:])
 				}
 			}
-			refs.Datasets = normalize.Strings(refs.Datasets)
-			refs.RequiredDatasets = normalize.Strings(refs.RequiredDatasets)
-			refs.Params = normalize.Strings(refs.Params)
 
-			rDatasets := datasetsForRuleReferences(rs.Doc.Ruleset, refs.Datasets)
+			datasetNames := normalize.Strings(r.RequiredData)
+			rDatasets := datasetsForRuleReferences(rs.Doc.Ruleset, datasetNames)
 			rDatasets = normalize.DatasetRefs(rDatasets)
 			for _, d := range rDatasets {
 				datasets[fmt.Sprintf("%s@%d", d.Dataset, d.Version)] = d
 				datasetsReferenced[d.Dataset] = struct{}{}
 			}
-			for _, d := range refs.Datasets {
+			for _, d := range datasetNames {
 				datasetsReferenced[d] = struct{}{}
 			}
-			for _, p := range refs.Params {
-				paramsReferenced[p] = struct{}{}
-			}
 
-			rInputs := inputsForRule(r, refs.Params)
+			rInputs := inputsForRule(r, nil)
 			accumulateRulesetInputs(rulesetInputs, r.Key, rInputs)
 
 			req.Rules = append(req.Rules, types.RuleRequirement{
@@ -99,10 +84,11 @@ func buildRequirements(b *schemasem.Bundle) types.RequirementsIndex {
 				IsManual:           isManualRule(r),
 				Datasets:           rDatasets,
 				Engine:             enginePtr,
-				Expression:         expression,
-				ExpressionSHA256:   expressionSHA256,
-				DatasetsReferenced: refs.Datasets,
-				ParamsReferenced:   refs.Params,
+				RegoPackage:        regoPackage,
+				RegoQuery:          regoQuery,
+				RegoSHA256:         regoSHA256,
+				DatasetsReferenced: datasetNames,
+				ParamsReferenced:   []string{},
 				Inputs:             rInputs,
 				Monitoring: types.RuleRequirementMonitoring{
 					Status: r.Monitoring.Status,
@@ -120,12 +106,20 @@ func buildRequirements(b *schemasem.Bundle) types.RequirementsIndex {
 	}
 
 	for _, pack := range b.EntityPolicyPacks {
+		rego := strings.TrimSpace(pack.Doc.EntityPolicyPack.Policy.Rego)
+		regoSHA256 := ""
+		if rego != "" {
+			sum := sha256.Sum256([]byte(rego))
+			regoSHA256 = hex.EncodeToString(sum[:])
+		}
 		out.EntityPolicyPacks = append(out.EntityPolicyPacks, types.EntityPolicyPackRequirement{
-			PolicyPackID:   pack.Doc.EntityPolicyPack.Metadata.ID,
-			Version:        pack.Doc.EntityPolicyPack.Metadata.Version,
-			Domain:         pack.Doc.EntityPolicyPack.Metadata.Domain,
-			InputSchema:    pack.Doc.EntityPolicyPack.Spec.Inputs.Schema,
-			ExpressionRefs: entityPolicyExpressionRefs(pack.Doc.EntityPolicyPack),
+			PolicyPackID: pack.Doc.EntityPolicyPack.Metadata.ID,
+			Version:      pack.Doc.EntityPolicyPack.Metadata.Version,
+			Domain:       pack.Doc.EntityPolicyPack.Metadata.Domain,
+			InputSchema:  pack.Doc.EntityPolicyPack.Inputs.Schema,
+			RegoPackage:  pack.Doc.EntityPolicyPack.Policy.Package,
+			RegoQuery:    pack.Doc.EntityPolicyPack.Policy.Query,
+			RegoSHA256:   regoSHA256,
 		})
 	}
 
@@ -136,31 +130,6 @@ func buildRequirements(b *schemasem.Bundle) types.RequirementsIndex {
 		return strings.Compare(a.PolicyPackID, b.PolicyPackID)
 	})
 	return out
-}
-
-func entityPolicyExpressionRefs(pack types.EntityPolicyPack) []string {
-	refs := make([]string, 0)
-	for _, rule := range pack.Spec.Suggestions.BusinessCriticality {
-		refs = append(refs, rule.ID)
-	}
-	for _, rule := range pack.Spec.Suggestions.DataClassification {
-		refs = append(refs, rule.ID)
-	}
-	for _, rule := range pack.Spec.Scoring.Rules {
-		refs = append(refs, rule.ID)
-	}
-	for _, rule := range pack.Spec.Levels {
-		refs = append(refs, "level:"+rule.Level)
-	}
-	for _, rule := range pack.Spec.Rules {
-		refs = append(refs, rule.ID)
-	}
-	for _, scopedRule := range pack.Spec.ScopedRules {
-		for _, rule := range scopedRule.Rules {
-			refs = append(refs, scopedRule.ID+"/"+rule.ID)
-		}
-	}
-	return setToSortedStringSlice(sliceToSet(refs))
 }
 
 func isManualRule(r *types.Rule) bool {
@@ -218,7 +187,7 @@ func resolveDatasetVersion(dataset string, contracts []types.DatasetContractRef)
 	return versions[0]
 }
 
-func inputsForRule(r *types.Rule, referencedParams []string) []types.RuleInputRequirement {
+func inputsForRule(r *types.Rule, _ []string) []types.RuleInputRequirement {
 	if r == nil {
 		return []types.RuleInputRequirement{}
 	}
@@ -261,14 +230,6 @@ func inputsForRule(r *types.Rule, referencedParams []string) []types.RuleInputRe
 			}
 			acc.sources[inputSourceSchema] = struct{}{}
 		}
-	}
-
-	for _, refParam := range referencedParams {
-		if strings.TrimSpace(refParam) == "" {
-			continue
-		}
-		acc := ensure(refParam)
-		acc.sources[inputSourceExpressionParam] = struct{}{}
 	}
 
 	if len(inputs) == 0 {
@@ -381,10 +342,8 @@ func inputSourceOrder(source string) int {
 		return 0
 	case inputSourceSchema:
 		return 1
-	case inputSourceExpressionParam:
-		return 2
 	default:
-		return 3
+		return 2
 	}
 }
 

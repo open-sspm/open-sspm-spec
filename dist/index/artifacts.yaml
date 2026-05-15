@@ -1,21 +1,21 @@
 "artifacts":
   -
-    "hash": "22510e81386abdb982b0d716f3f4e5385a652ebf02378c12c86e9c1082913b72"
+    "hash": "e265be280a9b95eac81ddf37045775125d228ff6d0c8a56598648c818ac77f3b"
     "key": "builtin.credential.risk"
     "kind": "opensspm.entity_policy_pack"
     "source_path": "specs/policies/credential.v2.yaml"
   -
-    "hash": "752450947eee86da6f90724093edf40fb75aae904125e89efd0e317c774cbe48"
+    "hash": "eb03129105e5b7324c07b7e63c5234e4515a689520db145e33347a870d573da6"
     "key": "builtin.identity.risk"
     "kind": "opensspm.entity_policy_pack"
     "source_path": "specs/policies/identity.v2.yaml"
   -
-    "hash": "68c4ff2dff67d5490b3aa716d6331a71a593f09c6209fc975ff974484c99a63b"
+    "hash": "72b6303f3f12cce9a4d81577af8939d5cbae7a16a62bc83c77139e196fede980"
     "key": "builtin.saas.app_overrides"
     "kind": "opensspm.entity_policy_pack"
     "source_path": "specs/policies/saas_apps.v2.yaml"
   -
-    "hash": "3cf6cc264105c024483264d17cf9a24577c1d4767179e042b3ebd345d27cd60b"
+    "hash": "03f20129167a28e4d6d123777a3e02376bcce7f1a26c890b85433ebd99817fac"
     "key": "builtin.saas.risk"
     "kind": "opensspm.entity_policy_pack"
     "source_path": "specs/policies/saas.v2.yaml"
@@ -25,7 +25,7 @@
     "kind": "opensspm.profile"
     "source_path": "specs/profiles/cis.okta.idaas_stig.profile.v2.yaml"
   -
-    "hash": "db164af6acef9b5fcb04f263c4e6469fe7537cb55f85c22e4fdf2d022c00a20b"
+    "hash": "ed6633679c3bdbe6039963310fee40c9aea4ac63b16ac55d3651c00292d9b09f"
     "key": "cis.okta.idaas_stig.v2"
     "kind": "opensspm.ruleset"
     "source_path": "specs/rulesets/cis/okta/cis.okta.idaas_stig.v2.yaml"
