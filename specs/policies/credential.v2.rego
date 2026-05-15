@@ -1,0 +1,115 @@
+package opensspm.entity.credential_risk
+
+active_like_statuses := {"", "active", "approved", "pending_approval"}
+high_privilege_credential_kinds := {"entra_client_secret", "github_deploy_key", "github_pat_request", "github_pat_fine_grained"}
+
+entity := input.entity
+status := lower(sprintf("%v", [object.get(entity, "status", "")]))
+credential_kind := lower(sprintf("%v", [object.get(entity, "credential_kind", "")]))
+created_by_external_id := sprintf("%v", [object.get(entity, "created_by_external_id", "")])
+approved_by_external_id := sprintf("%v", [object.get(entity, "approved_by_external_id", "")])
+
+expired(expires_at, evaluated_at) if {
+  expires_at != null
+  evaluated_at != null
+  time.parse_rfc3339_ns(expires_at) < time.parse_rfc3339_ns(evaluated_at)
+}
+
+default expired_active := false
+expired_active if {
+  expired(object.get(entity, "expires_at", null), object.get(entity, "evaluated_at", null))
+  status in active_like_statuses
+}
+
+default expired_inactive := false
+expired_inactive if {
+  expired(object.get(entity, "expires_at", null), object.get(entity, "evaluated_at", null))
+  not status in active_like_statuses
+}
+
+default high_privilege_missing_provenance := false
+high_privilege_missing_provenance if {
+  credential_kind in high_privilege_credential_kinds
+  created_by_external_id == ""
+  approved_by_external_id == ""
+}
+
+default expiring_within_7_days := false
+expiring_within_7_days if {
+  expires_at := object.get(entity, "expires_at", null)
+  evaluated_at := object.get(entity, "evaluated_at", null)
+  expires_at != null
+  evaluated_at != null
+  ns := time.parse_rfc3339_ns(expires_at)
+  now := time.parse_rfc3339_ns(evaluated_at)
+  ns >= now
+  ns <= now + 604800000000000
+}
+
+default missing_creator := false
+missing_creator if {
+  created_by_external_id == ""
+}
+
+default unused_over_90_days := false
+unused_over_90_days if {
+  last_used_at := object.get(entity, "last_used_at", null)
+  evaluated_at := object.get(entity, "evaluated_at", null)
+  last_used_at != null
+  evaluated_at != null
+  used := time.parse_rfc3339_ns(last_used_at)
+  now := time.parse_rfc3339_ns(evaluated_at)
+  used <= now - 7776000000000000
+}
+
+default expiring_within_30_days := false
+expiring_within_30_days if {
+  expires_at := object.get(entity, "expires_at", null)
+  evaluated_at := object.get(entity, "evaluated_at", null)
+  expires_at != null
+  evaluated_at != null
+  ns := time.parse_rfc3339_ns(expires_at)
+  now := time.parse_rfc3339_ns(evaluated_at)
+  ns > now + 604800000000000
+  ns <= now + 2592000000000000
+}
+
+signal_defs := [
+  {"id": "expired_active", "severity": "critical", "title": "Credential has expired while still marked active", "matched": expired_active},
+  {"id": "expired_inactive", "severity": "high", "title": "Credential has expired", "matched": expired_inactive},
+  {"id": "high_privilege_missing_provenance", "severity": "critical", "title": "High-privilege credential has no creator or approver", "matched": high_privilege_missing_provenance},
+  {"id": "expiring_within_7_days", "severity": "high", "title": "Credential expires within 7 days", "matched": expiring_within_7_days},
+  {"id": "missing_creator", "severity": "high", "title": "Creator attribution is missing", "matched": missing_creator},
+  {"id": "unused_over_90_days", "severity": "high", "title": "Credential has not been used in over 90 days", "matched": unused_over_90_days},
+  {"id": "expiring_within_30_days", "severity": "medium", "title": "Credential expires within 30 days", "matched": expiring_within_30_days},
+]
+
+signals := [{"id": s.id, "severity": s.severity, "title": s.title} |
+  s := signal_defs[_]
+  s.matched
+]
+
+has_severity(level) if {
+  signals[_].severity == level
+}
+
+risk_level := "critical" if { has_severity("critical") }
+risk_level := "high" if {
+  not has_severity("critical")
+  has_severity("high")
+}
+risk_level := "medium" if {
+  not has_severity("critical")
+  not has_severity("high")
+  has_severity("medium")
+}
+risk_level := "low" if {
+  not has_severity("critical")
+  not has_severity("high")
+  not has_severity("medium")
+}
+
+result := {
+  "risk_level": risk_level,
+  "signals": signals,
+}

@@ -128,7 +128,11 @@
     "required":
       - "engine"
       - "package"
-      - "rego"
+    "oneOf":
+      - "required":
+          - "rego"
+      - "required":
+          - "rego_path"
     "properties":
       "engine":
         "const": "rego"
@@ -140,6 +144,9 @@
         "type": "string"
         "minLength": 1
       "rego":
+        "type": "string"
+        "minLength": 1
+      "rego_path":
         "type": "string"
         "minLength": 1
   "check":
@@ -148,6 +155,10 @@
     "required":
       - "engine"
       - "query"
+    "not":
+      "required":
+        - "rego"
+        - "rego_path"
     "properties":
       "engine":
         "const": "rego"
@@ -159,6 +170,9 @@
         "type": "string"
         "minLength": 1
       "rego":
+        "type": "string"
+        "minLength": 1
+      "rego_path":
         "type": "string"
         "minLength": 1
   "monitoring":

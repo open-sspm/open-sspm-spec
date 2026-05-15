@@ -11,8 +11,9 @@ Source-of-truth repository for Open SSPM **compliance specifications**.
 Open SSPM is an open, versioned spec (YAML authoring + JSON Schema semantics) for posture/compliance rulesets and profiles (benchmarks) that tools can evaluate.
 
 Executable checks are authored in Rego (`check.engine: rego`). A ruleset can
-provide a shared Rego module under `ruleset.policy`, and each automated rule
-selects its result with `check.query`.
+provide a shared Rego module under `ruleset.policy`, usually by setting
+`rego_path` to a `.rego` file beside the YAML, and each automated rule selects
+its result with `check.query`.
 
 ## What this repo contains
 
@@ -80,9 +81,11 @@ GitHub Pages:
 
 ## Check evaluation mode
 
-- `engine: rego`: an OPA/Rego module plus query. The query must return an
-  object with at least `status` for rule checks. Entity policy packs use Rego
-  too, returning `risk_level`, `risk_score`, and `signals` as needed.
+- `engine: rego`: an OPA/Rego module plus query. Author the module inline with
+  `rego` or, preferably, point to a relative `.rego` file with `rego_path`.
+  The query must return an object with at least `status` for rule checks.
+  Entity policy packs use Rego too, returning `risk_level`, `risk_score`, and
+  `signals` as needed.
 
 Rule checks receive input shaped as:
 

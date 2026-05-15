@@ -147,17 +147,19 @@ type Lifecycle struct {
 }
 
 type Check struct {
-	Engine  CheckEngine `json:"engine"`
-	Package string      `json:"package,omitempty"`
-	Query   string      `json:"query"`
-	Rego    string      `json:"rego,omitempty"`
+	Engine   CheckEngine `json:"engine"`
+	Package  string      `json:"package,omitempty"`
+	Query    string      `json:"query"`
+	Rego     string      `json:"rego,omitempty"`
+	RegoPath string      `json:"rego_path,omitempty"`
 }
 
 type RegoPolicy struct {
-	Engine  CheckEngine `json:"engine"`
-	Package string      `json:"package"`
-	Query   string      `json:"query,omitempty"`
-	Rego    string      `json:"rego"`
+	Engine   CheckEngine `json:"engine"`
+	Package  string      `json:"package"`
+	Query    string      `json:"query,omitempty"`
+	Rego     string      `json:"rego,omitempty"`
+	RegoPath string      `json:"rego_path,omitempty"`
 }
 
 type EntityPolicyPackDoc struct {
