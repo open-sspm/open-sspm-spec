@@ -97,7 +97,6 @@ results["R3"] := {"status": "pass"} if { true }
 				Datasets:           []types.DatasetRefSpec{{Dataset: "okta:log-streams", Version: 2}},
 				Engines:            []types.CheckEngine{types.CheckEngineRego},
 				DatasetsReferenced: []string{"okta:log-streams"},
-				ParamsReferenced:   []string{},
 				Inputs: []types.RulesetInputRequirement{
 					{
 						Name:     "enabled",
@@ -127,7 +126,6 @@ results["R3"] := {"status": "pass"} if { true }
 						RegoQuery:          `data.opensspm.example.results["R1"]`,
 						RegoSHA256:         hashRego(regoModule),
 						DatasetsReferenced: []string{"okta:log-streams"},
-						ParamsReferenced:   []string{},
 						Inputs: []types.RuleInputRequirement{
 							{Name: "enabled", Default: true, HasDefault: true, Sources: []string{"defaults"}},
 							{Name: "min", Default: 1, HasDefault: true, Sources: []string{"defaults"}},
@@ -140,7 +138,6 @@ results["R3"] := {"status": "pass"} if { true }
 						Datasets:           []types.DatasetRefSpec{},
 						Engine:             nil,
 						DatasetsReferenced: []string{},
-						ParamsReferenced:   []string{},
 						Inputs:             []types.RuleInputRequirement{},
 						Monitoring:         types.RuleRequirementMonitoring{Status: types.MonitoringStatusManual},
 					},
@@ -153,7 +150,6 @@ results["R3"] := {"status": "pass"} if { true }
 						RegoQuery:          `data.opensspm.example.results["R3"]`,
 						RegoSHA256:         hashRego(regoModule),
 						DatasetsReferenced: []string{},
-						ParamsReferenced:   []string{},
 						Inputs: []types.RuleInputRequirement{
 							{Name: "enabled", Type: "boolean", Default: false, HasDefault: true, Sources: []string{"defaults", "schema"}},
 							{Name: "threshold", Type: "integer", Default: 5, HasDefault: true, Sources: []string{"defaults", "schema"}},
