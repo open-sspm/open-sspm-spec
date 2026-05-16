@@ -910,16 +910,15 @@ function renderPolicyPacks() {
   for (const c of d.entity_policy_packs || []) {
     const p = c.object?.entity_policy_pack;
     if (!p) continue;
-    if (!matches(state.query, p.metadata?.id, p.metadata?.domain, p.metadata?.version)) continue;
-    const ruleCount = (p.spec?.rules || []).length + (p.spec?.scoring?.rules || []).length;
+    if (!matches(state.query, p.metadata?.id, p.metadata?.domain, p.metadata?.version, p.inputs?.schema, p.policy?.package, p.policy?.query)) continue;
     rows.push(h("tr", {},
       h("td", {},
         h("a", { href: `#policy-pack/${encodeURIComponent(p.metadata?.id || "")}` }, p.metadata?.id || "—"),
         p.metadata?.domain ? h("span", { class: "sub" }, p.metadata.domain) : null,
       ),
       h("td", {}, h("code", {}, p.metadata?.version || "—")),
-      h("td", {}, h("code", {}, p.spec?.inputs?.schema || "—")),
-      h("td", { style: "font-variant-numeric: tabular-nums;" }, String(ruleCount)),
+      h("td", {}, h("code", {}, p.inputs?.schema || "—")),
+      h("td", {}, h("span", { class: "tag tag-engine" }, p.policy?.engine || "—")),
       h("td", {}, hash(c.hash)),
     ));
   }
@@ -927,7 +926,7 @@ function renderPolicyPacks() {
     h("section", { class: "card" },
       kicker("Catalog — policy packs"),
       display("Entity ", h("span", { class: "upright" }, "policy packs")),
-      lede("Policy packs evaluate one entity at a time. They produce risk levels, scores, suggestions, and signals — separate from connector-scoped rulesets."),
+      lede("Policy packs evaluate one entity at a time. They produce risk levels, scores, and signals — separate from connector-scoped rulesets."),
     ),
     h("section", { class: "card" },
       h("table", { class: "ledger" },
@@ -935,7 +934,7 @@ function renderPolicyPacks() {
           h("th", {}, "Pack"),
           h("th", { style: "width: 100px" }, "Version"),
           h("th", {}, "Input"),
-          h("th", { style: "width: 90px" }, "Rules"),
+          h("th", { style: "width: 90px" }, "Engine"),
           h("th", { style: "width: 130px" }, "Hash"),
         )),
         h("tbody", {}, ...rows),
@@ -955,27 +954,7 @@ function renderPolicyPackDetail(id) {
   }
   const pp = c.object.entity_policy_pack;
   const meta = pp.metadata || {};
-  const spec = pp.spec || {};
-
-  function ruleRow(r, src) {
-    return h("tr", {},
-      h("td", {},
-        h("code", {}, r.id),
-        r.title ? h("span", { class: "sub" }, r.title) : null,
-      ),
-      h("td", {}, sev(r.severity || (r.signal && r.signal.severity) || "info")),
-      h("td", {}, src),
-      h("td", {},
-        r.points != null ? h("span", { style: "font-variant-numeric: tabular-nums;" }, `+${r.points}`) : null,
-      ),
-      h("td", { style: "max-width: 100%;" }, h("code", {}, r.when || "")),
-    );
-  }
-
-  const allRules = [
-    ...(spec.rules || []).map((r) => [r, "rule"]),
-    ...(spec.scoring?.rules || []).map((r) => [r, "scoring"]),
-  ];
+  const policy = pp.policy || {};
 
   return [
     h("section", { class: "card" },
@@ -983,39 +962,18 @@ function renderPolicyPackDetail(id) {
       display(serifTitle(meta.id || "—")),
       h("p", { class: "lede" }, "Domain ", h("strong", {}, meta.domain || "?"), " · v", meta.version || "?"),
       dl([
-        ["Input schema", h("code", {}, spec.inputs?.schema || "—")],
-        ["Aggregation", spec.aggregation?.risk_level?.strategy ? h("code", {}, spec.aggregation.risk_level.strategy) : "—"],
+        ["Input schema", h("code", {}, pp.inputs?.schema || "—")],
+        ["Engine", h("span", { class: "tag tag-engine" }, policy.engine || "—")],
+        ["Package", h("code", {}, policy.package || "—")],
+        ["Query", h("code", {}, policy.query || "—")],
         ["Path", h("code", {}, c.source_path)],
         ["Hash", hash(c.hash)],
       ]),
     ),
-    spec.constants && Object.keys(spec.constants).length ? h("section", { class: "card" },
-      section(null, "constants", "Constants"),
-      yamlBlock(spec.constants, "copy yaml"),
-    ) : null,
-    spec.levels && spec.levels.length ? h("section", { class: "card" },
-      section(null, "levels", "Levels"),
-      h("table", { class: "ledger compact" },
-        h("thead", {}, h("tr", {}, h("th", {}, "Level"), h("th", {}, "When"))),
-        h("tbody", {}, ...spec.levels.map((l) => h("tr", {},
-          h("td", {}, sev(l.level)),
-          h("td", {}, h("code", {}, l.when)),
-        ))),
-      ),
-    ) : null,
-    allRules.length ? h("section", { class: "card" },
-      section(null, "rules", "Rules"),
-      h("table", { class: "ledger" },
-        h("thead", {}, h("tr", {},
-          h("th", {}, "Id"),
-          h("th", { style: "width: 130px" }, "Severity"),
-          h("th", { style: "width: 90px" }, "Source"),
-          h("th", { style: "width: 80px" }, "Points"),
-          h("th", {}, "When"),
-        )),
-        h("tbody", {}, ...allRules.map(([r, src]) => ruleRow(r, src))),
-      ),
-    ) : null,
+    h("section", { class: "card" },
+      section(null, "policy", "Policy"),
+      yamlBlock(policy, "copy yaml"),
+    ),
     h("section", { class: "card" },
       section(null, "pack-yaml", "Source"),
       h("details", {},
@@ -1038,7 +996,7 @@ function renderRequirements() {
     h("section", { class: "card" },
       kicker("Index — requirements"),
       display("Requirements ", h("span", { class: "upright" }, "Index")),
-      lede("Computed requirements per ruleset (engines, datasets, params) and per policy pack (input schemas, expression refs)."),
+      lede("Computed requirements per ruleset (engines, datasets, inputs) and per policy pack (input schemas and Rego metadata)."),
     ),
     h("section", { class: "card" },
       section(null, "requirements-rulesets", "Per ruleset"),
@@ -1048,7 +1006,7 @@ function renderRequirements() {
           h("th", {}, "Scope"),
           h("th", {}, "Engines"),
           h("th", {}, "Datasets"),
-          h("th", {}, "Params"),
+          h("th", {}, "Inputs"),
         )),
         h("tbody", {}, ...filteredRS.map((rr) => h("tr", {},
           h("td", {}, h("a", { href: `#ruleset/${encodeURIComponent(rr.ruleset_key)}` }, rr.ruleset_key)),
@@ -1063,8 +1021,11 @@ function renderRequirements() {
                 h("code", {}, `${ds.dataset}@v${ds.version}`),
               ]))
             : h("span", { class: "muted" }, "—")),
-          h("td", {}, (rr.params_referenced || []).length
-            ? h("span", {}, ...(rr.params_referenced || []).flatMap((p, i) => [i ? " · " : "", h("code", {}, p)]))
+          h("td", {}, (rr.inputs || []).length
+            ? h("span", {}, ...(rr.inputs || []).flatMap((input, i) => [
+                i ? h("span", { class: "muted" }, " · ") : "",
+                h("code", {}, input.type ? `${input.name}:${input.type}` : input.name),
+              ]))
             : h("span", { class: "muted" }, "—")),
         ))),
       ),
@@ -1076,18 +1037,16 @@ function renderRequirements() {
           h("th", {}, "Pack"),
           h("th", {}, "Domain"),
           h("th", {}, "Input"),
-          h("th", {}, "Expression refs"),
+          h("th", {}, "Rego"),
         )),
         h("tbody", {}, ...packs.map((p) => h("tr", {},
           h("td", {}, h("a", { href: `#policy-pack/${encodeURIComponent(p.policy_pack_id)}` }, p.policy_pack_id)),
           h("td", {}, h("code", {}, p.domain || "—")),
           h("td", {}, h("code", {}, p.input_schema || "—")),
-          h("td", { style: "max-width: 360px;" },
-            (p.expression_refs || []).slice(0, 8).map((r, i) => h("span", {},
-              i ? h("span", { class: "muted" }, " · ") : "",
-              h("code", {}, r),
-            )),
-            (p.expression_refs || []).length > 8 ? h("span", { class: "muted" }, ` … (+${p.expression_refs.length - 8})`) : null,
+          h("td", { style: "max-width: 420px;" },
+            h("code", {}, p.rego_package || "—"),
+            p.rego_query ? h("span", { class: "sub" }, h("code", {}, p.rego_query)) : null,
+            p.rego_sha256 ? h("span", { class: "sub" }, hash(p.rego_sha256)) : null,
           ),
         ))),
       ),

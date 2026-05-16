@@ -42,7 +42,6 @@ type RulesetRequirement struct {
 	Datasets           []DatasetRefSpec          `json:"datasets"`
 	Engines            []CheckEngine             `json:"engines"`
 	DatasetsReferenced []string                  `json:"datasets_referenced"`
-	ParamsReferenced   []string                  `json:"params_referenced"`
 	Inputs             []RulesetInputRequirement `json:"inputs"`
 	Rules              []RuleRequirement         `json:"rules"`
 }
@@ -60,7 +59,6 @@ type RuleRequirement struct {
 	RegoQuery          string                    `json:"rego_query,omitempty"`
 	RegoSHA256         string                    `json:"rego_sha256,omitempty"`
 	DatasetsReferenced []string                  `json:"datasets_referenced"`
-	ParamsReferenced   []string                  `json:"params_referenced"`
 	Inputs             []RuleInputRequirement    `json:"inputs"`
 	Monitoring         RuleRequirementMonitoring `json:"monitoring"`
 }

@@ -63,7 +63,6 @@
     "engines":
       - "rego"
     "inputs": []
-    "params_referenced": []
     "rules":
       -
         "datasets":
@@ -77,7 +76,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000020\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -94,7 +92,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000025\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -106,7 +103,6 @@
         "is_manual": true
         "monitoring":
           "status": "manual"
-        "params_referenced": []
         "rule_key": "OKTA-APP-000090"
       -
         "datasets":
@@ -120,7 +116,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000170\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -137,7 +132,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000180\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -154,7 +148,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000190\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -166,7 +159,6 @@
         "is_manual": true
         "monitoring":
           "status": "manual"
-        "params_referenced": []
         "rule_key": "OKTA-APP-000200"
       -
         "datasets":
@@ -180,7 +172,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000560\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -197,7 +188,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000570\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -214,7 +204,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000650\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -231,7 +220,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000670\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -248,7 +236,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000680\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -265,7 +252,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000690\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -282,7 +268,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000700\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -299,7 +284,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000740\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -316,7 +300,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-000745\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -333,7 +316,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-001430\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -350,7 +332,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-001665\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -367,7 +348,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-001670\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -384,7 +364,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-001700\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -401,7 +380,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-001710\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -413,7 +391,6 @@
         "is_manual": true
         "monitoring":
           "status": "manual"
-        "params_referenced": []
         "rule_key": "OKTA-APP-001920"
       -
         "datasets":
@@ -427,7 +404,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-002980\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"
@@ -444,7 +420,6 @@
         "is_manual": false
         "monitoring":
           "status": "automated"
-        "params_referenced": []
         "rego_package": "opensspm.rules.cis.okta.idaas_stig"
         "rego_query": "data.opensspm.rules.cis.okta.idaas_stig.results[\"OKTA-APP-003010\"]"
         "rego_sha256": "45a39c2e1da6f6c1ff7b0cfc6336de5c083ca7956b132f1824242158eb4820bd"

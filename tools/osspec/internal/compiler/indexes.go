@@ -37,7 +37,6 @@ func buildRequirements(b *schemasem.Bundle) types.RequirementsIndex {
 		}
 
 		engines := map[types.CheckEngine]struct{}{}
-		paramsReferenced := map[string]struct{}{}
 		datasetsReferenced := map[string]struct{}{}
 		datasets := map[string]types.DatasetRefSpec{}
 		rulesetInputs := map[string]*rulesetInputAccumulator{}
@@ -88,7 +87,6 @@ func buildRequirements(b *schemasem.Bundle) types.RequirementsIndex {
 				RegoQuery:          regoQuery,
 				RegoSHA256:         regoSHA256,
 				DatasetsReferenced: datasetNames,
-				ParamsReferenced:   []string{},
 				Inputs:             rInputs,
 				Monitoring: types.RuleRequirementMonitoring{
 					Status: r.Monitoring.Status,
@@ -99,7 +97,6 @@ func buildRequirements(b *schemasem.Bundle) types.RequirementsIndex {
 		req.Datasets = setToSortedDatasetRefs(datasets)
 		req.Engines = setToSortedEngines(engines)
 		req.DatasetsReferenced = setToSortedStringSlice(datasetsReferenced)
-		req.ParamsReferenced = setToSortedStringSlice(paramsReferenced)
 		req.Inputs = setToSortedRulesetInputs(rulesetInputs)
 
 		out.Rulesets = append(out.Rulesets, req)
