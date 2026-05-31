@@ -568,6 +568,25 @@ function serifTitle(text) {
 
 /* ------------------------------ Rulesets ------------------------------ */
 
+function rulesetOf(compiled) {
+  return compiled?.object?.ruleset || null;
+}
+
+function findRuleset(key) {
+  return (state.descriptor?.rulesets || []).find((x) => rulesetOf(x)?.key === key) || null;
+}
+
+function safeHref(url) {
+  const raw = String(url || "").trim();
+  if (!raw) return "#";
+  try {
+    const parsed = new URL(raw, window.location.href);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.href : "#";
+  } catch {
+    return "#";
+  }
+}
+
 function rulesetFacets(d) {
   const sevs = new Map();
   const mons = new Map();
@@ -626,7 +645,8 @@ function renderRulesets() {
   let ruleTotal = 0;
   let ruleShown = 0;
   for (const c of d.rulesets || []) {
-    const rs = c.object.ruleset;
+    const rs = rulesetOf(c);
+    if (!rs) continue;
     const total = (rs.rules || []).length;
     const visibleRules = (rs.rules || []).filter(ruleVisible);
     ruleTotal += total;
@@ -672,14 +692,14 @@ function renderRulesets() {
 
 function renderRulesetDetail(key) {
   const d = state.descriptor;
-  const c = (d.rulesets || []).find((x) => x.object.ruleset.key === key);
-  if (!c) {
+  const c = findRuleset(key);
+  const rs = rulesetOf(c);
+  if (!rs) {
     return [h("div", { class: "card" },
       kicker("Not found"),
       display("Ruleset ", h("code", {}, key), " is not in this build."),
     )];
   }
-  const rs = c.object.ruleset;
   const all = rs.rules || [];
   const visible = all.filter(ruleVisible);
   const { sevs, mons, engs } = (() => {
@@ -707,7 +727,7 @@ function renderRulesetDetail(key) {
     h("code", {}, `${dc.dataset}@v${dc.version}`),
   ));
   const refs = (rs.references || []).map((r) => h("li", {},
-    h("a", { href: r.url || "#", rel: "noopener" }, r.title || r.url),
+    h("a", { href: safeHref(r.url), rel: "noopener" }, r.title || r.url),
     r.type ? h("span", { class: "muted" }, ` — ${r.type}`) : null,
   ));
 
@@ -766,14 +786,14 @@ function renderRulesetDetail(key) {
 
 function renderRuleDetail(rsKey, ruleKey) {
   const d = state.descriptor;
-  const c = (d.rulesets || []).find((x) => x.object.ruleset.key === rsKey);
-  if (!c) {
+  const c = findRuleset(rsKey);
+  const rs = rulesetOf(c);
+  if (!rs) {
     return [h("div", { class: "card" },
       kicker("Not found"),
       display("Ruleset ", h("code", {}, rsKey), " is not in this build."),
     )];
   }
-  const rs = c.object.ruleset;
   const r = (rs.rules || []).find((x) => x.key === ruleKey);
   if (!r) {
     return [h("div", { class: "card" },
@@ -862,14 +882,15 @@ function renderProfileDetail(key) {
   }
   const p = c.object.profile;
   const rulesetItems = (p.rulesets || []).map((r) => {
-    const ref = (d.rulesets || []).find((x) => x.object.ruleset.key === r.key);
+    const ref = findRuleset(r.key);
+    const refRuleset = rulesetOf(ref);
     return h("tr", {},
       h("td", {},
         h("a", { href: `#ruleset/${encodeURIComponent(r.key)}` }, r.key),
-        ref?.object?.ruleset?.name ? h("span", { class: "sub" }, ref.object.ruleset.name) : null,
+        refRuleset?.name ? h("span", { class: "sub" }, refRuleset.name) : null,
       ),
       h("td", {}, h("code", {}, r.version || "—")),
-      h("td", { style: "font-variant-numeric: tabular-nums;" }, ref ? String((ref.object.ruleset.rules || []).length) : "—"),
+      h("td", { style: "font-variant-numeric: tabular-nums;" }, refRuleset ? String((refRuleset.rules || []).length) : "—"),
     );
   });
 
@@ -1089,7 +1110,8 @@ function buildSearchIndex() {
   const idx = [];
   const d = state.descriptor;
   for (const c of d.rulesets || []) {
-    const rs = c.object.ruleset;
+    const rs = rulesetOf(c);
+    if (!rs) continue;
     idx.push({ kind: "ruleset", key: rs.key, label: rs.name || rs.key, sub: rs.scope?.connector_kind || rs.scope?.kind || "", href: `#ruleset/${encodeURIComponent(rs.key)}`, hay: [rs.key, rs.name, rs.scope?.kind, rs.scope?.connector_kind].join(" ") });
     for (const r of rs.rules || []) {
       idx.push({ kind: "rule", key: r.key, label: r.title || r.key, sub: `${rs.key} · ${r.severity || ""}`, href: `#rule/${encodeURIComponent(rs.key)}/${encodeURIComponent(r.key)}`, hay: [r.key, r.title, r.summary, r.severity, r.check?.engine].join(" ") });

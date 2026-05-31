@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/testutil"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
 )
 
@@ -60,6 +61,12 @@ func TestEvaluateRuleRegoPassWithFakeData(t *testing.T) {
 	}
 	if status != "pass" {
 		t.Fatalf("expected pass, got %q", status)
+	}
+}
+
+func TestRunVerifiesRepoSpecs(t *testing.T) {
+	if err := Run(context.Background(), testutil.RepoRoot(t)); err != nil {
+		t.Fatalf("Run() returned error: %v", err)
 	}
 }
 
