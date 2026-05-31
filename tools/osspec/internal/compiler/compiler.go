@@ -146,7 +146,6 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 		Version:       version,
 		Index: types.DescriptorIndex{
 			Requirements: reqIndex,
-			Artifacts:    artifactsIndex,
 		},
 	}
 

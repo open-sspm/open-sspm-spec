@@ -75,7 +75,7 @@ func buildRequirements(b *schemasem.Bundle) types.RequirementsIndex {
 				datasetsReferenced[d] = struct{}{}
 			}
 
-			rInputs := inputsForRule(r, nil)
+			rInputs := inputsForRule(r)
 			accumulateRulesetInputs(rulesetInputs, r.Key, rInputs)
 
 			req.Rules = append(req.Rules, types.RuleRequirement{
@@ -184,7 +184,7 @@ func resolveDatasetVersion(dataset string, contracts []types.DatasetContractRef)
 	return versions[0]
 }
 
-func inputsForRule(r *types.Rule, _ []string) []types.RuleInputRequirement {
+func inputsForRule(r *types.Rule) []types.RuleInputRequirement {
 	if r == nil {
 		return []types.RuleInputRequirement{}
 	}
@@ -376,17 +376,5 @@ func setToSortedStringSlice(m map[string]struct{}) []string {
 		out = append(out, k)
 	}
 	slices.Sort(out)
-	return out
-}
-
-func sliceToSet(values []string) map[string]struct{} {
-	out := make(map[string]struct{}, len(values))
-	for _, value := range values {
-		value = strings.TrimSpace(value)
-		if value == "" {
-			continue
-		}
-		out[value] = struct{}{}
-	}
 	return out
 }

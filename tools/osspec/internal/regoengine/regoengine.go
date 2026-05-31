@@ -8,11 +8,6 @@ import (
 	"github.com/open-policy-agent/opa/v1/rego"
 )
 
-const (
-	DefaultRuleQuery         = "data.opensspm.rule.result"
-	DefaultEntityPolicyQuery = "data.opensspm.entity.result"
-)
-
 type EvaluationResult map[string]any
 
 func ValidateModule(ctx context.Context, moduleName, module, query string) error {

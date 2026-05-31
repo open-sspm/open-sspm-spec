@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -113,12 +114,7 @@ func LoadSpecFiles(ctx context.Context, opts Options) ([]LoadedFile, error) {
 }
 
 func sortLoaded(files []LoadedFile) {
-	// small local insertion sort to avoid importing sort everywhere
-	for i := 1; i < len(files); i++ {
-		j := i
-		for j > 0 && files[j-1].RelPath > files[j].RelPath {
-			files[j-1], files[j] = files[j], files[j-1]
-			j--
-		}
-	}
+	slices.SortFunc(files, func(a, b LoadedFile) int {
+		return strings.Compare(a.RelPath, b.RelPath)
+	})
 }

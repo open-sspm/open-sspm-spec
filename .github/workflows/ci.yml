@@ -18,10 +18,18 @@ jobs:
           cache: true
       - name: Enforce no tracked JSON files
         run: test -z "$(git ls-files '*.json')"
+      - name: Check formatting
+        run: |
+          out="$(git ls-files '*.go' | xargs gofmt -l)"
+          test -z "$out" || { echo "$out"; exit 1; }
+      - name: Vet
+        run: go vet ./...
       - name: Test
         run: go test ./...
       - name: Validate specs
         run: go run ./tools/osspec/cmd/osspec validate
+      - name: Verify executable specs
+        run: go run ./tools/osspec/cmd/osspec verify
       - name: Build dist
         run: go run ./tools/osspec/cmd/osspec build
       - name: Codegen (Go)

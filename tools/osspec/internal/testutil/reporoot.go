@@ -28,4 +28,3 @@ func RepoRoot(t *testing.T) string {
 	t.Fatal("RepoRoot: go.mod not found")
 	return ""
 }
-
