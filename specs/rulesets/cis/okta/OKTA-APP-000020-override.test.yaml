@@ -1,0 +1,18 @@
+"description": "Should apply a test-case override for max_session_idle_minutes"
+"expect": "pass"
+"inputs":
+  "okta:policies/sign-on":
+    -
+      "actions":
+        "signon":
+          "session":
+            "maxSessionIdleMinutes": 30
+      "name": "Custom Rule"
+      "policy":
+        "name": "Default Policy"
+      "priority": 1
+"kind": "opensspm.test_case"
+"parameters":
+  "max_session_idle_minutes": 30
+"rule_key": "OKTA-APP-000020"
+"schema_version": 2

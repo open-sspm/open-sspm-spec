@@ -87,28 +87,10 @@ func ValidateSemantic(b *Bundle) []error {
 	return errs
 }
 
+// ValidateSemantic validates relationships and executable Rego after documents
+// have passed JSON Schema validation, normalization, and Rego path resolution.
 func validateEntityPolicyPack(path string, doc *types.EntityPolicyPackDoc) []error {
-	var errs []error
-	if doc == nil {
-		return []error{fmt.Errorf("semantic: %s: nil entity policy pack", path)}
-	}
-	pack := doc.EntityPolicyPack
-	if strings.TrimSpace(pack.Metadata.ID) == "" {
-		errs = append(errs, fmt.Errorf("semantic: %s: entity_policy_pack.metadata.id is required", path))
-	}
-	if strings.TrimSpace(pack.Metadata.Version) == "" {
-		errs = append(errs, fmt.Errorf("semantic: %s: entity_policy_pack.metadata.version is required", path))
-	}
-	switch pack.Metadata.Domain {
-	case types.EntityPolicyDomainCredential, types.EntityPolicyDomainSaaS, types.EntityPolicyDomainIdentity:
-	default:
-		errs = append(errs, fmt.Errorf("semantic: %s: entity_policy_pack.metadata.domain %q is not supported", path, pack.Metadata.Domain))
-	}
-	if strings.TrimSpace(pack.Inputs.Schema) == "" {
-		errs = append(errs, fmt.Errorf("semantic: %s: entity_policy_pack.inputs.schema is required", path))
-	}
-	errs = append(errs, validateRegoPolicy(path, "entity_policy_pack.policy", &pack.Policy, true)...)
-	return errs
+	return validateRegoPolicy(path, "entity_policy_pack.policy", &doc.EntityPolicyPack.Policy)
 }
 
 func validateScope(path string, s types.Scope) []error {
@@ -122,8 +104,6 @@ func validateScope(path string, s types.Scope) []error {
 		if strings.TrimSpace(s.ConnectorKind) != "" {
 			errs = append(errs, fmt.Errorf("semantic: %s: scope.kind=global forbids scope.connector_kind", path))
 		}
-	default:
-		errs = append(errs, fmt.Errorf("semantic: %s: unknown scope.kind %q", path, s.Kind))
 	}
 	return errs
 }
@@ -150,7 +130,7 @@ func validateRulesetPolicy(path string, policy *types.RegoPolicy) []error {
 	if policy == nil {
 		return nil
 	}
-	return validateRegoPolicy(path, "ruleset.policy", policy, false)
+	return validateRegoPolicy(path, "ruleset.policy", policy)
 }
 
 func validateRulesetRules(path string, doc *types.RulesetDoc) []error {
@@ -176,25 +156,14 @@ func validateRulesetRules(path string, doc *types.RulesetDoc) []error {
 func validateRule(path string, r *types.Rule, policy *types.RegoPolicy, contractsIdx datasetContractIndex) []error {
 	var errs []error
 
-	requiresCheck := false
-	switch r.Monitoring.Status {
-	case types.MonitoringStatusAutomated, types.MonitoringStatusPartial:
-		requiresCheck = true
-	case types.MonitoringStatusManual, types.MonitoringStatusUnsupported:
-		requiresCheck = false
-	default:
-		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: unknown monitoring.status %q", path, r.Key, r.Monitoring.Status))
-	}
-
-	if requiresCheck && r.Check == nil {
-		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: monitoring.status=%q requires rule.check", path, r.Key, r.Monitoring.Status))
-		return errs
-	}
-	if !requiresCheck {
+	if r.Monitoring.Status == types.MonitoringStatusManual || r.Monitoring.Status == types.MonitoringStatusUnsupported {
 		if r.Check != nil {
 			errs = append(errs, fmt.Errorf("semantic: %s: rule %q: monitoring.status=%q requires rule.check to be omitted", path, r.Key, r.Monitoring.Status))
 		}
 		return errs
+	}
+	if r.Check == nil {
+		return append(errs, fmt.Errorf("semantic: %s: rule %q: monitoring.status=%q requires rule.check", path, r.Key, r.Monitoring.Status))
 	}
 
 	errs = append(errs, validateCheck(path, r, policy)...)
@@ -208,22 +177,12 @@ func validateCheck(path string, r *types.Rule, policy *types.RegoPolicy) []error
 	}
 	c := rulecheck.Resolve(policy, r.Check)
 	var errs []error
-	if strings.TrimSpace(string(c.Engine)) == "" {
-		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.engine is required", path, r.Key))
-	} else if c.Engine != types.CheckEngineRego {
-		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: unsupported check.engine %q", path, r.Key, c.Engine))
-	}
 	if strings.TrimSpace(c.Package) == "" {
 		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.package is required", path, r.Key))
 	}
-	if strings.TrimSpace(c.Query) == "" {
-		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.query is required", path, r.Key))
-	}
 	rego := strings.TrimSpace(c.Rego)
 	if rego == "" {
-		if strings.TrimSpace(c.RegoPath) == "" {
-			errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.rego is required, either inline, via check.rego_path, or via ruleset.policy", path, r.Key))
-		}
+		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.rego is required, either inline, via check.rego_path, or via ruleset.policy", path, r.Key))
 		return errs
 	}
 	if len(errs) == 0 {
@@ -234,54 +193,27 @@ func validateCheck(path string, r *types.Rule, policy *types.RegoPolicy) []error
 	return errs
 }
 
-func validateRegoPolicy(path, field string, policy *types.RegoPolicy, requireQuery bool) []error {
-	var errs []error
-	if policy == nil {
-		return []error{fmt.Errorf("semantic: %s: %s is required", path, field)}
-	}
-	if policy.Engine != types.CheckEngineRego {
-		errs = append(errs, fmt.Errorf("semantic: %s: %s.engine must be rego", path, field))
-	}
-	if strings.TrimSpace(policy.Package) == "" {
-		errs = append(errs, fmt.Errorf("semantic: %s: %s.package is required", path, field))
-	}
-	if requireQuery && strings.TrimSpace(policy.Query) == "" {
-		errs = append(errs, fmt.Errorf("semantic: %s: %s.query is required", path, field))
-	}
+func validateRegoPolicy(path, field string, policy *types.RegoPolicy) []error {
 	rego := strings.TrimSpace(policy.Rego)
-	if rego == "" {
-		if strings.TrimSpace(policy.RegoPath) == "" {
-			errs = append(errs, fmt.Errorf("semantic: %s: %s.rego is required, either inline or via rego_path", path, field))
+	if strings.TrimSpace(policy.Query) == "" {
+		if err := regoengine.ValidateModuleOnly(context.Background(), path+":"+field+".rego", rego); err != nil {
+			return []error{fmt.Errorf("semantic: %s: %s invalid Rego: %v", path, field, err)}
 		}
-		return errs
+		return nil
 	}
-	if len(errs) == 0 {
-		if strings.TrimSpace(policy.Query) == "" {
-			if err := regoengine.ValidateModuleOnly(context.Background(), path+":"+field+".rego", rego); err != nil {
-				errs = append(errs, fmt.Errorf("semantic: %s: %s invalid Rego: %v", path, field, err))
-			}
-			return errs
-		}
-		if err := regoengine.ValidateModule(context.Background(), path+":"+field+".rego", rego, policy.Query); err != nil {
-			errs = append(errs, fmt.Errorf("semantic: %s: %s invalid Rego: %v", path, field, err))
-		}
+	if err := regoengine.ValidateModule(context.Background(), path+":"+field+".rego", rego, policy.Query); err != nil {
+		return []error{fmt.Errorf("semantic: %s: %s invalid Rego: %v", path, field, err)}
 	}
-	return errs
+	return nil
 }
 
 func validateRequiredData(path string, r *types.Rule, contractsIdx datasetContractIndex) []error {
 	var errs []error
-	seen := map[string]struct{}{}
 	for _, dataset := range r.RequiredData {
 		dataset = strings.TrimSpace(dataset)
 		if dataset == "" {
 			continue
 		}
-		if _, ok := seen[dataset]; ok {
-			errs = append(errs, fmt.Errorf("semantic: %s: rule %q: duplicate required_data dataset %q", path, r.Key, dataset))
-			continue
-		}
-		seen[dataset] = struct{}{}
 
 		versions := contractsIdx.versionsByDataset[dataset]
 		if len(versions) == 0 {
