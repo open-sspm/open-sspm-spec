@@ -371,41 +371,6 @@ type EntityPolicyEvaluateResult struct {
 	Signals   []EntityPolicyTestSignal `json:"signals,omitempty"`
 }
 
-func (rs *Ruleset) AddRule(rule Rule) (bool, error) {
-	if rs == nil {
-		return false, fmt.Errorf("ruleset is nil")
-	}
-	key := strings.TrimSpace(rule.Key)
-	if key == "" {
-		return false, fmt.Errorf("rule key is required")
-	}
-	rule.Key = key
-	for i := range rs.Rules {
-		if rs.Rules[i].Key == key {
-			rs.Rules[i] = rule
-			return true, nil
-		}
-	}
-	rs.Rules = append(rs.Rules, rule)
-	return false, nil
-}
-
-func (rs *Ruleset) RuleByKey(ruleKey string) (*Rule, bool) {
-	if rs == nil {
-		return nil, false
-	}
-	key := strings.TrimSpace(ruleKey)
-	if key == "" {
-		return nil, false
-	}
-	for i := range rs.Rules {
-		if rs.Rules[i].Key == key {
-			return &rs.Rules[i], true
-		}
-	}
-	return nil, false
-}
-
 func EvaluateRule(ruleset *Ruleset, rule *Rule, input EvaluateInput) (EvaluateResult, error) {
 	if rule == nil {
 		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "nil_rule"}, fmt.Errorf("rule is nil")
@@ -456,23 +421,6 @@ func EvaluateRule(ruleset *Ruleset, rule *Rule, input EvaluateInput) (EvaluateRe
 		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "invalid_status"}, err
 	}
 	return out, nil
-}
-
-func EvaluateEntityPolicyPack(pack *EntityPolicyPack, entityInput map[string]any) (EntityPolicyEvaluateResult, error) {
-	if pack == nil {
-		return EntityPolicyEvaluateResult{}, fmt.Errorf("entity policy pack is nil")
-	}
-	result, err := evaluateRego(pack.Metadata.ID+".rego", pack.Policy.Rego, pack.Policy.Query, map[string]any{
-		"entity": entityInput,
-		"policy": map[string]any{
-			"id":     pack.Metadata.ID,
-			"domain": pack.Metadata.Domain,
-		},
-	})
-	if err != nil {
-		return EntityPolicyEvaluateResult{}, err
-	}
-	return entityPolicyEvaluateResultFromMap(result)
 }
 
 func wrapDatasetInput(input map[string]DatasetInput) map[string]any {
@@ -543,29 +491,6 @@ func evaluateStatusFromAny(value any, ok bool) (EvaluateStatus, error) {
 	default:
 		return EvaluateStatus_UNKNOWN, fmt.Errorf("rego result.status %q is invalid", status)
 	}
-}
-
-func entityPolicyEvaluateResultFromMap(result map[string]any) (EntityPolicyEvaluateResult, error) {
-	out := EntityPolicyEvaluateResult{
-		RiskLevel: strings.TrimSpace(fmt.Sprint(result["risk_level"])),
-	}
-	out.RiskScore, _ = intFromAny(result["risk_score"])
-	signals, ok := result["signals"].([]any)
-	if !ok {
-		return out, nil
-	}
-	for _, raw := range signals {
-		signal, ok := raw.(map[string]any)
-		if !ok {
-			return EntityPolicyEvaluateResult{}, fmt.Errorf("entity policy signal must be object, got %T", raw)
-		}
-		out.Signals = append(out.Signals, EntityPolicyTestSignal{
-			ID:       strings.TrimSpace(fmt.Sprint(signal["id"])),
-			Severity: strings.TrimSpace(fmt.Sprint(signal["severity"])),
-			Title:    strings.TrimSpace(fmt.Sprint(signal["title"])),
-		})
-	}
-	return out, nil
 }
 
 func intFromAny(value any) (int, bool) {
