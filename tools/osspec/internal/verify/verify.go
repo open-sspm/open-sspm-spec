@@ -137,10 +137,8 @@ func evaluateRule(ctx context.Context, ruleset *types.Ruleset, rule *types.Rule,
 	check := rulecheck.Resolve(policy, rule.Check)
 
 	effectiveParams := make(map[string]any)
-	if rule.Parameters != nil {
-		for k, v := range rule.Parameters.Defaults {
-			effectiveParams[k] = v
-		}
+	for k, v := range rule.Parameters {
+		effectiveParams[k] = v
 	}
 	for k, v := range params {
 		effectiveParams[k] = v

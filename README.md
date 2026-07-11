@@ -104,6 +104,9 @@ Rule checks receive input shaped as:
 }
 ```
 
+Optional `rule.parameters` values are defaults for `input.params`. Test cases
+may override individual values with their own `parameters` object.
+
 Entity policy packs receive `input.entity` and `input.policy`.
 
 ## `required_data` policy

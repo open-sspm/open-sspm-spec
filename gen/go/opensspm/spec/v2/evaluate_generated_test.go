@@ -38,7 +38,7 @@ func TestEvaluateRuleRegoPassFail(t *testing.T) {
 			Engine: CheckEngine_REGO,
 			Query:  "data.opensspm.tests.result",
 		},
-		Parameters: &Parameters{Defaults: map[string]any{"min": 2}},
+		Parameters: map[string]any{"min": 2},
 	}
 
 	passRes, err := EvaluateRule(&ruleset, &rule, EvaluateInput{
@@ -66,6 +66,19 @@ func TestEvaluateRuleRegoPassFail(t *testing.T) {
 	}
 	if failRes.Status != EvaluateStatus_FAIL {
 		t.Fatalf("expected fail status, got %+v", failRes)
+	}
+
+	overrideRes, err := EvaluateRule(&ruleset, &rule, EvaluateInput{
+		Datasets: map[string]DatasetInput{
+			"d": {Rows: []any{map[string]any{"x": 1}}},
+		},
+		Params: map[string]any{"min": 1},
+	})
+	if err != nil {
+		t.Fatalf("expected override evaluation without error, got %v", err)
+	}
+	if overrideRes.Status != EvaluateStatus_PASS || overrideRes.TargetValue == nil || *overrideRes.TargetValue != 1 {
+		t.Fatalf("expected parameter override to pass with target 1, got %+v", overrideRes)
 	}
 }
 

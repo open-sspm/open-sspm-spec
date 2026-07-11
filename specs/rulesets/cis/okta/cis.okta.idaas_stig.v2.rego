@@ -129,7 +129,10 @@ authenticator_by_name(name) := [r |
 results["OKTA-APP-000020"] := dataset_error_result(signon_dataset) if { not dataset_ok(signon_dataset) }
 results["OKTA-APP-000020"] := field_result(signon_default_priority1, passed, 1, "fail") if {
   dataset_ok(signon_dataset)
-  passed := [r | r := signon_default_priority1[_]; r.actions.signon.session.maxSessionIdleMinutes == 15]
+  passed := [r |
+    r := signon_default_priority1[_]
+    r.actions.signon.session.maxSessionIdleMinutes == input.params.max_session_idle_minutes
+  ]
 }
 
 results["OKTA-APP-000025"] := dataset_error_result(admin_settings_dataset) if { not dataset_ok(admin_settings_dataset) }
@@ -249,4 +252,3 @@ results["OKTA-APP-003010"] := field_result(active_password_policies, passed, 1, 
   dataset_ok(password_dataset)
   passed := [r | r := active_password_policies[_]; r.settings.password.age.historyCount >= 5]
 }
-

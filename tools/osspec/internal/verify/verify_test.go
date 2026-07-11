@@ -45,9 +45,7 @@ func TestEvaluateRuleRegoPassWithFakeData(t *testing.T) {
 			Package: "opensspm.test",
 			Query:   "data.opensspm.test.result",
 		},
-		Parameters: &types.Parameters{
-			Defaults: map[string]any{"min": 10},
-		},
+		Parameters: map[string]any{"min": 10},
 	}
 
 	status, err := evaluateRule(context.Background(), ruleset, rule, map[string][]any{

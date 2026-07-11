@@ -87,43 +87,6 @@
         "minimum": 1
       "description":
         "type": "string"
-  "framework_mapping":
-    "type": "object"
-    "additionalProperties": false
-    "required":
-      - "framework"
-      - "control"
-    "properties":
-      "framework":
-        "type": "string"
-        "minLength": 1
-      "control":
-        "type": "string"
-        "minLength": 1
-      "enhancement":
-        "type": "string"
-      "coverage":
-        "enum":
-          - "direct"
-          - "partial"
-          - "supporting"
-        "type": "string"
-      "notes":
-        "type": "string"
-  "ruleset_requirements":
-    "type": "object"
-    "additionalProperties": false
-    "properties":
-      "api_scopes":
-        "type": "array"
-        "items":
-          "type": "string"
-      "permissions":
-        "type": "array"
-        "items":
-          "type": "string"
-      "notes":
-        "type": "string"
   "rego_policy":
     "type": "object"
     "additionalProperties": false
@@ -192,84 +155,6 @@
         "type": "string"
       "reason":
         "type": "string"
-  "parameter_schema":
-    "type": "object"
-    "additionalProperties": false
-    "required":
-      - "type"
-    "properties":
-      "type":
-        "type": "string"
-      "description":
-        "type": "string"
-      "minimum":
-        "type": "number"
-      "maximum":
-        "type": "number"
-      "enum":
-        "type": "array"
-  "parameters":
-    "type": "object"
-    "additionalProperties": false
-    "required":
-      - "defaults"
-    "properties":
-      "defaults":
-        "type": "object"
-      "schema":
-        "type": "object"
-        "additionalProperties":
-          "$ref": "#/definitions/parameter_schema"
-  "affected_resources":
-    "type": "object"
-    "additionalProperties": false
-    "required":
-      - "dataset"
-      - "id_field"
-      - "display_field"
-    "properties":
-      "dataset":
-        "type": "string"
-      "id_field":
-        "type": "string"
-      "display_field":
-        "type": "string"
-  "evidence":
-    "type": "object"
-    "additionalProperties": false
-    "properties":
-      "affected_resources":
-        "$ref": "#/definitions/affected_resources"
-      "summary_templates":
-        "type": "object"
-        "additionalProperties":
-          "type": "string"
-  "remediation":
-    "type": "object"
-    "additionalProperties": false
-    "required":
-      - "instructions"
-    "properties":
-      "instructions":
-        "type": "string"
-      "risks":
-        "type": "string"
-      "effort":
-        "enum":
-          - "low"
-          - "medium"
-          - "high"
-        "type": "string"
-  "lifecycle":
-    "type": "object"
-    "additionalProperties": false
-    "properties":
-      "rule_version":
-        "type": "string"
-      "is_active":
-        "type": "boolean"
-      "replaced_by":
-        "type": "string"
   "rule":
     "type": "object"
     "additionalProperties": false
@@ -308,27 +193,18 @@
       "category":
         "type": "string"
       "parameters":
-        "$ref": "#/definitions/parameters"
+        "description": "Default values exposed to Rego as input.params. Test cases may override them."
+        "type": "object"
       "check":
         "$ref": "#/definitions/check"
-      "evidence":
-        "$ref": "#/definitions/evidence"
-      "remediation":
-        "$ref": "#/definitions/remediation"
       "references":
         "type": "array"
         "items":
           "$ref": "#/definitions/reference"
-      "framework_mappings":
-        "type": "array"
-        "items":
-          "$ref": "#/definitions/framework_mapping"
       "tags":
         "type": "array"
         "items":
           "type": "string"
-      "lifecycle":
-        "$ref": "#/definitions/lifecycle"
   "ruleset":
     "type": "object"
     "additionalProperties": false
@@ -364,12 +240,6 @@
         "type": "array"
         "items":
           "$ref": "#/definitions/reference"
-      "framework_mappings":
-        "type": "array"
-        "items":
-          "$ref": "#/definitions/framework_mapping"
-      "requirements":
-        "$ref": "#/definitions/ruleset_requirements"
       "data_contracts":
         "type": "array"
         "items":

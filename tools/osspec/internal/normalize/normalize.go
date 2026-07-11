@@ -53,14 +53,11 @@ func RulesetDoc(doc *types.RulesetDoc) {
 		doc.Ruleset.Status = "active"
 	}
 	normalizeReferences(doc.Ruleset.References)
-	normalizeFrameworkMappings(doc.Ruleset.FrameworkMappings)
 	normalizeDataContracts(doc.Ruleset.DataContracts)
-	normalizeRulesetRequirements(doc.Ruleset.Requirements)
 	normalizeRegoPolicy(doc.Ruleset.Policy)
 
 	doc.Ruleset.Tags = Strings(doc.Ruleset.Tags)
 	doc.Ruleset.References = References(doc.Ruleset.References)
-	doc.Ruleset.FrameworkMappings = FrameworkMappings(doc.Ruleset.FrameworkMappings)
 	doc.Ruleset.DataContracts = DataContracts(doc.Ruleset.DataContracts)
 
 	if len(doc.Ruleset.Rules) > 0 {
@@ -72,9 +69,6 @@ func RulesetDoc(doc *types.RulesetDoc) {
 			doc.Ruleset.Rules[i].RequiredData = Strings(doc.Ruleset.Rules[i].RequiredData)
 			normalizeReferences(doc.Ruleset.Rules[i].References)
 			doc.Ruleset.Rules[i].References = References(doc.Ruleset.Rules[i].References)
-			normalizeFrameworkMappings(doc.Ruleset.Rules[i].FrameworkMappings)
-			doc.Ruleset.Rules[i].FrameworkMappings = FrameworkMappings(doc.Ruleset.Rules[i].FrameworkMappings)
-			normalizeRuleLifecycle(doc.Ruleset.Rules[i].Lifecycle)
 			normalizeRuleCheck(doc.Ruleset.Rules[i].Check)
 		}
 	}
@@ -109,26 +103,6 @@ func EntityPolicyPackDoc(doc *types.EntityPolicyPackDoc) {
 	normalizeRegoPolicy(&pack.Policy)
 }
 
-func FrameworkMappings(v []types.FrameworkMapping) []types.FrameworkMapping {
-	out := append([]types.FrameworkMapping{}, v...)
-	slices.SortFunc(out, func(a, b types.FrameworkMapping) int {
-		if c := strings.Compare(a.Framework, b.Framework); c != 0 {
-			return c
-		}
-		if c := strings.Compare(a.Control, b.Control); c != 0 {
-			return c
-		}
-		if c := strings.Compare(a.Enhancement, b.Enhancement); c != 0 {
-			return c
-		}
-		if c := strings.Compare(string(a.Coverage), string(b.Coverage)); c != 0 {
-			return c
-		}
-		return strings.Compare(a.Notes, b.Notes)
-	})
-	return out
-}
-
 func DataContracts(v []types.DatasetContractRef) []types.DatasetContractRef {
 	out := append([]types.DatasetContractRef{}, v...)
 	slices.SortFunc(out, func(a, b types.DatasetContractRef) int {
@@ -154,34 +128,8 @@ func normalizeReferences(v []types.Reference) {
 	}
 }
 
-func normalizeFrameworkMappings(v []types.FrameworkMapping) {
-	for i := range v {
-		if v[i].Coverage == "" {
-			v[i].Coverage = types.FrameworkCoverageSupporting
-		}
-	}
-}
-
 func normalizeDataContracts(_ []types.DatasetContractRef) {
 	// currently no defaulting required
-}
-
-func normalizeRulesetRequirements(req *types.RulesetRequirements) {
-	if req == nil {
-		return
-	}
-	req.APIScopes = Strings(req.APIScopes)
-	req.Permissions = Strings(req.Permissions)
-}
-
-func normalizeRuleLifecycle(lc *types.Lifecycle) {
-	if lc == nil {
-		return
-	}
-	if lc.IsActive == nil {
-		v := true
-		lc.IsActive = &v
-	}
 }
 
 func normalizeRuleCheck(c *types.Check) {
