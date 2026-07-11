@@ -8,99 +8,85 @@ import (
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
 )
 
-func TestCompile_CISOktaRulesetIndexed(t *testing.T) {
+func TestCompile_CISOktaRuleset(t *testing.T) {
 	root := testutil.RepoRoot(t)
 	res, err := Compile(context.Background(), Options{RepoRoot: root})
 	if err != nil {
 		t.Fatalf("Compile() error: %v", err)
 	}
 
-	var rr *types.RulesetRequirement
-	for i := range res.Requirements.Rulesets {
-		if res.Requirements.Rulesets[i].RulesetKey == "cis.okta.idaas_stig.v2" {
-			rr = &res.Requirements.Rulesets[i]
+	var ruleset *types.Ruleset
+	for i := range res.Descriptor.Rulesets {
+		candidate := &res.Descriptor.Rulesets[i].Object.Ruleset
+		if candidate.Key == "cis.okta.idaas_stig.v2" {
+			ruleset = candidate
 			break
 		}
 	}
-	if rr == nil {
-		t.Fatalf("missing ruleset cis.okta.idaas_stig.v2 in requirements index")
+	if ruleset == nil {
+		t.Fatalf("missing ruleset cis.okta.idaas_stig.v2 in descriptor")
 	}
 
-	if rr.Status != "active" {
-		t.Fatalf("expected status=active, got %q", rr.Status)
+	if ruleset.Status != "active" {
+		t.Fatalf("expected status=active, got %q", ruleset.Status)
 	}
-	if rr.Scope.Kind != types.ScopeKindConnectorInstance || rr.Scope.ConnectorKind != "okta" {
-		t.Fatalf("unexpected scope: %+v", rr.Scope)
+	if ruleset.Scope.Kind != types.ScopeKindConnectorInstance || ruleset.Scope.ConnectorKind != "okta" {
+		t.Fatalf("unexpected scope: %+v", ruleset.Scope)
 	}
-	if len(rr.Datasets) != 6 {
-		t.Fatalf("expected 6 datasets, got %+v", rr.Datasets)
-	}
-	if len(rr.Engines) != 1 || rr.Engines[0] != types.CheckEngineRego {
-		t.Fatalf("expected engines=[rego], got %+v", rr.Engines)
+	if len(ruleset.DataContracts) != 6 {
+		t.Fatalf("expected 6 data contracts, got %+v", ruleset.DataContracts)
 	}
 
-	if len(rr.Rules) != 24 {
-		t.Fatalf("expected 24 rules, got %d", len(rr.Rules))
+	if len(ruleset.Rules) != 24 {
+		t.Fatalf("expected 24 rules, got %d", len(ruleset.Rules))
 	}
 	expected := map[string]struct {
-		manual   bool
 		status   types.MonitoringStatus
-		engine   *types.CheckEngine
 		datasets int
 	}{
-		"OKTA-APP-000020": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-000025": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-000090": {manual: true, status: types.MonitoringStatusManual, engine: nil, datasets: 0},
-		"OKTA-APP-000170": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-000180": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-000190": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-000200": {manual: true, status: types.MonitoringStatusManual, engine: nil, datasets: 0},
-		"OKTA-APP-000560": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-000570": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-000650": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-000670": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-000680": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-000690": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-000700": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-000740": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-000745": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-001430": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-001665": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-001670": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-001700": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-001710": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-001920": {manual: true, status: types.MonitoringStatusManual, engine: nil, datasets: 0},
-		"OKTA-APP-002980": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
-		"OKTA-APP-003010": {manual: false, status: types.MonitoringStatusAutomated, engine: ptrEngine(types.CheckEngineRego), datasets: 1},
+		"OKTA-APP-000020": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-000025": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-000090": {status: types.MonitoringStatusManual, datasets: 0},
+		"OKTA-APP-000170": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-000180": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-000190": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-000200": {status: types.MonitoringStatusManual, datasets: 0},
+		"OKTA-APP-000560": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-000570": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-000650": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-000670": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-000680": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-000690": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-000700": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-000740": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-000745": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-001430": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-001665": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-001670": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-001700": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-001710": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-001920": {status: types.MonitoringStatusManual, datasets: 0},
+		"OKTA-APP-002980": {status: types.MonitoringStatusAutomated, datasets: 1},
+		"OKTA-APP-003010": {status: types.MonitoringStatusAutomated, datasets: 1},
 	}
 
-	for _, r := range rr.Rules {
-		exp, ok := expected[r.RuleKey]
+	for _, rule := range ruleset.Rules {
+		exp, ok := expected[rule.Key]
 		if !ok {
-			t.Fatalf("unexpected rule %q in requirements index", r.RuleKey)
+			t.Fatalf("unexpected rule %q in descriptor", rule.Key)
 		}
-		if r.IsManual != exp.manual {
-			t.Fatalf("expected rule %q is_manual=%v, got %v", r.RuleKey, exp.manual, r.IsManual)
+		if exp.status == types.MonitoringStatusManual {
+			if rule.Check != nil {
+				t.Fatalf("expected manual rule %q to omit check", rule.Key)
+			}
+		} else if rule.Check == nil || rule.Check.Engine != types.CheckEngineRego {
+			t.Fatalf("expected automated rule %q to use Rego, got %+v", rule.Key, rule.Check)
 		}
-		if !sameEngine(r.Engine, exp.engine) {
-			t.Fatalf("expected rule %q engine=%v, got %#v", r.RuleKey, exp.engine, r.Engine)
+		if rule.Monitoring.Status != exp.status {
+			t.Fatalf("expected rule %q monitoring.status=%q, got %q", rule.Key, exp.status, rule.Monitoring.Status)
 		}
-		if r.Monitoring.Status != exp.status {
-			t.Fatalf("expected rule %q monitoring.status=%q, got %q", r.RuleKey, exp.status, r.Monitoring.Status)
-		}
-		if len(r.Datasets) != exp.datasets {
-			t.Fatalf("expected rule %q to have %d datasets, got %+v", r.RuleKey, exp.datasets, r.Datasets)
+		if len(rule.RequiredData) != exp.datasets {
+			t.Fatalf("expected rule %q to have %d datasets, got %+v", rule.Key, exp.datasets, rule.RequiredData)
 		}
 	}
-}
-
-func ptrEngine(v types.CheckEngine) *types.CheckEngine {
-	return &v
-}
-
-func sameEngine(a, b *types.CheckEngine) bool {
-	if a == nil || b == nil {
-		return a == nil && b == nil
-	}
-	return *a == *b
 }

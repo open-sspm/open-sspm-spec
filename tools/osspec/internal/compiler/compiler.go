@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/hash"
@@ -26,9 +25,7 @@ type Options struct {
 }
 
 type Result struct {
-	Descriptor   types.Descriptor
-	Artifacts    types.ArtifactsIndex
-	Requirements types.RequirementsIndex
+	Descriptor types.Descriptor
 }
 
 func Compile(ctx context.Context, opts Options) (*Result, error) {
@@ -52,7 +49,7 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 		return nil, err
 	}
 
-	version, versionHash, err := loadVersion(repoRootAbs)
+	version, err := loadVersion(repoRootAbs)
 	if err != nil {
 		return nil, err
 	}
@@ -131,22 +128,10 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 		return nil, joinErrors(semErrs)
 	}
 
-	reqIndex := buildRequirements(&bundle)
-	artifactsIndex := types.ArtifactsIndex{
-		SchemaVersion: 2,
-		Kind:          "opensspm.artifacts_index",
-		Artifacts: []types.Artifact{
-			{Kind: "opensspm.version", Key: "version", SourcePath: "version.yaml", Hash: versionHash},
-		},
-	}
-
 	desc := types.Descriptor{
 		SchemaVersion: 2,
 		Kind:          "opensspm.engine_descriptor",
 		Version:       version,
-		Index: types.DescriptorIndex{
-			Requirements: reqIndex,
-		},
 	}
 
 	for _, rs := range bundle.Rulesets {
@@ -155,7 +140,6 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 			return nil, fmt.Errorf("%s: hash: %w", rs.Path, err)
 		}
 		desc.Rulesets = append(desc.Rulesets, types.Compiled[types.RulesetDoc]{SourcePath: rs.Path, Hash: h, Object: rs.Doc})
-		artifactsIndex.Artifacts = append(artifactsIndex.Artifacts, types.Artifact{Kind: rs.Doc.Kind, Key: rs.Doc.Ruleset.Key, SourcePath: rs.Path, Hash: h})
 	}
 	for _, pack := range bundle.EntityPolicyPacks {
 		h, _, err := hash.HashObjectCanonicalYAML(pack.Doc)
@@ -163,7 +147,6 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 			return nil, fmt.Errorf("%s: hash: %w", pack.Path, err)
 		}
 		desc.EntityPolicyPacks = append(desc.EntityPolicyPacks, types.Compiled[types.EntityPolicyPackDoc]{SourcePath: pack.Path, Hash: h, Object: pack.Doc})
-		artifactsIndex.Artifacts = append(artifactsIndex.Artifacts, types.Artifact{Kind: pack.Doc.Kind, Key: pack.Doc.EntityPolicyPack.Metadata.ID, SourcePath: pack.Path, Hash: h})
 	}
 	for _, p := range bundle.Profiles {
 		h, _, err := hash.HashObjectCanonicalYAML(p.Doc)
@@ -171,22 +154,9 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 			return nil, fmt.Errorf("%s: hash: %w", p.Path, err)
 		}
 		desc.Profiles = append(desc.Profiles, types.Compiled[types.ProfileDoc]{SourcePath: p.Path, Hash: h, Object: p.Doc})
-		artifactsIndex.Artifacts = append(artifactsIndex.Artifacts, types.Artifact{Kind: p.Doc.Kind, Key: p.Doc.Profile.Key, SourcePath: p.Path, Hash: h})
 	}
 
-	slices.SortFunc(artifactsIndex.Artifacts, func(a, b types.Artifact) int {
-		if c := strings.Compare(a.Kind, b.Kind); c != 0 {
-			return c
-		}
-		return strings.Compare(a.Key, b.Key)
-	})
-	desc.Index.Artifacts = artifactsIndex
-
-	return &Result{
-		Descriptor:   desc,
-		Artifacts:    artifactsIndex,
-		Requirements: reqIndex,
-	}, nil
+	return &Result{Descriptor: desc}, nil
 }
 
 func applyRulesetPolicyDefaults(doc *types.RulesetDoc) {
@@ -211,30 +181,26 @@ func applyRulesetPolicyDefaults(doc *types.RulesetDoc) {
 	}
 }
 
-func loadVersion(repoRootAbs string) (types.Version, string, error) {
+func loadVersion(repoRootAbs string) (types.Version, error) {
 	if _, err := os.Stat(filepath.Join(repoRootAbs, "version.json")); err == nil {
-		return types.Version{}, "", fmt.Errorf("compiler: version.json is not allowed; use version.yaml")
+		return types.Version{}, fmt.Errorf("compiler: version.json is not allowed; use version.yaml")
 	} else if !errors.Is(err, os.ErrNotExist) {
-		return types.Version{}, "", fmt.Errorf("compiler: stat version.json: %w", err)
+		return types.Version{}, fmt.Errorf("compiler: stat version.json: %w", err)
 	}
 
 	b, err := os.ReadFile(filepath.Join(repoRootAbs, "version.yaml"))
 	if err != nil {
-		return types.Version{}, "", fmt.Errorf("compiler: read version.yaml: %w", err)
+		return types.Version{}, fmt.Errorf("compiler: read version.yaml: %w", err)
 	}
 
 	var v types.Version
 	if err := yamlstrict.DecodeSingleStrictYAML(b, &v, true); err != nil {
-		return types.Version{}, "", fmt.Errorf("compiler: parse version.yaml: %w", err)
+		return types.Version{}, fmt.Errorf("compiler: parse version.yaml: %w", err)
 	}
 	if v.Project == "" || v.Repo == "" || v.SpecVersion == "" || v.SchemaVersion != 2 {
-		return types.Version{}, "", fmt.Errorf("compiler: invalid version.yaml (missing required fields)")
+		return types.Version{}, fmt.Errorf("compiler: invalid version.yaml (missing required fields)")
 	}
-	h, _, err := hash.HashObjectCanonicalYAML(v)
-	if err != nil {
-		return types.Version{}, "", err
-	}
-	return v, h, nil
+	return v, nil
 }
 
 func joinErrors(errs []error) error {

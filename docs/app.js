@@ -209,7 +209,7 @@ function renderTOC() {
   item("#profiles", "Profiles", counts.profiles);
   item("#policy-packs", "Policy packs", counts.policyPacks);
 
-  section("Indexes");
+  section("Derived views");
   item("#requirements", "Requirements");
   item("#artifacts", "Artifacts");
 
@@ -405,7 +405,7 @@ function renderOverview() {
     rulesets: (d.rulesets || []).length,
     profiles: (d.profiles || []).length,
     policyPacks: (d.entity_policy_packs || []).length,
-    artifacts: (d.index?.artifacts?.artifacts || []).length,
+    artifacts: compiledArtifacts(d).length,
   };
 
   const cover = h("section", { class: "cover" },
@@ -463,8 +463,8 @@ function renderOverview() {
     tocLink("#rulesets", "Rulesets", `${counts.rulesets} compiled, ${countRules(d)} rules total`),
     tocLink("#profiles", "Profiles", `${counts.profiles} bundles`),
     tocLink("#policy-packs", "Entity policy packs", `${counts.policyPacks} packs`),
-    tocLink("#requirements", "Requirements index", "Datasets, params, engines per ruleset"),
-    tocLink("#artifacts", "Artifacts index", `${counts.artifacts} entries`),
+    tocLink("#requirements", "Requirements", "Datasets, params, engines per ruleset"),
+    tocLink("#artifacts", "Artifacts", `${counts.artifacts} compiled objects`),
   );
 
   const contents = h("div", { class: "card" },
@@ -488,6 +488,29 @@ function countRules(d) {
   let n = 0;
   for (const c of d.rulesets || []) n += (c.object?.ruleset?.rules || []).length;
   return n;
+}
+
+function compiledArtifacts(d) {
+  const artifacts = [];
+
+  function append(compiledItems, fallbackKind, keyForObject) {
+    for (const compiled of compiledItems || []) {
+      const object = compiled.object || {};
+      artifacts.push({
+        kind: object.kind || fallbackKind,
+        key: keyForObject(object),
+        source_path: compiled.source_path,
+        hash: compiled.hash,
+      });
+    }
+  }
+
+  append(d.rulesets, "opensspm.ruleset", (object) => object.ruleset?.key || "");
+  append(d.entity_policy_packs, "opensspm.entity_policy_pack", (object) => object.entity_policy_pack?.metadata?.id || "");
+  append(d.profiles, "opensspm.profile", (object) => object.profile?.key || "");
+
+  artifacts.sort((a, b) => a.kind.localeCompare(b.kind) || a.key.localeCompare(b.key));
+  return artifacts;
 }
 
 /* ------------------------------ Schemas ------------------------------- */
@@ -1005,19 +1028,73 @@ function renderPolicyPackDetail(id) {
   ].filter(Boolean);
 }
 
-/* ----------------------------- Indexes -------------------------------- */
+/* -------------------------- Derived views ----------------------------- */
+
+function deriveRulesetRequirements(d) {
+  return (d.rulesets || []).map((compiled) => {
+    const ruleset = rulesetOf(compiled) || {};
+    const rules = ruleset.rules || [];
+    const datasetNames = [...new Set(rules.flatMap((rule) => rule.required_data || []))].sort();
+    const contracts = new Map((ruleset.data_contracts || []).map((contract) => [contract.dataset, contract]));
+    const datasets = datasetNames.map((dataset) => ({
+      dataset,
+      version: contracts.get(dataset)?.version || 1,
+    }));
+    const engines = [...new Set(rules.map((rule) => rule.check?.engine).filter(Boolean))].sort();
+    const inputTypes = new Map();
+
+    for (const rule of rules) {
+      const defaults = rule.parameters?.defaults || {};
+      const schemas = rule.parameters?.schema || {};
+      const names = new Set([...Object.keys(defaults), ...Object.keys(schemas)]);
+      for (const name of names) {
+        if (!inputTypes.has(name)) inputTypes.set(name, new Set());
+        const type = schemas[name]?.type;
+        if (type) inputTypes.get(name).add(type);
+      }
+    }
+
+    const inputs = [...inputTypes.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([name, types]) => ({ name, type: types.size === 1 ? [...types][0] : "" }));
+
+    return {
+      ruleset_key: ruleset.key,
+      status: ruleset.status,
+      scope: ruleset.scope,
+      datasets,
+      engines,
+      datasets_referenced: datasetNames,
+      inputs,
+    };
+  });
+}
+
+function derivePolicyPackRequirements(d) {
+  return (d.entity_policy_packs || []).map((compiled) => {
+    const pack = compiled.object?.entity_policy_pack || {};
+    return {
+      policy_pack_id: pack.metadata?.id,
+      version: pack.metadata?.version,
+      domain: pack.metadata?.domain,
+      input_schema: pack.inputs?.schema,
+      rego_package: pack.policy?.package,
+      rego_query: pack.policy?.query,
+    };
+  });
+}
 
 function renderRequirements() {
   const d = state.descriptor;
-  const rs = d.index?.requirements?.rulesets || [];
-  const packs = d.index?.requirements?.entity_policy_packs || [];
+  const rs = deriveRulesetRequirements(d);
+  const packs = derivePolicyPackRequirements(d);
   const filteredRS = rs.filter((x) => matches(state.query, x.ruleset_key, x.scope?.kind, x.scope?.connector_kind, ...(x.engines || []), ...(x.datasets_referenced || [])));
 
   return [
     h("section", { class: "card" },
-      kicker("Index — requirements"),
-      display("Requirements ", h("span", { class: "upright" }, "Index")),
-      lede("Computed requirements per ruleset (engines, datasets, inputs) and per policy pack (input schemas and Rego metadata)."),
+      kicker("Derived view — requirements"),
+      display("Requirements"),
+      lede("Requirements derived from compiled rulesets and policy packs: engines, datasets, inputs, and Rego metadata."),
     ),
     h("section", { class: "card" },
       section(null, "requirements-rulesets", "Per ruleset"),
@@ -1067,7 +1144,6 @@ function renderRequirements() {
           h("td", { style: "max-width: 420px;" },
             h("code", {}, p.rego_package || "—"),
             p.rego_query ? h("span", { class: "sub" }, h("code", {}, p.rego_query)) : null,
-            p.rego_sha256 ? h("span", { class: "sub" }, hash(p.rego_sha256)) : null,
           ),
         ))),
       ),
@@ -1077,13 +1153,13 @@ function renderRequirements() {
 
 function renderArtifacts() {
   const d = state.descriptor;
-  const a = d.index?.artifacts?.artifacts || [];
+  const a = compiledArtifacts(d);
   const rows = a.filter((x) => matches(state.query, x.kind, x.key, x.source_path, x.hash));
   return [
     h("section", { class: "card" },
-      kicker("Index — artifacts"),
-      display("Artifacts ", h("span", { class: "upright" }, "Index")),
-      lede(`${a.length} artifacts. Every compiled object is content-addressed by SHA-256.`),
+      kicker("Derived view — artifacts"),
+      display("Artifacts"),
+      lede(`${a.length} compiled objects. Every object is content-addressed by SHA-256.`),
     ),
     h("section", { class: "card" },
       h("table", { class: "ledger compact" },

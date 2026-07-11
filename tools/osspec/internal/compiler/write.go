@@ -33,9 +33,6 @@ func writeDist(repoRoot, distDir string, res *Result) error {
 	docsAbs := filepath.Join(repoRootAbs, "docs")
 
 	_ = os.RemoveAll(filepath.Join(distAbs, "index"))
-	if err := os.MkdirAll(filepath.Join(distAbs, "index"), 0o755); err != nil {
-		return err
-	}
 	_ = os.RemoveAll(filepath.Join(distAbs, "compiled"))
 	if err := os.MkdirAll(filepath.Join(distAbs, "compiled"), 0o755); err != nil {
 		return err
@@ -68,13 +65,6 @@ func writeDist(repoRoot, distDir string, res *Result) error {
 	if err := copyMetaschemaToDocs(repoRootAbs, docsAbs); err != nil {
 		return err
 	}
-	if err := writeCanonicalYAML(filepath.Join(distAbs, "index", "artifacts.yaml"), res.Artifacts); err != nil {
-		return err
-	}
-	if err := writeCanonicalYAML(filepath.Join(distAbs, "index", "requirements.yaml"), res.Requirements); err != nil {
-		return err
-	}
-
 	if err := writeCompiled(distAbs, res); err != nil {
 		return err
 	}
