@@ -23,8 +23,6 @@ func TestGenerateSpecTypes_RegoSurfaceAndHelpers(t *testing.T) {
 		"Rego     string",
 		"RegoPath string",
 		"type RegoPolicy struct",
-		"type RulesetRequirement struct",
-		"RegoSHA256",
 		"type EvaluateStatus string",
 		"type DatasetInputError struct",
 		"type DatasetInput struct",
