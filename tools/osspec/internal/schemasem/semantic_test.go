@@ -71,7 +71,7 @@ func TestValidateSemantic_EffectiveCheckRequiresPackageAndRego(t *testing.T) {
 	doc.Ruleset.Rules[0].Check.Rego = ""
 
 	errs := ValidateSemantic(bundleWithRuleset(doc))
-	for _, want := range []string{"check.package is required", "check.rego is required"} {
+	for _, want := range []string{"check.package is required", "check.rego is required (inline or inherited from ruleset.policy)"} {
 		if !containsErr(errs, want) {
 			t.Fatalf("expected %q error, got:\n%s", want, joinErrs(errs))
 		}
@@ -192,6 +192,20 @@ helper := if {
 		t.Fatalf("expected invalid ruleset policy Rego error, got:\n%s", joinErrs(errs))
 	}
 }
+
+func TestValidateSemantic_RulesetPolicyRequiresRego(t *testing.T) {
+	doc := validRulesetDoc()
+	doc.Ruleset.Policy = &types.RegoPolicy{
+		Engine:  types.CheckEngineRego,
+		Package: "opensspm.policy",
+	}
+
+	errs := ValidateSemantic(bundleWithRuleset(doc))
+	if !containsErr(errs, "ruleset.policy.rego is required (inline or via rego_path)") {
+		t.Fatalf("expected missing ruleset policy Rego error, got:\n%s", joinErrs(errs))
+	}
+}
+
 func TestValidateSemantic_EntityPolicyPack(t *testing.T) {
 	pack := types.EntityPolicyPackDoc{
 		SchemaVersion: 2,
