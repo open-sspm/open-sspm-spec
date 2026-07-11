@@ -29,14 +29,15 @@ result := {"status": "pass"} if {
 }`,
 		},
 	}
+	ruleset := &specv2.Ruleset{}
 	input := EvaluateInput{
 		Datasets: map[string]specv2.DatasetInput{
 			"d": {Rows: []any{map[string]any{"x": 1}}},
 		},
 	}
 
-	wrapped, wrappedErr := EvaluateRule(rule, input)
-	direct, directErr := specv2.EvaluateRule(rule, specv2.EvaluateInput(input))
+	wrapped, wrappedErr := EvaluateRule(ruleset, rule, input)
+	direct, directErr := specv2.EvaluateRule(ruleset, rule, specv2.EvaluateInput(input))
 
 	if (wrappedErr == nil) != (directErr == nil) {
 		t.Fatalf("wrapper/direct error mismatch: wrapped=%v direct=%v", wrappedErr, directErr)

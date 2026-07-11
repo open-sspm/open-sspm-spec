@@ -1,6 +1,9 @@
 package v2
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 const testRuleRego = `package opensspm.tests
 
@@ -62,18 +65,18 @@ func TestRulesetAddRuleAppendReplaceAndErrors(t *testing.T) {
 }
 
 func TestEvaluateRuleRegoPassFail(t *testing.T) {
+	ruleset := Ruleset{Policy: &RegoPolicy{Rego: testRuleRego}}
 	rule := Rule{
 		Key:        "R1",
 		Monitoring: Monitoring{Status: MonitoringStatus_AUTOMATED},
 		Check: &Check{
 			Engine: CheckEngine_REGO,
 			Query:  "data.opensspm.tests.result",
-			Rego:   testRuleRego,
 		},
 		Parameters: &Parameters{Defaults: map[string]any{"min": 2}},
 	}
 
-	passRes, err := rule.Evaluate(EvaluateInput{
+	passRes, err := EvaluateRule(&ruleset, &rule, EvaluateInput{
 		Datasets: map[string]DatasetInput{
 			"d": {Rows: []any{map[string]any{"x": 1}, map[string]any{"x": 2}}},
 		},
@@ -88,7 +91,7 @@ func TestEvaluateRuleRegoPassFail(t *testing.T) {
 		t.Fatalf("unexpected aggregate counters for pass: %+v", passRes)
 	}
 
-	failRes, err := rule.Evaluate(EvaluateInput{
+	failRes, err := EvaluateRule(&ruleset, &rule, EvaluateInput{
 		Datasets: map[string]DatasetInput{
 			"d": {Rows: []any{map[string]any{"x": 1}}},
 		},
@@ -98,6 +101,54 @@ func TestEvaluateRuleRegoPassFail(t *testing.T) {
 	}
 	if failRes.Status != EvaluateStatus_FAIL {
 		t.Fatalf("expected fail status, got %+v", failRes)
+	}
+}
+
+func TestEvaluateRulePrefersRuleModule(t *testing.T) {
+	ruleset := Ruleset{Policy: &RegoPolicy{Rego: `package opensspm.tests
+
+result := {"status": "fail"} if { true }`}}
+	rule := Rule{
+		Key:        "R1",
+		Monitoring: Monitoring{Status: MonitoringStatus_AUTOMATED},
+		Check: &Check{
+			Engine: CheckEngine_REGO,
+			Query:  "data.opensspm.tests.result",
+			Rego: `package opensspm.tests
+
+result := {"status": "pass"} if { true }`,
+		},
+	}
+
+	result, err := EvaluateRule(&ruleset, &rule, EvaluateInput{})
+	if err != nil {
+		t.Fatalf("EvaluateRule() returned error: %v", err)
+	}
+	if result.Status != EvaluateStatus_PASS {
+		t.Fatalf("EvaluateRule() ignored rule module override: %+v", result)
+	}
+}
+
+func TestEvaluateRuleRejectsUnresolvedRuleRegoPath(t *testing.T) {
+	ruleset := Ruleset{Policy: &RegoPolicy{Rego: `package opensspm.tests
+
+result := {"status": "pass"} if { true }`}}
+	rule := Rule{
+		Key:        "R1",
+		Monitoring: Monitoring{Status: MonitoringStatus_AUTOMATED},
+		Check: &Check{
+			Engine:   CheckEngine_REGO,
+			Query:    "data.opensspm.tests.result",
+			RegoPath: "rule.rego",
+		},
+	}
+
+	result, err := EvaluateRule(&ruleset, &rule, EvaluateInput{})
+	if err == nil || !strings.Contains(err.Error(), "must be resolved") {
+		t.Fatalf("EvaluateRule() error = %v, want unresolved rego_path error", err)
+	}
+	if result.Status != EvaluateStatus_UNKNOWN || result.ReasonCode != "rego_error" {
+		t.Fatalf("EvaluateRule() result = %+v, want Rego error", result)
 	}
 }
 
@@ -118,7 +169,7 @@ func TestEvaluateRuleManualAndErrors(t *testing.T) {
 		Key:        "M1",
 		Monitoring: Monitoring{Status: MonitoringStatus_MANUAL},
 	}
-	manualRes, err := manual.Evaluate(EvaluateInput{})
+	manualRes, err := EvaluateRule(nil, &manual, EvaluateInput{})
 	if err != nil {
 		t.Fatalf("manual rule should not error: %v", err)
 	}
@@ -130,7 +181,7 @@ func TestEvaluateRuleManualAndErrors(t *testing.T) {
 		Key:        "A1",
 		Monitoring: Monitoring{Status: MonitoringStatus_AUTOMATED},
 	}
-	res, err := missingCheck.Evaluate(EvaluateInput{})
+	res, err := EvaluateRule(nil, &missingCheck, EvaluateInput{})
 	if err == nil {
 		t.Fatalf("missing check should return error")
 	}
@@ -143,7 +194,7 @@ func TestEvaluateRuleManualAndErrors(t *testing.T) {
 		Monitoring: Monitoring{Status: MonitoringStatus_AUTOMATED},
 		Check:      &Check{Engine: CheckEngine("legacy"), Query: "data.bad.result", Rego: `package bad`},
 	}
-	res, err = badEngine.Evaluate(EvaluateInput{})
+	res, err = EvaluateRule(nil, &badEngine, EvaluateInput{})
 	if err == nil {
 		t.Fatalf("unsupported engine should return error")
 	}
@@ -166,7 +217,7 @@ result := {"status": "unknown", "reason_code": sprintf("dataset_%s", [kind])} if
 		Check:      &Check{Engine: CheckEngine_REGO, Query: "data.opensspm.tests.result", Rego: module},
 	}
 
-	res, err := rule.Evaluate(EvaluateInput{
+	res, err := EvaluateRule(nil, &rule, EvaluateInput{
 		Datasets: map[string]DatasetInput{
 			"d": {Error: &DatasetInputError{Kind: DatasetErrorKind_PERMISSION_DENIED}},
 		},
@@ -189,7 +240,7 @@ result := {"status": "skipped"} if { true }`
 		Check:      &Check{Engine: CheckEngine_REGO, Query: "data.opensspm.tests.result", Rego: module},
 	}
 
-	res, err := rule.Evaluate(EvaluateInput{})
+	res, err := EvaluateRule(nil, &rule, EvaluateInput{})
 	if err == nil {
 		t.Fatalf("invalid Rego status should return error")
 	}
@@ -208,7 +259,7 @@ result := {"reason_code": "missing_status"} if { true }`
 		Check:      &Check{Engine: CheckEngine_REGO, Query: "data.opensspm.tests.result", Rego: module},
 	}
 
-	res, err := rule.Evaluate(EvaluateInput{})
+	res, err := EvaluateRule(nil, &rule, EvaluateInput{})
 	if err == nil {
 		t.Fatalf("missing Rego status should return error")
 	}
@@ -231,7 +282,7 @@ results["fail"] := {"status": "fail"} if { true }`
 		Check:      &Check{Engine: CheckEngine_REGO, Query: "data.opensspm.tests.results[_]", Rego: module},
 	}
 
-	res, err := rule.Evaluate(EvaluateInput{})
+	res, err := EvaluateRule(nil, &rule, EvaluateInput{})
 	if err == nil {
 		t.Fatalf("multiple Rego query results should return error")
 	}

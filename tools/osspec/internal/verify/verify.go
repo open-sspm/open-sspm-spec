@@ -13,6 +13,7 @@ import (
 
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/compiler"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/regoengine"
+	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/rulecheck"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/yamlstrict"
 )
@@ -32,11 +33,16 @@ func Run(ctx context.Context, repoRoot string) error {
 		return nil
 	}
 
-	rulesByKey := make(map[string]*types.Rule)
-	for _, rs := range res.Descriptor.Rulesets {
-		for i := range rs.Object.Ruleset.Rules {
-			r := &rs.Object.Ruleset.Rules[i]
-			rulesByKey[r.Key] = r
+	type rulesetRule struct {
+		ruleset *types.Ruleset
+		rule    *types.Rule
+	}
+	rulesByKey := make(map[string]rulesetRule)
+	for i := range res.Descriptor.Rulesets {
+		ruleset := &res.Descriptor.Rulesets[i].Object.Ruleset
+		for j := range ruleset.Rules {
+			rule := &ruleset.Rules[j]
+			rulesByKey[rule.Key] = rulesetRule{ruleset: ruleset, rule: rule}
 		}
 	}
 
@@ -80,13 +86,13 @@ func Run(ctx context.Context, repoRoot string) error {
 			continue
 		}
 
-		rule, ok := rulesByKey[tc.RuleKey]
+		target, ok := rulesByKey[tc.RuleKey]
 		if !ok {
 			fmt.Printf("FAIL: %s: rule %q not found\n", tf, tc.RuleKey)
 			failed++
 			continue
 		}
-		status, err := evaluateRule(ctx, rule, tc.Inputs, tc.Parameters)
+		status, err := evaluateRule(ctx, target.ruleset, target.rule, tc.Inputs, tc.Parameters)
 		if err != nil {
 			fmt.Printf("FAIL: %s: %v\n", tf, err)
 			failed++
@@ -114,7 +120,7 @@ type entityPolicyResult struct {
 	Signals   []types.EntityPolicyTestSignal
 }
 
-func evaluateRule(ctx context.Context, rule *types.Rule, datasets map[string][]any, params map[string]any) (string, error) {
+func evaluateRule(ctx context.Context, ruleset *types.Ruleset, rule *types.Rule, datasets map[string][]any, params map[string]any) (string, error) {
 	if rule == nil {
 		return "unknown", fmt.Errorf("rule is nil")
 	}
@@ -124,6 +130,11 @@ func evaluateRule(ctx context.Context, rule *types.Rule, datasets map[string][]a
 	if rule.Check == nil {
 		return "unknown", nil
 	}
+	var policy *types.RegoPolicy
+	if ruleset != nil {
+		policy = ruleset.Policy
+	}
+	check := rulecheck.Resolve(policy, rule.Check)
 
 	effectiveParams := make(map[string]any)
 	if rule.Parameters != nil {
@@ -144,7 +155,7 @@ func evaluateRule(ctx context.Context, rule *types.Rule, datasets map[string][]a
 		},
 	}
 
-	result, err := regoengine.Evaluate(ctx, rule.Key+".rego", rule.Check.Rego, rule.Check.Query, input)
+	result, err := regoengine.Evaluate(ctx, rule.Key+".rego", check.Rego, check.Query, input)
 	if err != nil {
 		return "unknown", err
 	}

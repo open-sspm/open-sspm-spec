@@ -36,6 +36,9 @@ func TestCompile_CISOktaRuleset(t *testing.T) {
 	if len(ruleset.DataContracts) != 6 {
 		t.Fatalf("expected 6 data contracts, got %+v", ruleset.DataContracts)
 	}
+	if ruleset.Policy == nil || ruleset.Policy.Rego == "" {
+		t.Fatalf("expected shared ruleset Rego policy")
+	}
 
 	if len(ruleset.Rules) != 24 {
 		t.Fatalf("expected 24 rules, got %d", len(ruleset.Rules))
@@ -81,6 +84,8 @@ func TestCompile_CISOktaRuleset(t *testing.T) {
 			}
 		} else if rule.Check == nil || rule.Check.Engine != types.CheckEngineRego {
 			t.Fatalf("expected automated rule %q to use Rego, got %+v", rule.Key, rule.Check)
+		} else if rule.Check.Rego != "" {
+			t.Fatalf("expected automated rule %q to inherit shared Rego without copying it", rule.Key)
 		}
 		if rule.Monitoring.Status != exp.status {
 			t.Fatalf("expected rule %q monitoring.status=%q, got %q", rule.Key, exp.status, rule.Monitoring.Status)

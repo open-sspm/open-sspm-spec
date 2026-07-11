@@ -49,6 +49,22 @@ func TestValidateSemantic_ValidRegoRule(t *testing.T) {
 	}
 }
 
+func TestValidateSemantic_RuleInheritsRulesetPolicy(t *testing.T) {
+	doc := validRulesetDoc()
+	doc.Ruleset.Policy = &types.RegoPolicy{
+		Engine:  types.CheckEngineRego,
+		Package: "opensspm.test",
+		Rego:    testRegoModule,
+	}
+	doc.Ruleset.Rules[0].Check.Package = ""
+	doc.Ruleset.Rules[0].Check.Rego = ""
+
+	errs := ValidateSemantic(bundleWithRuleset(doc))
+	if len(errs) != 0 {
+		t.Fatalf("expected inherited ruleset policy to be valid, got:\n%s", joinErrs(errs))
+	}
+}
+
 func TestValidateSemantic_RegoOnlyAndRequiredDataContracts(t *testing.T) {
 	doc := validRulesetDoc()
 	doc.Ruleset.Rules[0].Check.Engine = ""

@@ -36,6 +36,7 @@ result := {"status": "fail", "selected_count": count(selected), "passed_count": 
 `
 
 func TestEvaluateRuleRegoPassWithFakeData(t *testing.T) {
+	ruleset := &types.Ruleset{Policy: &types.RegoPolicy{Rego: testRuleRego}}
 	rule := &types.Rule{
 		Key:        "R1",
 		Monitoring: types.Monitoring{Status: types.MonitoringStatusAutomated},
@@ -43,14 +44,13 @@ func TestEvaluateRuleRegoPassWithFakeData(t *testing.T) {
 			Engine:  types.CheckEngineRego,
 			Package: "opensspm.test",
 			Query:   "data.opensspm.test.result",
-			Rego:    testRuleRego,
 		},
 		Parameters: &types.Parameters{
 			Defaults: map[string]any{"min": 10},
 		},
 	}
 
-	status, err := evaluateRule(context.Background(), rule, map[string][]any{
+	status, err := evaluateRule(context.Background(), ruleset, rule, map[string][]any{
 		"d": {
 			map[string]any{"enabled": true, "score": 12},
 			map[string]any{"enabled": false, "score": 5},
@@ -76,7 +76,7 @@ func TestEvaluateRuleManualAlwaysUnknown(t *testing.T) {
 		Monitoring: types.Monitoring{Status: types.MonitoringStatusManual},
 	}
 
-	status, err := evaluateRule(context.Background(), rule, map[string][]any{
+	status, err := evaluateRule(context.Background(), nil, rule, map[string][]any{
 		"d": {map[string]any{"x": 1}},
 	}, nil)
 	if err != nil {
@@ -102,7 +102,7 @@ result := {"status": "skipped"} if { true }
 		},
 	}
 
-	status, err := evaluateRule(context.Background(), rule, nil, nil)
+	status, err := evaluateRule(context.Background(), nil, rule, nil, nil)
 	if err == nil {
 		t.Fatalf("evaluateRule() expected invalid status error")
 	}
