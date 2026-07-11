@@ -29,41 +29,6 @@ result := {
 	count(rows) != input.params.min
 }`
 
-func TestRulesetAddRuleAppendReplaceAndErrors(t *testing.T) {
-	rs := &Ruleset{Rules: []Rule{{Key: "R1", Title: "old"}}}
-
-	replaced, err := rs.AddRule(Rule{Key: "R2", Title: "new"})
-	if err != nil {
-		t.Fatalf("AddRule append returned error: %v", err)
-	}
-	if replaced {
-		t.Fatalf("AddRule append should not report replaced")
-	}
-	if len(rs.Rules) != 2 || rs.Rules[1].Key != "R2" {
-		t.Fatalf("AddRule append produced unexpected rules: %+v", rs.Rules)
-	}
-
-	replaced, err = rs.AddRule(Rule{Key: "R1", Title: "updated"})
-	if err != nil {
-		t.Fatalf("AddRule replace returned error: %v", err)
-	}
-	if !replaced {
-		t.Fatalf("AddRule replace should report replaced")
-	}
-	if len(rs.Rules) != 2 || rs.Rules[0].Title != "updated" || rs.Rules[0].Key != "R1" {
-		t.Fatalf("AddRule replace should preserve index and update value: %+v", rs.Rules)
-	}
-
-	if _, err := rs.AddRule(Rule{Key: "  "}); err == nil {
-		t.Fatalf("AddRule should reject empty rule key")
-	}
-
-	var nilRuleset *Ruleset
-	if _, err := nilRuleset.AddRule(Rule{Key: "R3"}); err == nil {
-		t.Fatalf("AddRule should fail on nil receiver")
-	}
-}
-
 func TestEvaluateRuleRegoPassFail(t *testing.T) {
 	ruleset := Ruleset{Policy: &RegoPolicy{Rego: testRuleRego}}
 	rule := Rule{
@@ -288,60 +253,5 @@ results["fail"] := {"status": "fail"} if { true }`
 	}
 	if res.Status != EvaluateStatus_UNKNOWN || res.ReasonCode != "rego_error" {
 		t.Fatalf("unexpected multiple-result response: %+v", res)
-	}
-}
-
-func TestEvaluateEntityPolicyPackRego(t *testing.T) {
-	const module = `package opensspm.entity.test
-
-result := {
-	"risk_level": "low",
-	"risk_score": 20,
-	"signals": [{"id": "missing_owner", "severity": "high", "title": "Owner is missing"}],
-} if {
-	input.entity.owner_identity_id == 0
-}`
-	pack := EntityPolicyPack{
-		Metadata: EntityPolicyMetadata{ID: "builtin.test.risk", Domain: EntityPolicyDomain_SAAS},
-		Policy:   RegoPolicy{Engine: CheckEngine_REGO, Package: "opensspm.entity.test", Query: "data.opensspm.entity.test.result", Rego: module},
-	}
-
-	res, err := EvaluateEntityPolicyPack(&pack, map[string]any{"owner_identity_id": 0})
-	if err != nil {
-		t.Fatalf("entity policy evaluation returned error: %v", err)
-	}
-	if res.RiskLevel != "low" || res.RiskScore != 20 {
-		t.Fatalf("unexpected entity policy risk result: %+v", res)
-	}
-	if len(res.Signals) != 1 || res.Signals[0].ID != "missing_owner" {
-		t.Fatalf("unexpected entity policy signals: %+v", res.Signals)
-	}
-}
-
-func TestEvaluateEntityPolicyPackReturnsBuiltinErrors(t *testing.T) {
-	const module = `package opensspm.entity.test
-
-expired if {
-  time.parse_rfc3339_ns(input.entity.expires_at) < time.parse_rfc3339_ns(input.entity.evaluated_at)
-}
-
-result := {"risk_level": "critical"} if {
-  expired
-}
-
-result := {"risk_level": "low"} if {
-  not expired
-}`
-	pack := EntityPolicyPack{
-		Metadata: EntityPolicyMetadata{ID: "builtin.test.risk", Domain: EntityPolicyDomain_CREDENTIAL},
-		Policy:   RegoPolicy{Engine: CheckEngine_REGO, Package: "opensspm.entity.test", Query: "data.opensspm.entity.test.result", Rego: module},
-	}
-
-	_, err := EvaluateEntityPolicyPack(&pack, map[string]any{
-		"expires_at":   "not-a-timestamp",
-		"evaluated_at": "2026-05-15T12:00:00Z",
-	})
-	if err == nil {
-		t.Fatalf("malformed timestamp should return Rego builtin error")
 	}
 }

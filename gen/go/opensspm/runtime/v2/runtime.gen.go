@@ -5,8 +5,6 @@ package v2
 import (
 	"context"
 	"encoding/json"
-
-	specv2 "github.com/open-sspm/open-sspm-spec/gen/go/opensspm/spec/v2"
 )
 
 type DatasetErrorKind string
@@ -18,19 +16,6 @@ const (
 	DatasetErrorKind_PERMISSION_DENIED   DatasetErrorKind = "permission_denied"
 	DatasetErrorKind_SYNC_FAILED         DatasetErrorKind = "sync_failed"
 )
-
-type ScopeKind string
-
-const (
-	ScopeKind_CONNECTOR_INSTANCE ScopeKind = "connector_instance"
-	ScopeKind_GLOBAL             ScopeKind = "global"
-)
-
-type EvalContext struct {
-	ScopeKind         ScopeKind `json:"scope_kind"`
-	ConnectorKind     string    `json:"connector_kind,omitempty"`
-	ConnectorInstance string    `json:"connector_instance,omitempty"`
-}
 
 type DatasetRef struct {
 	Dataset string `json:"dataset"`
@@ -48,14 +33,5 @@ type DatasetResult struct {
 }
 
 type DatasetProvider interface {
-	Capabilities(ctx context.Context) []DatasetRef
-	GetDataset(ctx context.Context, eval EvalContext, ref DatasetRef) DatasetResult
-}
-
-type EvaluateInput = specv2.EvaluateInput
-type EvaluateResult = specv2.EvaluateResult
-type EvaluateStatus = specv2.EvaluateStatus
-
-func EvaluateRule(ruleset *specv2.Ruleset, rule *specv2.Rule, input EvaluateInput) (EvaluateResult, error) {
-	return specv2.EvaluateRule(ruleset, rule, input)
+	GetDataset(ctx context.Context, ref DatasetRef) DatasetResult
 }
