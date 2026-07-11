@@ -451,7 +451,7 @@ function renderOverview() {
     h("dl", { class: "dl" },
       h("dt", {}, "Ruleset policy"), h("dd", {}, "Shared Rego modules can live under ", h("code", {}, "ruleset.policy"), " and be reused by automated rule checks."),
       h("dt", {}, "Rule checks"), h("dd", {}, h("code", {}, "check.engine: rego"), " with ", h("code", {}, "check.query"), " selecting the result object for the rule."),
-      h("dt", {}, "Evaluation"), h("dd", {}, "Rule Rego receives ", h("code", {}, "input.datasets"), ", ", h("code", {}, "input.params"), " and ", h("code", {}, "input.rule"), " and returns a verdict object."),
+      h("dt", {}, "Evaluation"), h("dd", {}, "Rule Rego receives ", h("code", {}, "input.datasets"), ", default values from ", h("code", {}, "rule.parameters"), " through ", h("code", {}, "input.params"), ", and ", h("code", {}, "input.rule"), ". Test cases may override individual parameters."),
     ),
   );
 
@@ -1041,22 +1041,13 @@ function deriveRulesetRequirements(d) {
       version: contracts.get(dataset)?.version || 1,
     }));
     const engines = [...new Set(rules.map((rule) => rule.check?.engine).filter(Boolean))].sort();
-    const inputTypes = new Map();
+    const inputNames = new Set();
 
     for (const rule of rules) {
-      const defaults = rule.parameters?.defaults || {};
-      const schemas = rule.parameters?.schema || {};
-      const names = new Set([...Object.keys(defaults), ...Object.keys(schemas)]);
-      for (const name of names) {
-        if (!inputTypes.has(name)) inputTypes.set(name, new Set());
-        const type = schemas[name]?.type;
-        if (type) inputTypes.get(name).add(type);
-      }
+      for (const name of Object.keys(rule.parameters || {})) inputNames.add(name);
     }
 
-    const inputs = [...inputTypes.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([name, types]) => ({ name, type: types.size === 1 ? [...types][0] : "" }));
+    const inputs = [...inputNames].sort().map((name) => ({ name }));
 
     return {
       ruleset_key: ruleset.key,
@@ -1122,7 +1113,7 @@ function renderRequirements() {
           h("td", {}, (rr.inputs || []).length
             ? h("span", {}, ...(rr.inputs || []).flatMap((input, i) => [
                 i ? h("span", { class: "muted" }, " · ") : "",
-                h("code", {}, input.type ? `${input.name}:${input.type}` : input.name),
+                h("code", {}, input.name),
               ]))
             : h("span", { class: "muted" }, "—")),
         ))),

@@ -53,6 +53,8 @@ ruleset:
         status: automated
       required_data:
         - okta:policies/sign-on
+      parameters:
+        max_session_idle_minutes: 15
       check:
         engine: rego
         query: 'data.opensspm.rules.cis.okta.idaas_stig.results["OKTA-APP-000020"]'

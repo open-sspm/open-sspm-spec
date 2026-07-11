@@ -25,14 +25,6 @@ results["A"] := {"status": "pass"} if { true }
 				{URL: "https://b.example", Title: "B"},
 				{URL: "https://a.example", Title: "A", Type: types.ReferenceTypeOther},
 			},
-			FrameworkMappings: []types.FrameworkMapping{
-				{Framework: "B", Control: "2", Coverage: types.FrameworkCoveragePartial},
-				{Framework: "A", Control: "1"},
-			},
-			Requirements: &types.RulesetRequirements{
-				APIScopes:   []string{"b", "a"},
-				Permissions: []string{"p2", "p1"},
-			},
 			DataContracts: []types.DatasetContractRef{{Dataset: "okta:log-streams", Version: 1}},
 			Rules: []types.Rule{
 				{
@@ -71,14 +63,6 @@ results["A"] := {"status": "pass"} if { true }
 			References: []types.Reference{
 				{URL: "https://a.example", Title: "A"},
 				{URL: "https://b.example", Title: "B", Type: types.ReferenceTypeOther},
-			},
-			FrameworkMappings: []types.FrameworkMapping{
-				{Framework: "A", Control: "1", Coverage: types.FrameworkCoverageSupporting},
-				{Framework: "B", Control: "2", Coverage: types.FrameworkCoveragePartial},
-			},
-			Requirements: &types.RulesetRequirements{
-				APIScopes:   []string{"a", "b"},
-				Permissions: []string{"p1", "p2"},
 			},
 			DataContracts: []types.DatasetContractRef{{Dataset: "okta:log-streams", Version: 1}},
 			Rules: []types.Rule{

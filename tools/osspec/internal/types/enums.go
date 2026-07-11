@@ -50,22 +50,6 @@ const (
 	ReferenceTypeOther         ReferenceType = "other"
 )
 
-type FrameworkCoverageKind string
-
-const (
-	FrameworkCoverageDirect     FrameworkCoverageKind = "direct"
-	FrameworkCoveragePartial    FrameworkCoverageKind = "partial"
-	FrameworkCoverageSupporting FrameworkCoverageKind = "supporting"
-)
-
-type RemediationEffort string
-
-const (
-	RemediationEffortLow    RemediationEffort = "low"
-	RemediationEffortMedium RemediationEffort = "medium"
-	RemediationEffortHigh   RemediationEffort = "high"
-)
-
 type DatasetErrorKind string
 
 const (
@@ -87,14 +71,12 @@ func enumStrings[T ~string](values []T) []string {
 // EnumValues returns the canonical enum value catalog used by generators.
 func EnumValues() map[string][]string {
 	return map[string][]string{
-		"ScopeKind":             enumStrings([]ScopeKind{ScopeKindGlobal, ScopeKindConnectorInstance}),
-		"MonitoringStatus":      enumStrings([]MonitoringStatus{MonitoringStatusAutomated, MonitoringStatusPartial, MonitoringStatusManual, MonitoringStatusUnsupported}),
-		"Severity":              enumStrings([]Severity{SeverityCritical, SeverityHigh, SeverityMedium, SeverityLow, SeverityInfo}),
-		"EntityPolicyDomain":    enumStrings([]EntityPolicyDomain{EntityPolicyDomainCredential, EntityPolicyDomainSaaS, EntityPolicyDomainIdentity}),
-		"CheckEngine":           enumStrings([]CheckEngine{CheckEngineRego}),
-		"ReferenceType":         enumStrings([]ReferenceType{ReferenceTypeDocumentation, ReferenceTypeStandard, ReferenceTypeBlog, ReferenceTypeTicket, ReferenceTypeOther}),
-		"FrameworkCoverageKind": enumStrings([]FrameworkCoverageKind{FrameworkCoverageDirect, FrameworkCoveragePartial, FrameworkCoverageSupporting}),
-		"RemediationEffort":     enumStrings([]RemediationEffort{RemediationEffortLow, RemediationEffortMedium, RemediationEffortHigh}),
-		"DatasetErrorKind":      enumStrings([]DatasetErrorKind{DatasetErrorKindMissingIntegration, DatasetErrorKindMissingDataset, DatasetErrorKindPermissionDenied, DatasetErrorKindSyncFailed, DatasetErrorKindEngineError}),
+		"ScopeKind":          enumStrings([]ScopeKind{ScopeKindGlobal, ScopeKindConnectorInstance}),
+		"MonitoringStatus":   enumStrings([]MonitoringStatus{MonitoringStatusAutomated, MonitoringStatusPartial, MonitoringStatusManual, MonitoringStatusUnsupported}),
+		"Severity":           enumStrings([]Severity{SeverityCritical, SeverityHigh, SeverityMedium, SeverityLow, SeverityInfo}),
+		"EntityPolicyDomain": enumStrings([]EntityPolicyDomain{EntityPolicyDomainCredential, EntityPolicyDomainSaaS, EntityPolicyDomainIdentity}),
+		"CheckEngine":        enumStrings([]CheckEngine{CheckEngineRego}),
+		"ReferenceType":      enumStrings([]ReferenceType{ReferenceTypeDocumentation, ReferenceTypeStandard, ReferenceTypeBlog, ReferenceTypeTicket, ReferenceTypeOther}),
+		"DatasetErrorKind":   enumStrings([]DatasetErrorKind{DatasetErrorKindMissingIntegration, DatasetErrorKindMissingDataset, DatasetErrorKindPermissionDenied, DatasetErrorKindSyncFailed, DatasetErrorKindEngineError}),
 	}
 }

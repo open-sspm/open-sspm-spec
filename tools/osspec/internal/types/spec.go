@@ -38,38 +38,22 @@ type RulesetDoc struct {
 }
 
 type Ruleset struct {
-	Key               string               `json:"key"`
-	Name              string               `json:"name"`
-	Scope             Scope                `json:"scope"`
-	Source            *Source              `json:"source,omitempty"`
-	Status            string               `json:"status,omitempty"`
-	Description       string               `json:"description,omitempty"`
-	Tags              []string             `json:"tags,omitempty"`
-	References        []Reference          `json:"references,omitempty"`
-	FrameworkMappings []FrameworkMapping   `json:"framework_mappings,omitempty"`
-	Requirements      *RulesetRequirements `json:"requirements,omitempty"`
-	DataContracts     []DatasetContractRef `json:"data_contracts,omitempty"`
-	Policy            *RegoPolicy          `json:"policy,omitempty"`
-	Rules             []Rule               `json:"rules"`
+	Key           string               `json:"key"`
+	Name          string               `json:"name"`
+	Scope         Scope                `json:"scope"`
+	Source        *Source              `json:"source,omitempty"`
+	Status        string               `json:"status,omitempty"`
+	Description   string               `json:"description,omitempty"`
+	Tags          []string             `json:"tags,omitempty"`
+	References    []Reference          `json:"references,omitempty"`
+	DataContracts []DatasetContractRef `json:"data_contracts,omitempty"`
+	Policy        *RegoPolicy          `json:"policy,omitempty"`
+	Rules         []Rule               `json:"rules"`
 }
 
 type DatasetRefSpec struct {
 	Dataset string `json:"dataset"`
 	Version int    `json:"version"`
-}
-
-type FrameworkMapping struct {
-	Framework   string                `json:"framework"`
-	Control     string                `json:"control"`
-	Enhancement string                `json:"enhancement,omitempty"`
-	Coverage    FrameworkCoverageKind `json:"coverage,omitempty"`
-	Notes       string                `json:"notes,omitempty"`
-}
-
-type RulesetRequirements struct {
-	APIScopes   []string `json:"api_scopes,omitempty"`
-	Permissions []string `json:"permissions,omitempty"`
-	Notes       string   `json:"notes,omitempty"`
 }
 
 type DatasetContractRef struct {
@@ -79,71 +63,23 @@ type DatasetContractRef struct {
 }
 
 type Rule struct {
-	Key               string             `json:"key"`
-	Title             string             `json:"title"`
-	Severity          Severity           `json:"severity"`
-	Monitoring        Monitoring         `json:"monitoring"`
-	RequiredData      []string           `json:"required_data"`
-	Summary           string             `json:"summary,omitempty"`
-	Description       string             `json:"description,omitempty"`
-	Category          string             `json:"category,omitempty"`
-	Parameters        *Parameters        `json:"parameters,omitempty"`
-	Check             *Check             `json:"check,omitempty"`
-	Evidence          *Evidence          `json:"evidence,omitempty"`
-	Remediation       *Remediation       `json:"remediation,omitempty"`
-	References        []Reference        `json:"references,omitempty"`
-	FrameworkMappings []FrameworkMapping `json:"framework_mappings,omitempty"`
-	Tags              []string           `json:"tags,omitempty"`
-	Lifecycle         *Lifecycle         `json:"lifecycle,omitempty"`
+	Key          string         `json:"key"`
+	Title        string         `json:"title"`
+	Severity     Severity       `json:"severity"`
+	Monitoring   Monitoring     `json:"monitoring"`
+	RequiredData []string       `json:"required_data"`
+	Summary      string         `json:"summary,omitempty"`
+	Description  string         `json:"description,omitempty"`
+	Category     string         `json:"category,omitempty"`
+	Parameters   map[string]any `json:"parameters,omitempty"`
+	Check        *Check         `json:"check,omitempty"`
+	References   []Reference    `json:"references,omitempty"`
+	Tags         []string       `json:"tags,omitempty"`
 }
 
 type Monitoring struct {
 	Status MonitoringStatus `json:"status"`
 	Reason string           `json:"reason,omitempty"`
-}
-
-type Parameters struct {
-	Defaults map[string]any             `json:"defaults"`
-	Schema   map[string]ParameterSchema `json:"schema,omitempty"`
-}
-
-type ParameterSchema struct {
-	Type        string   `json:"type"`
-	Description string   `json:"description,omitempty"`
-	Minimum     *float64 `json:"minimum,omitempty"`
-	Maximum     *float64 `json:"maximum,omitempty"`
-	Enum        []any    `json:"enum,omitempty"`
-}
-
-type Evidence struct {
-	AffectedResources *AffectedResources        `json:"affected_resources,omitempty"`
-	SummaryTemplates  *EvidenceSummaryTemplates `json:"summary_templates,omitempty"`
-}
-
-type AffectedResources struct {
-	Dataset      string `json:"dataset"`
-	IDField      string `json:"id_field"`
-	DisplayField string `json:"display_field"`
-}
-
-type EvidenceSummaryTemplates struct {
-	Pass          string `json:"pass,omitempty"`
-	Fail          string `json:"fail,omitempty"`
-	Unknown       string `json:"unknown,omitempty"`
-	Error         string `json:"error,omitempty"`
-	NotApplicable string `json:"not_applicable,omitempty"`
-}
-
-type Remediation struct {
-	Instructions string            `json:"instructions"`
-	Risks        string            `json:"risks,omitempty"`
-	Effort       RemediationEffort `json:"effort,omitempty"`
-}
-
-type Lifecycle struct {
-	RuleVersion string `json:"rule_version,omitempty"`
-	IsActive    *bool  `json:"is_active,omitempty"`
-	ReplacedBy  string `json:"replaced_by,omitempty"`
 }
 
 type Check struct {

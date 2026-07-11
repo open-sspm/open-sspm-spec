@@ -176,18 +176,6 @@ func validateRulesetRules(path string, doc *types.RulesetDoc) []error {
 func validateRule(path string, r *types.Rule, policy *types.RegoPolicy, contractsIdx datasetContractIndex) []error {
 	var errs []error
 
-	if r.Parameters != nil && r.Parameters.Schema != nil {
-		for k := range r.Parameters.Schema {
-			if r.Parameters.Defaults == nil {
-				errs = append(errs, fmt.Errorf("semantic: %s: rule %q: parameters.schema=%q but parameters.defaults is missing", path, r.Key, k))
-				continue
-			}
-			if _, ok := r.Parameters.Defaults[k]; !ok {
-				errs = append(errs, fmt.Errorf("semantic: %s: rule %q: parameters.schema=%q not found in parameters.defaults", path, r.Key, k))
-			}
-		}
-	}
-
 	requiresCheck := false
 	switch r.Monitoring.Status {
 	case types.MonitoringStatusAutomated, types.MonitoringStatusPartial:
