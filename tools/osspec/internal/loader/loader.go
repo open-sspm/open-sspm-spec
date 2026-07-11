@@ -19,21 +19,13 @@ type LoadedFile struct {
 	Bytes   []byte
 }
 
-type Options struct {
-	RepoRoot string
-	SpecsDir string
-}
-
-func LoadSpecFiles(ctx context.Context, opts Options) ([]LoadedFile, error) {
-	if opts.RepoRoot == "" {
+func LoadSpecFiles(ctx context.Context, repoRoot string) ([]LoadedFile, error) {
+	if repoRoot == "" {
 		return nil, errors.New("loader: RepoRoot is required")
 	}
-	if opts.SpecsDir == "" {
-		return nil, errors.New("loader: SpecsDir is required")
-	}
 
-	root := filepath.Clean(opts.RepoRoot)
-	specsAbs := filepath.Join(root, opts.SpecsDir)
+	root := filepath.Clean(repoRoot)
+	specsAbs := filepath.Join(root, "specs")
 
 	var out []LoadedFile
 	err := filepath.WalkDir(specsAbs, func(path string, d fs.DirEntry, walkErr error) error {

@@ -8,10 +8,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require (
-	github.com/google/go-cmp v0.7.0
-	github.com/open-policy-agent/opa v1.16.2
-)
+require github.com/open-policy-agent/opa v1.16.2
 
 require (
 	github.com/agnivade/levenshtein v1.2.1 // indirect

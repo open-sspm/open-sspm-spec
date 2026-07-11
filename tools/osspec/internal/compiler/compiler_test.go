@@ -9,7 +9,7 @@ import (
 
 func TestCompile_RepoExamples(t *testing.T) {
 	root := testutil.RepoRoot(t)
-	if _, err := Compile(context.Background(), Options{RepoRoot: root}); err != nil {
+	if _, err := Compile(context.Background(), root); err != nil {
 		t.Fatalf("Compile() error: %v", err)
 	}
 }

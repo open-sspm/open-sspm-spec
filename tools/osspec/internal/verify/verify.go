@@ -19,7 +19,7 @@ import (
 )
 
 func Run(ctx context.Context, repoRoot string) error {
-	res, err := compiler.Compile(ctx, compiler.Options{RepoRoot: repoRoot})
+	desc, err := compiler.Compile(ctx, repoRoot)
 	if err != nil {
 		return fmt.Errorf("compile: %w", err)
 	}
@@ -38,8 +38,8 @@ func Run(ctx context.Context, repoRoot string) error {
 		rule    *types.Rule
 	}
 	rulesByKey := make(map[string]rulesetRule)
-	for i := range res.Descriptor.Rulesets {
-		ruleset := &res.Descriptor.Rulesets[i].Object.Ruleset
+	for i := range desc.Rulesets {
+		ruleset := &desc.Rulesets[i].Object.Ruleset
 		for j := range ruleset.Rules {
 			rule := &ruleset.Rules[j]
 			rulesByKey[rule.Key] = rulesetRule{ruleset: ruleset, rule: rule}
@@ -47,8 +47,8 @@ func Run(ctx context.Context, repoRoot string) error {
 	}
 
 	entityPolicyPacksByKey := make(map[string]*types.EntityPolicyPack)
-	for i := range res.Descriptor.EntityPolicyPacks {
-		compiled := &res.Descriptor.EntityPolicyPacks[i]
+	for i := range desc.EntityPolicyPacks {
+		compiled := &desc.EntityPolicyPacks[i]
 		pack := &compiled.Object.EntityPolicyPack
 		entityPolicyPacksByKey[pack.Metadata.ID] = pack
 	}

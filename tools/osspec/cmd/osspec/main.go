@@ -49,7 +49,7 @@ func runValidate(args []string) {
 	_ = fs.Parse(args)
 
 	ctx := context.Background()
-	_, err := compiler.Compile(ctx, compiler.Options{RepoRoot: *repo})
+	_, err := compiler.Compile(ctx, *repo)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
@@ -82,8 +82,7 @@ func runBuild(args []string) {
 	_ = fs.Parse(args)
 
 	ctx := context.Background()
-	_, err := compiler.Build(ctx, compiler.Options{RepoRoot: *repo, DistDir: *out})
-	if err != nil {
+	if err := compiler.Build(ctx, *repo, *out); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
@@ -113,13 +112,13 @@ func runCodegen(args []string) {
 	}
 
 	ctx := context.Background()
-	res, err := compiler.Compile(ctx, compiler.Options{RepoRoot: repoAbs})
+	desc, err := compiler.Compile(ctx, repoAbs)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
 
-	files, err := gengo.Generate(res.Descriptor)
+	files, err := gengo.Generate(*desc)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)

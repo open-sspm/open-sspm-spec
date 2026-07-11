@@ -28,23 +28,6 @@ func References(v []types.Reference) []types.Reference {
 	return out
 }
 
-func DatasetRefs(v []types.DatasetRefSpec) []types.DatasetRefSpec {
-	out := append([]types.DatasetRefSpec{}, v...)
-	slices.SortFunc(out, func(a, b types.DatasetRefSpec) int {
-		if c := strings.Compare(a.Dataset, b.Dataset); c != 0 {
-			return c
-		}
-		if a.Version < b.Version {
-			return -1
-		}
-		if a.Version > b.Version {
-			return 1
-		}
-		return 0
-	})
-	return out
-}
-
 func RulesetDoc(doc *types.RulesetDoc) {
 	if doc == nil {
 		return
@@ -53,7 +36,6 @@ func RulesetDoc(doc *types.RulesetDoc) {
 		doc.Ruleset.Status = "active"
 	}
 	normalizeReferences(doc.Ruleset.References)
-	normalizeDataContracts(doc.Ruleset.DataContracts)
 	normalizeRegoPolicy(doc.Ruleset.Policy)
 
 	doc.Ruleset.Tags = Strings(doc.Ruleset.Tags)
@@ -126,10 +108,6 @@ func normalizeReferences(v []types.Reference) {
 			v[i].Type = types.ReferenceTypeOther
 		}
 	}
-}
-
-func normalizeDataContracts(_ []types.DatasetContractRef) {
-	// currently no defaulting required
 }
 
 func normalizeRuleCheck(c *types.Check) {

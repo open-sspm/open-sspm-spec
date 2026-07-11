@@ -30,11 +30,6 @@ type File struct {
 }
 
 func Generate(desc types.Descriptor) ([]File, error) {
-	normalizedDesc, err := normalizeDescriptor(desc)
-	if err != nil {
-		return nil, err
-	}
-
 	enumValues := types.EnumValues()
 
 	specCode, err := generateSpecTypes(enumValues)
@@ -45,7 +40,7 @@ func Generate(desc types.Descriptor) ([]File, error) {
 	if err != nil {
 		return nil, err
 	}
-	snapshotCode, err := generateDescriptorSnapshot(normalizedDesc)
+	snapshotCode, err := generateDescriptorSnapshot(desc)
 	if err != nil {
 		return nil, err
 	}
@@ -55,20 +50,6 @@ func Generate(desc types.Descriptor) ([]File, error) {
 		{Path: "opensspm/spec/v2/descriptor_snapshot.gen.go", Content: snapshotCode},
 		{Path: "opensspm/runtime/v2/runtime.gen.go", Content: runtimeCode},
 	}, nil
-}
-
-func normalizeDescriptor(desc types.Descriptor) (types.Descriptor, error) {
-	// Preserve the generated literal produced by the former JSON plugin boundary.
-	encoded, err := json.Marshal(desc)
-	if err != nil {
-		return types.Descriptor{}, fmt.Errorf("normalize descriptor: marshal: %w", err)
-	}
-
-	var normalized types.Descriptor
-	if err := json.Unmarshal(encoded, &normalized); err != nil {
-		return types.Descriptor{}, fmt.Errorf("normalize descriptor: unmarshal: %w", err)
-	}
-	return normalized, nil
 }
 
 func generateSpecTypes(enumValues map[string][]string) (string, error) {

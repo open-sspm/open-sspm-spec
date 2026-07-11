@@ -51,11 +51,6 @@ type Ruleset struct {
 	Rules         []Rule               `json:"rules"`
 }
 
-type DatasetRefSpec struct {
-	Dataset string `json:"dataset"`
-	Version int    `json:"version"`
-}
-
 type DatasetContractRef struct {
 	Dataset     string `json:"dataset"`
 	Version     int    `json:"version"`
