@@ -9,8 +9,7 @@ import (
 	"strings"
 
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/compiler"
-	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/plugin"
-	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
+	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/gengo"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/verify"
 )
 
@@ -94,12 +93,16 @@ func runBuild(args []string) {
 func runCodegen(args []string) {
 	fs := flag.NewFlagSet("codegen", flag.ExitOnError)
 	repo := fs.String("repo", ".", "repo root")
-	lang := fs.String("lang", "", "language plugin to run (e.g. go)")
+	lang := fs.String("lang", "", "output language (currently go)")
 	outDir := fs.String("out", "", "output directory")
 	_ = fs.Parse(args)
 
 	if *lang == "" || *outDir == "" {
 		fmt.Fprintln(os.Stderr, "codegen requires --lang and --out")
+		os.Exit(2)
+	}
+	if *lang != "go" {
+		fmt.Fprintf(os.Stderr, "codegen: unsupported language %q\n", *lang)
 		os.Exit(2)
 	}
 
@@ -116,28 +119,20 @@ func runCodegen(args []string) {
 		os.Exit(1)
 	}
 
-	req := types.CodegenRequest{
-		SchemaVersion: 2,
-		Kind:          "opensspm.codegen_request",
-		Language:      *lang,
-		Descriptor:    res.Descriptor,
-	}
-
-	r := plugin.Runner{RepoRoot: repoAbs}
-	resp, err := r.Run(ctx, *lang, req)
+	files, err := gengo.Generate(res.Descriptor)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
 
-	if err := writeGeneratedFiles(repoAbs, *outDir, resp.Files); err != nil {
+	if err := writeGeneratedFiles(repoAbs, *outDir, files); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
-	fmt.Fprintf(os.Stdout, "generated %d files\n", len(resp.Files))
+	fmt.Fprintf(os.Stdout, "generated %d files\n", len(files))
 }
 
-func writeGeneratedFiles(repoRootAbs, outDir string, files []types.CodegenFile) error {
+func writeGeneratedFiles(repoRootAbs, outDir string, files []gengo.File) error {
 	outAbs := outDir
 	if !filepath.IsAbs(outAbs) {
 		outAbs = filepath.Join(repoRootAbs, outDir)
