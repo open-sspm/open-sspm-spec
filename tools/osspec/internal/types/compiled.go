@@ -14,21 +14,3 @@ type Descriptor struct {
 	EntityPolicyPacks []Compiled[EntityPolicyPackDoc] `json:"entity_policy_packs,omitempty"`
 	Profiles          []Compiled[ProfileDoc]          `json:"profiles"`
 }
-
-type CodegenRequest struct {
-	SchemaVersion int        `json:"schema_version"`
-	Kind          string     `json:"kind"`
-	Language      string     `json:"language"`
-	Descriptor    Descriptor `json:"descriptor"`
-}
-
-type CodegenResponse struct {
-	SchemaVersion int           `json:"schema_version"`
-	Kind          string        `json:"kind"`
-	Files         []CodegenFile `json:"files"`
-}
-
-type CodegenFile struct {
-	Path    string `json:"path"`
-	Content string `json:"content"`
-}
