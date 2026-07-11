@@ -27,6 +27,8 @@ type Bundle struct {
 	}
 }
 
+// ValidateSemantic validates relationships and executable Rego after documents
+// have passed JSON Schema validation, normalization, and Rego path resolution.
 func ValidateSemantic(b *Bundle) []error {
 	if b == nil {
 		return []error{fmt.Errorf("semantic: nil bundle")}
@@ -87,8 +89,6 @@ func ValidateSemantic(b *Bundle) []error {
 	return errs
 }
 
-// ValidateSemantic validates relationships and executable Rego after documents
-// have passed JSON Schema validation, normalization, and Rego path resolution.
 func validateEntityPolicyPack(path string, doc *types.EntityPolicyPackDoc) []error {
 	return validateRegoPolicy(path, "entity_policy_pack.policy", &doc.EntityPolicyPack.Policy)
 }
@@ -163,7 +163,7 @@ func validateRule(path string, r *types.Rule, policy *types.RegoPolicy, contract
 		return errs
 	}
 	if r.Check == nil {
-		return append(errs, fmt.Errorf("semantic: %s: rule %q: monitoring.status=%q requires rule.check", path, r.Key, r.Monitoring.Status))
+		return []error{fmt.Errorf("semantic: %s: rule %q: monitoring.status=%q requires rule.check", path, r.Key, r.Monitoring.Status)}
 	}
 
 	errs = append(errs, validateCheck(path, r, policy)...)
