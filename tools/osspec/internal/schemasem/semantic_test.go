@@ -65,29 +65,103 @@ func TestValidateSemantic_RuleInheritsRulesetPolicy(t *testing.T) {
 	}
 }
 
-func TestValidateSemantic_RegoOnlyAndRequiredDataContracts(t *testing.T) {
+func TestValidateSemantic_EffectiveCheckRequiresPackageAndRego(t *testing.T) {
 	doc := validRulesetDoc()
-	doc.Ruleset.Rules[0].Check.Engine = ""
+	doc.Ruleset.Rules[0].Check.Package = ""
+	doc.Ruleset.Rules[0].Check.Rego = ""
+
 	errs := ValidateSemantic(bundleWithRuleset(doc))
-	if !containsErr(errs, "check.engine is required") {
-		t.Fatalf("expected required engine error, got:\n%s", joinErrs(errs))
+	for _, want := range []string{"check.package is required", "check.rego is required"} {
+		if !containsErr(errs, want) {
+			t.Fatalf("expected %q error, got:\n%s", want, joinErrs(errs))
+		}
 	}
-	if containsErr(errs, `unsupported check.engine ""`) {
-		t.Fatalf("expected no unsupported empty engine error, got:\n%s", joinErrs(errs))
+}
+
+func TestValidateSemantic_ScopeRelationships(t *testing.T) {
+	doc := validRulesetDoc()
+	doc.Ruleset.Scope = types.Scope{Kind: types.ScopeKindConnectorInstance}
+	errs := ValidateSemantic(bundleWithRuleset(doc))
+	if !containsErr(errs, "requires scope.connector_kind") {
+		t.Fatalf("expected missing connector kind error, got:\n%s", joinErrs(errs))
 	}
 
 	doc = validRulesetDoc()
-	doc.Ruleset.Rules[0].Check.Engine = "legacy"
+	doc.Ruleset.Scope.ConnectorKind = "okta"
 	errs = ValidateSemantic(bundleWithRuleset(doc))
-	if !containsErr(errs, `unsupported check.engine "legacy"`) {
-		t.Fatalf("expected unsupported engine error, got:\n%s", joinErrs(errs))
+	if !containsErr(errs, "scope.kind=global forbids scope.connector_kind") {
+		t.Fatalf("expected forbidden connector kind error, got:\n%s", joinErrs(errs))
+	}
+}
+
+func TestValidateSemantic_MonitoringCheckRelationships(t *testing.T) {
+	doc := validRulesetDoc()
+	doc.Ruleset.Rules[0].Check = nil
+	errs := ValidateSemantic(bundleWithRuleset(doc))
+	if !containsErr(errs, "requires rule.check") {
+		t.Fatalf("expected required check error, got:\n%s", joinErrs(errs))
 	}
 
 	doc = validRulesetDoc()
+	doc.Ruleset.Rules[0].Monitoring.Status = types.MonitoringStatusManual
+	errs = ValidateSemantic(bundleWithRuleset(doc))
+	if !containsErr(errs, "requires rule.check to be omitted") {
+		t.Fatalf("expected omitted check error, got:\n%s", joinErrs(errs))
+	}
+}
+
+func TestValidateSemantic_RequiredDataContracts(t *testing.T) {
+	doc := validRulesetDoc()
 	doc.Ruleset.Rules[0].RequiredData = []string{"okta:missing"}
-	errs = ValidateSemantic(bundleWithRuleset(doc))
+	errs := ValidateSemantic(bundleWithRuleset(doc))
 	if !containsErr(errs, `ruleset.data_contracts missing dataset "okta:missing"`) {
 		t.Fatalf("expected missing data contract error, got:\n%s", joinErrs(errs))
+	}
+
+	doc = validRulesetDoc()
+	doc.Ruleset.DataContracts = append(doc.Ruleset.DataContracts, types.DatasetContractRef{
+		Dataset: "okta:log-streams",
+		Version: 2,
+	})
+	errs = ValidateSemantic(bundleWithRuleset(doc))
+	if !containsErr(errs, "has multiple data_contracts versions") {
+		t.Fatalf("expected multiple versions error, got:\n%s", joinErrs(errs))
+	}
+}
+
+func TestValidateSemantic_UniquenessAndProfileReferences(t *testing.T) {
+	doc := validRulesetDoc()
+	doc.Ruleset.Rules = append(doc.Ruleset.Rules, doc.Ruleset.Rules[0])
+	bundle := bundleWithRuleset(doc)
+	bundle.Rulesets = append(bundle.Rulesets, bundle.Rulesets[0])
+	bundle.Profiles = []struct {
+		Path string
+		Doc  types.ProfileDoc
+	}{
+		{
+			Path: "specs/profile.yaml",
+			Doc: types.ProfileDoc{SchemaVersion: 2, Kind: "opensspm.profile", Profile: types.Profile{
+				Key:  "profile.v2",
+				Name: "Profile",
+				Rulesets: []types.ProfileRulesetRef{
+					{Key: doc.Ruleset.Key},
+					{Key: doc.Ruleset.Key},
+					{Key: "missing.v2"},
+				},
+			}},
+		},
+	}
+
+	errs := ValidateSemantic(bundle)
+	for _, want := range []string{
+		"duplicate ruleset.key",
+		"duplicate rule.key",
+		"duplicate ruleset ref",
+		"references missing ruleset.key",
+	} {
+		if !containsErr(errs, want) {
+			t.Fatalf("expected %q error, got:\n%s", want, joinErrs(errs))
+		}
 	}
 }
 
@@ -100,20 +174,6 @@ results["R1"] := if {
 	errs := ValidateSemantic(bundleWithRuleset(doc))
 	if !containsErr(errs, "invalid Rego") {
 		t.Fatalf("expected invalid Rego error, got:\n%s", joinErrs(errs))
-	}
-}
-
-func TestValidateSemantic_CheckAcceptsUnresolvedRegoPath(t *testing.T) {
-	doc := validRulesetDoc()
-	doc.Ruleset.Rules[0].Check.Rego = ""
-	doc.Ruleset.Rules[0].Check.RegoPath = "rule.rego"
-
-	errs := ValidateSemantic(bundleWithRuleset(doc))
-	if containsErr(errs, "check.rego is required") {
-		t.Fatalf("expected check.rego_path to satisfy Rego content requirement, got:\n%s", joinErrs(errs))
-	}
-	if len(errs) != 0 {
-		t.Fatalf("expected no semantic errors, got:\n%s", joinErrs(errs))
 	}
 }
 
@@ -132,24 +192,6 @@ helper := if {
 		t.Fatalf("expected invalid ruleset policy Rego error, got:\n%s", joinErrs(errs))
 	}
 }
-
-func TestValidateSemantic_PolicyAcceptsUnresolvedRegoPath(t *testing.T) {
-	doc := validRulesetDoc()
-	doc.Ruleset.Policy = &types.RegoPolicy{
-		Engine:   types.CheckEngineRego,
-		Package:  "opensspm.policy",
-		RegoPath: "policy.rego",
-	}
-
-	errs := ValidateSemantic(bundleWithRuleset(doc))
-	if containsErr(errs, "ruleset.policy.rego is required") {
-		t.Fatalf("expected policy.rego_path to satisfy Rego content requirement, got:\n%s", joinErrs(errs))
-	}
-	if len(errs) != 0 {
-		t.Fatalf("expected no semantic errors, got:\n%s", joinErrs(errs))
-	}
-}
-
 func TestValidateSemantic_EntityPolicyPack(t *testing.T) {
 	pack := types.EntityPolicyPackDoc{
 		SchemaVersion: 2,
