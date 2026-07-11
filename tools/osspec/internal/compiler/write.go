@@ -8,23 +8,21 @@ import (
 	"strings"
 
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/cyaml"
+	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
 )
 
-func Build(ctx context.Context, opts Options) (*Result, error) {
-	if opts.DistDir == "" {
-		opts.DistDir = "dist"
+func Build(ctx context.Context, repoRoot, distDir string) error {
+	if distDir == "" {
+		distDir = "dist"
 	}
-	res, err := Compile(ctx, opts)
+	desc, err := Compile(ctx, repoRoot)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if err := writeDist(opts.RepoRoot, opts.DistDir, res); err != nil {
-		return nil, err
-	}
-	return res, nil
+	return writeDist(repoRoot, distDir, desc)
 }
 
-func writeDist(repoRoot, distDir string, res *Result) error {
+func writeDist(repoRoot, distDir string, desc *types.Descriptor) error {
 	repoRootAbs, err := filepath.Abs(repoRoot)
 	if err != nil {
 		return err
@@ -32,7 +30,6 @@ func writeDist(repoRoot, distDir string, res *Result) error {
 	distAbs := filepath.Join(repoRootAbs, distDir)
 	docsAbs := filepath.Join(repoRootAbs, "docs")
 
-	_ = os.RemoveAll(filepath.Join(distAbs, "index"))
 	_ = os.RemoveAll(filepath.Join(distAbs, "compiled"))
 	if err := os.MkdirAll(filepath.Join(distAbs, "compiled"), 0o755); err != nil {
 		return err
@@ -46,26 +43,19 @@ func writeDist(repoRoot, distDir string, res *Result) error {
 	if err := os.MkdirAll(filepath.Join(distAbs, "compiled", "profiles"), 0o755); err != nil {
 		return err
 	}
-	if err := removeLegacyDescriptors(distAbs, "descriptor.v2.yaml"); err != nil {
-		return err
-	}
-
-	if err := writeCanonicalYAML(filepath.Join(distAbs, "descriptor.v2.yaml"), res.Descriptor); err != nil {
+	if err := writeCanonicalYAML(filepath.Join(distAbs, "descriptor.v2.yaml"), desc); err != nil {
 		return err
 	}
 	if err := os.MkdirAll(docsAbs, 0o755); err != nil {
 		return err
 	}
-	if err := removeLegacyDescriptors(docsAbs, "descriptor.v2.yaml"); err != nil {
-		return err
-	}
-	if err := writeCanonicalYAML(filepath.Join(docsAbs, "descriptor.v2.yaml"), res.Descriptor); err != nil {
+	if err := writeCanonicalYAML(filepath.Join(docsAbs, "descriptor.v2.yaml"), desc); err != nil {
 		return err
 	}
 	if err := copyMetaschemaToDocs(repoRootAbs, docsAbs); err != nil {
 		return err
 	}
-	if err := writeCompiled(distAbs, res); err != nil {
+	if err := writeCompiled(distAbs, desc); err != nil {
 		return err
 	}
 	return nil
@@ -113,23 +103,23 @@ func writeCanonicalYAML(path string, v any) error {
 	return os.WriteFile(path, canonical, 0o644)
 }
 
-func writeCompiled(distAbs string, res *Result) error {
+func writeCompiled(distAbs string, desc *types.Descriptor) error {
 	// Rulesets
-	for _, rs := range res.Descriptor.Rulesets {
+	for _, rs := range desc.Rulesets {
 		name := sanitizeFilename(rs.Object.Ruleset.Key) + ".yaml"
 		if err := writeCanonicalYAML(filepath.Join(distAbs, "compiled", "rulesets", name), rs.Object); err != nil {
 			return fmt.Errorf("write compiled ruleset %s: %w", rs.Object.Ruleset.Key, err)
 		}
 	}
 	// Entity policy packs
-	for _, pack := range res.Descriptor.EntityPolicyPacks {
+	for _, pack := range desc.EntityPolicyPacks {
 		name := sanitizeFilename(pack.Object.EntityPolicyPack.Metadata.ID) + ".yaml"
 		if err := writeCanonicalYAML(filepath.Join(distAbs, "compiled", "entity_policy_packs", name), pack.Object); err != nil {
 			return fmt.Errorf("write compiled entity policy pack %s: %w", pack.Object.EntityPolicyPack.Metadata.ID, err)
 		}
 	}
 	// Profiles
-	for _, p := range res.Descriptor.Profiles {
+	for _, p := range desc.Profiles {
 		name := sanitizeFilename(p.Object.Profile.Key) + ".yaml"
 		if err := writeCanonicalYAML(filepath.Join(distAbs, "compiled", "profiles", name), p.Object); err != nil {
 			return fmt.Errorf("write compiled profile %s: %w", p.Object.Profile.Key, err)
@@ -160,24 +150,4 @@ func sanitizeFilename(s string) string {
 		}
 	}
 	return b.String()
-}
-
-func removeLegacyDescriptors(dir, keepName string) error {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return err
-	}
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		name := entry.Name()
-		if !strings.HasPrefix(name, "descriptor.") || !strings.HasSuffix(name, ".yaml") || name == keepName {
-			continue
-		}
-		if err := os.Remove(filepath.Join(dir, name)); err != nil {
-			return err
-		}
-	}
-	return nil
 }

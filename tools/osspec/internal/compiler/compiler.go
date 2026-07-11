@@ -16,35 +16,17 @@ import (
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/yamlstrict"
 )
 
-type Options struct {
-	RepoRoot string
-
-	SpecsDir      string
-	MetaschemaDir string
-	DistDir       string
-}
-
-type Result struct {
-	Descriptor types.Descriptor
-}
-
-func Compile(ctx context.Context, opts Options) (*Result, error) {
-	if opts.RepoRoot == "" {
+func Compile(ctx context.Context, repoRoot string) (*types.Descriptor, error) {
+	if repoRoot == "" {
 		return nil, errors.New("compiler: RepoRoot is required")
 	}
-	if opts.SpecsDir == "" {
-		opts.SpecsDir = "specs"
-	}
-	if opts.MetaschemaDir == "" {
-		opts.MetaschemaDir = "metaschema"
-	}
 
-	repoRootAbs, err := filepath.Abs(opts.RepoRoot)
+	repoRootAbs, err := filepath.Abs(repoRoot)
 	if err != nil {
 		return nil, err
 	}
 
-	reg, err := schemasem.LoadRegistry(filepath.Join(repoRootAbs, opts.MetaschemaDir))
+	reg, err := schemasem.LoadRegistry(filepath.Join(repoRootAbs, "metaschema"))
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +36,7 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 		return nil, err
 	}
 
-	specFiles, err := loader.LoadSpecFiles(ctx, loader.Options{RepoRoot: repoRootAbs, SpecsDir: opts.SpecsDir})
+	specFiles, err := loader.LoadSpecFiles(ctx, repoRootAbs)
 	if err != nil {
 		return nil, err
 	}
@@ -155,16 +137,10 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 		desc.Profiles = append(desc.Profiles, types.Compiled[types.ProfileDoc]{SourcePath: p.Path, Hash: h, Object: p.Doc})
 	}
 
-	return &Result{Descriptor: desc}, nil
+	return &desc, nil
 }
 
 func loadVersion(repoRootAbs string) (types.Version, error) {
-	if _, err := os.Stat(filepath.Join(repoRootAbs, "version.json")); err == nil {
-		return types.Version{}, fmt.Errorf("compiler: version.json is not allowed; use version.yaml")
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return types.Version{}, fmt.Errorf("compiler: stat version.json: %w", err)
-	}
-
 	b, err := os.ReadFile(filepath.Join(repoRootAbs, "version.yaml"))
 	if err != nil {
 		return types.Version{}, fmt.Errorf("compiler: read version.yaml: %w", err)

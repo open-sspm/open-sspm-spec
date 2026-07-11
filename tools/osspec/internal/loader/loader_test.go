@@ -24,7 +24,7 @@ func TestLoadSpecFiles_LoadsYAML(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	files, err := LoadSpecFiles(context.Background(), Options{RepoRoot: repo, SpecsDir: "specs"})
+	files, err := LoadSpecFiles(context.Background(), repo)
 	if err != nil {
 		t.Fatalf("LoadSpecFiles() error: %v", err)
 	}
@@ -46,7 +46,7 @@ func TestLoadSpecFiles_RejectsJSONAndYML(t *testing.T) {
 		if err := os.WriteFile(filepath.Join(specsDir, "bad.json"), []byte("{}"), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		_, err := LoadSpecFiles(context.Background(), Options{RepoRoot: repo, SpecsDir: "specs"})
+		_, err := LoadSpecFiles(context.Background(), repo)
 		if err == nil || !strings.Contains(err.Error(), "json spec source not allowed") {
 			t.Fatalf("expected json rejection error, got %v", err)
 		}
@@ -61,7 +61,7 @@ func TestLoadSpecFiles_RejectsJSONAndYML(t *testing.T) {
 		if err := os.WriteFile(filepath.Join(specsDir, "bad.yml"), []byte("{}"), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		_, err := LoadSpecFiles(context.Background(), Options{RepoRoot: repo, SpecsDir: "specs"})
+		_, err := LoadSpecFiles(context.Background(), repo)
 		if err == nil || !strings.Contains(err.Error(), ".yml is not allowed") {
 			t.Fatalf("expected .yml rejection error, got %v", err)
 		}

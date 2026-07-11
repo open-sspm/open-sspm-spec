@@ -10,14 +10,14 @@ import (
 
 func TestCompile_CISOktaRuleset(t *testing.T) {
 	root := testutil.RepoRoot(t)
-	res, err := Compile(context.Background(), Options{RepoRoot: root})
+	desc, err := Compile(context.Background(), root)
 	if err != nil {
 		t.Fatalf("Compile() error: %v", err)
 	}
 
 	var ruleset *types.Ruleset
-	for i := range res.Descriptor.Rulesets {
-		candidate := &res.Descriptor.Rulesets[i].Object.Ruleset
+	for i := range desc.Rulesets {
+		candidate := &desc.Rulesets[i].Object.Ruleset
 		if candidate.Key == "cis.okta.idaas_stig.v2" {
 			ruleset = candidate
 			break

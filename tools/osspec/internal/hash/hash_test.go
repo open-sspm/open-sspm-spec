@@ -7,7 +7,7 @@ import (
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
 )
 
-func TestHashObjectJCS_NormalizedRulesetStableAcrossOrdering(t *testing.T) {
+func TestHashObjectCanonicalYAML_NormalizedRulesetStableAcrossOrdering(t *testing.T) {
 	regoModule := `package opensspm.test
 
 results["A"] := {"status": "pass"} if { true }
@@ -93,20 +93,20 @@ results["A"] := {"status": "pass"} if { true }
 	normalize.RulesetDoc(&doc1)
 	normalize.RulesetDoc(&doc2)
 
-	h1, _, err := HashObjectJCS(doc1)
+	h1, _, err := HashObjectCanonicalYAML(doc1)
 	if err != nil {
-		t.Fatalf("HashObjectJCS(doc1) error: %v", err)
+		t.Fatalf("HashObjectCanonicalYAML(doc1) error: %v", err)
 	}
-	h2, _, err := HashObjectJCS(doc2)
+	h2, _, err := HashObjectCanonicalYAML(doc2)
 	if err != nil {
-		t.Fatalf("HashObjectJCS(doc2) error: %v", err)
+		t.Fatalf("HashObjectCanonicalYAML(doc2) error: %v", err)
 	}
 	if h1 != h2 {
 		t.Fatalf("expected equal hashes, got %s vs %s", h1, h2)
 	}
 }
 
-func TestHashObjectJCS_NormalizedRulesetStableAcrossRequiredDataOrdering(t *testing.T) {
+func TestHashObjectCanonicalYAML_NormalizedRulesetStableAcrossRequiredDataOrdering(t *testing.T) {
 	regoModule := `package opensspm.test
 
 results["R1"] := {"status": "pass"} if { true }
@@ -168,13 +168,13 @@ results["R1"] := {"status": "pass"} if { true }
 	normalize.RulesetDoc(&doc1)
 	normalize.RulesetDoc(&doc2)
 
-	h1, _, err := HashObjectJCS(doc1)
+	h1, _, err := HashObjectCanonicalYAML(doc1)
 	if err != nil {
-		t.Fatalf("HashObjectJCS(doc1) error: %v", err)
+		t.Fatalf("HashObjectCanonicalYAML(doc1) error: %v", err)
 	}
-	h2, _, err := HashObjectJCS(doc2)
+	h2, _, err := HashObjectCanonicalYAML(doc2)
 	if err != nil {
-		t.Fatalf("HashObjectJCS(doc2) error: %v", err)
+		t.Fatalf("HashObjectCanonicalYAML(doc2) error: %v", err)
 	}
 	if h1 != h2 {
 		t.Fatalf("expected equal hashes, got %s vs %s", h1, h2)
