@@ -182,7 +182,7 @@ func validateCheck(path string, r *types.Rule, policy *types.RegoPolicy) []error
 	}
 	rego := strings.TrimSpace(c.Rego)
 	if rego == "" {
-		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.rego is required, either inline, via check.rego_path, or via ruleset.policy", path, r.Key))
+		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.rego is required (inline or inherited from ruleset.policy)", path, r.Key))
 		return errs
 	}
 	if len(errs) == 0 {
@@ -195,6 +195,9 @@ func validateCheck(path string, r *types.Rule, policy *types.RegoPolicy) []error
 
 func validateRegoPolicy(path, field string, policy *types.RegoPolicy) []error {
 	rego := strings.TrimSpace(policy.Rego)
+	if rego == "" {
+		return []error{fmt.Errorf("semantic: %s: %s.rego is required (inline or via rego_path)", path, field)}
+	}
 	if strings.TrimSpace(policy.Query) == "" {
 		if err := regoengine.ValidateModuleOnly(context.Background(), path+":"+field+".rego", rego); err != nil {
 			return []error{fmt.Errorf("semantic: %s: %s invalid Rego: %v", path, field, err)}

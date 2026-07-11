@@ -30,6 +30,7 @@ func writeDist(repoRoot, distDir string, desc *types.Descriptor) error {
 	distAbs := filepath.Join(repoRootAbs, distDir)
 	docsAbs := filepath.Join(repoRootAbs, "docs")
 
+	_ = os.RemoveAll(filepath.Join(distAbs, "index"))
 	_ = os.RemoveAll(filepath.Join(distAbs, "compiled"))
 	if err := os.MkdirAll(filepath.Join(distAbs, "compiled"), 0o755); err != nil {
 		return err
