@@ -42,6 +42,6 @@ type EvaluateInput = specv2.EvaluateInput
 type EvaluateResult = specv2.EvaluateResult
 type EvaluateStatus = specv2.EvaluateStatus
 
-func EvaluateRule(rule *specv2.Rule, input EvaluateInput) (EvaluateResult, error) {
-	return specv2.EvaluateRule(rule, input)
+func EvaluateRule(ruleset *specv2.Ruleset, rule *specv2.Rule, input EvaluateInput) (EvaluateResult, error) {
+	return specv2.EvaluateRule(ruleset, rule, input)
 }

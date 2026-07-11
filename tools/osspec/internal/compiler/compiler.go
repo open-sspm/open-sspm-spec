@@ -88,7 +88,6 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 			if err := resolveRulesetRegoReferences(repoRootAbs, f, &doc); err != nil {
 				return nil, err
 			}
-			applyRulesetPolicyDefaults(&doc)
 			bundle.Rulesets = append(bundle.Rulesets, struct {
 				Path string
 				Doc  types.RulesetDoc
@@ -157,28 +156,6 @@ func Compile(ctx context.Context, opts Options) (*Result, error) {
 	}
 
 	return &Result{Descriptor: desc}, nil
-}
-
-func applyRulesetPolicyDefaults(doc *types.RulesetDoc) {
-	if doc == nil || doc.Ruleset.Policy == nil {
-		return
-	}
-	policy := doc.Ruleset.Policy
-	for i := range doc.Ruleset.Rules {
-		check := doc.Ruleset.Rules[i].Check
-		if check == nil {
-			continue
-		}
-		if check.Engine == "" {
-			check.Engine = policy.Engine
-		}
-		if check.Package == "" {
-			check.Package = policy.Package
-		}
-		if check.Rego == "" {
-			check.Rego = policy.Rego
-		}
-	}
 }
 
 func loadVersion(repoRootAbs string) (types.Version, error) {

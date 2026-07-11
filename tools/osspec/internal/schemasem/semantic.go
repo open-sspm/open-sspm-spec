@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/regoengine"
+	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/rulecheck"
 	"github.com/open-sspm/open-sspm-spec/tools/osspec/internal/types"
 )
 
@@ -166,13 +167,13 @@ func validateRulesetRules(path string, doc *types.RulesetDoc) []error {
 			seenRuleKeys[r.Key] = struct{}{}
 		}
 
-		errs = append(errs, validateRule(path, r, contractsIdx)...)
+		errs = append(errs, validateRule(path, r, doc.Ruleset.Policy, contractsIdx)...)
 	}
 
 	return errs
 }
 
-func validateRule(path string, r *types.Rule, contractsIdx datasetContractIndex) []error {
+func validateRule(path string, r *types.Rule, policy *types.RegoPolicy, contractsIdx datasetContractIndex) []error {
 	var errs []error
 
 	if r.Parameters != nil && r.Parameters.Schema != nil {
@@ -208,15 +209,16 @@ func validateRule(path string, r *types.Rule, contractsIdx datasetContractIndex)
 		return errs
 	}
 
-	errs = append(errs, validateCheck(path, r, r.Check)...)
+	errs = append(errs, validateCheck(path, r, policy)...)
 	errs = append(errs, validateRequiredData(path, r, contractsIdx)...)
 	return errs
 }
 
-func validateCheck(path string, r *types.Rule, c *types.Check) []error {
-	if c == nil {
+func validateCheck(path string, r *types.Rule, policy *types.RegoPolicy) []error {
+	if r.Check == nil {
 		return nil
 	}
+	c := rulecheck.Resolve(policy, r.Check)
 	var errs []error
 	if strings.TrimSpace(string(c.Engine)) == "" {
 		errs = append(errs, fmt.Errorf("semantic: %s: rule %q: check.engine is required", path, r.Key))

@@ -30,8 +30,7 @@ func TestGenerateSpecTypes_RegoSurfaceAndHelpers(t *testing.T) {
 		"type EvaluateResult struct",
 		"func (rs *Ruleset) AddRule(rule Rule) (bool, error)",
 		"func (rs *Ruleset) RuleByKey(ruleKey string) (*Rule, bool)",
-		"func EvaluateRule(rule *Rule, input EvaluateInput) (EvaluateResult, error)",
-		"func (r *Rule) Evaluate(input EvaluateInput) (EvaluateResult, error)",
+		"func EvaluateRule(ruleset *Ruleset, rule *Rule, input EvaluateInput) (EvaluateResult, error)",
 		"func EvaluateEntityPolicyPack(pack *EntityPolicyPack, entityInput map[string]any) (EntityPolicyEvaluateResult, error)",
 		"func evaluateRego(moduleName, module, query string, input any) (map[string]any, error)",
 		"rego.StrictBuiltinErrors(true)",
@@ -71,8 +70,8 @@ func TestGenerateRuntimeTypes_EvaluateWrapper(t *testing.T) {
 		"type EvaluateInput = specv2.EvaluateInput",
 		"type EvaluateResult = specv2.EvaluateResult",
 		"type EvaluateStatus = specv2.EvaluateStatus",
-		"func EvaluateRule(rule *specv2.Rule, input EvaluateInput) (EvaluateResult, error)",
-		"return specv2.EvaluateRule(rule, input)",
+		"func EvaluateRule(ruleset *specv2.Ruleset, rule *specv2.Rule, input EvaluateInput) (EvaluateResult, error)",
+		"return specv2.EvaluateRule(ruleset, rule, input)",
 	}
 	for _, want := range required {
 		if !strings.Contains(code, want) {

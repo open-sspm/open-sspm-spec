@@ -332,7 +332,7 @@ func (rs *Ruleset) RuleByKey(ruleKey string) (*Rule, bool) {
 	return nil, false
 }
 
-func EvaluateRule(rule *Rule, input EvaluateInput) (EvaluateResult, error) {
+func EvaluateRule(ruleset *Ruleset, rule *Rule, input EvaluateInput) (EvaluateResult, error) {
 	if rule == nil {
 		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "nil_rule"}, fmt.Errorf("rule is nil")
 	}
@@ -346,6 +346,16 @@ func EvaluateRule(rule *Rule, input EvaluateInput) (EvaluateResult, error) {
 		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "unsupported_engine"}, fmt.Errorf("unsupported check.engine %q", rule.Check.Engine)
 	}
 
+	module := rule.Check.Rego
+	modulePath := rule.Check.RegoPath
+	if strings.TrimSpace(module) == "" && strings.TrimSpace(modulePath) == "" && ruleset != nil && ruleset.Policy != nil {
+		module = ruleset.Policy.Rego
+		modulePath = ruleset.Policy.RegoPath
+	}
+	if strings.TrimSpace(module) == "" && strings.TrimSpace(modulePath) != "" {
+		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "rego_error"}, fmt.Errorf("rego_path %q must be resolved before evaluation", modulePath)
+	}
+
 	params := make(map[string]any)
 	if rule.Parameters != nil {
 		for k, v := range rule.Parameters.Defaults {
@@ -356,7 +366,7 @@ func EvaluateRule(rule *Rule, input EvaluateInput) (EvaluateResult, error) {
 		params[k] = v
 	}
 
-	result, err := evaluateRego(rule.Key+".rego", rule.Check.Rego, rule.Check.Query, map[string]any{
+	result, err := evaluateRego(rule.Key+".rego", module, rule.Check.Query, map[string]any{
 		"datasets": wrapDatasetInput(input.Datasets),
 		"params":   params,
 		"rule": map[string]any{
@@ -372,10 +382,6 @@ func EvaluateRule(rule *Rule, input EvaluateInput) (EvaluateResult, error) {
 		return EvaluateResult{Status: EvaluateStatus_UNKNOWN, ReasonCode: "invalid_status"}, err
 	}
 	return out, nil
-}
-
-func (r *Rule) Evaluate(input EvaluateInput) (EvaluateResult, error) {
-	return EvaluateRule(r, input)
 }
 
 func EvaluateEntityPolicyPack(pack *EntityPolicyPack, entityInput map[string]any) (EntityPolicyEvaluateResult, error) {
